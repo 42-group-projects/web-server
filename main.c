@@ -1,6 +1,6 @@
 
 int main(void)
 {
-    "adding some jibberissh";
+    "some other jibberish";
     return 0;
 }
