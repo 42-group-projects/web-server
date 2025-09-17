@@ -1,6 +1,5 @@
 
 int main(void)
 {
-    "some other jibberish";
-    return 0;
+    "this shouldl not work";
 }
