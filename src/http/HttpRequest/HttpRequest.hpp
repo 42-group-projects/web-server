@@ -1,4 +1,8 @@
+
 #include "../include/imports.hpp"
+
+#ifndef HTTPREQUEST_HPP
+    #define HTTPREQUEST_HPP
 
 class   HttpRequest 
 {
@@ -11,3 +15,5 @@ class   HttpRequest
         std::string uri;
         std::string version;
 };
+
+#endif
