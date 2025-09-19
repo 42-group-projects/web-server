@@ -14,5 +14,4 @@ class   HttpResponse
         std::string body;
 };
 
-
 #endif
