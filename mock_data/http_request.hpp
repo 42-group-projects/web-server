@@ -1,6 +1,5 @@
 #ifndef HTTP_REQUEST_MOCK_DATA_HPP
     #define HTTP_REQUEST_MOCK_DATA_HPP
-
 #include <string>
 
 //GET request
@@ -18,7 +17,6 @@ const std::string get_request_with_params =
     "Connection: keep-alive\r\n"
     "Accept: text/html\r\n"
     "\r\n"; 
-
 
 //POST request
 const std::string simple_post_request = 
