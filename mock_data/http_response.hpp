@@ -1,4 +1,4 @@
-#ifndef HTTPRESPONSE_MOCK_DATA_HPP
+#ifndef HTTP_RESPONSE_MOCK_DATA_HPP
     #define HTTP_RESPONSE_MOCK_DATA_HPP
 #include <string>
 
