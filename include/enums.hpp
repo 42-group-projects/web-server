@@ -1,5 +1,21 @@
 #pragma once
 
+enum e_mimeType
+{
+    NO_FILE,
+    TEXT_HTML,
+	TEXT_CSS,
+	APPLICATION_JAVASCRIPT,
+	APPLICATION_JSON,
+	TEXT_PLAIN,
+	IMAGE_PNG,
+	IMAGE_JPEG,
+	IMAGE_GIF,
+	APPLICATION_PDF,
+	IMAGE_SVG,
+	APPLICATION_OCTET_STREAM // fallback for unknown types
+};
+
 enum e_method
 {
     GET,
