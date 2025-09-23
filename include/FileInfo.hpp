@@ -17,6 +17,8 @@ private:
     bool isExists;                 // true/false
     bool isDirectory;           // true/false 
     bool isReadable;            // true/false
+    bool isWritable;            // true/false
+    bool isExecutable;            // true/false
 
     e_mimeType detectMimeType(const SafePath& safePath);
 
@@ -30,4 +32,6 @@ public:
     bool exists() const;
     bool directory() const;
     bool readable() const;
+    bool writable() const;
+    bool executable() const;
 };

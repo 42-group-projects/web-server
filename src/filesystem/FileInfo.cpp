@@ -11,6 +11,8 @@ FileInfo::FileInfo(SafePath path) : fullPath(path)
         mimeType = detectMimeType(path);
         isDirectory = S_ISDIR(sb.st_mode);
         isReadable = (access(fullPath.getFullPath().c_str(), R_OK) == 0);
+        isWritable = (access(fullPath.getFullPath().c_str(), W_OK) == 0);
+        isExecutable = (access(fullPath.getFullPath().c_str(), X_OK) == 0);
     }
     else 
     {
@@ -20,6 +22,8 @@ FileInfo::FileInfo(SafePath path) : fullPath(path)
         mimeType = NO_FILE;
         isDirectory = false;
         isReadable = false;
+        isWritable = false;
+        isExecutable = false;
     }
 }
 
@@ -54,3 +58,5 @@ e_mimeType FileInfo::getMimeType() const { return mimeType; }
 bool FileInfo::exists() const { return isExists; }
 bool FileInfo::directory() const { return isDirectory; }
 bool FileInfo::readable() const { return isReadable; }
+bool FileInfo::writable() const { return isWritable; }
+bool FileInfo::executable() const { return isExecutable; }

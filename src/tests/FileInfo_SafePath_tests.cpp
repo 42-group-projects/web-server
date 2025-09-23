@@ -55,6 +55,8 @@ void FileInfo_SafePath_tests(std::string path) {
         FileInfo info(sp);
         std::cout << "Exists: " << (info.exists() ? "yes" : "no") << std::endl;
         std::cout << "Readable: " << (info.readable() ? "yes" : "no") << std::endl;
+        std::cout << "Writable: " << (info.writable() ? "yes" : "no") << std::endl;
+        std::cout << "Executable: " << (info.executable() ? "yes" : "no") << std::endl;
         std::cout << "Directory: " << (info.directory() ? "yes" : "no") << std::endl;
         std::cout << "Size: " << info.getSize() << " bytes" << std::endl;
         std::cout << "Last modified: " << info.getLastModified() << " (unix time)" << std::endl;
