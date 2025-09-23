@@ -24,8 +24,11 @@ enum e_method
     UNDEFINED
 };
 
-enum error_codes
+enum e_status_code
 {
+    // for initialization
+    UNSET = 0,
+
     OK = 200,
     CREATED = 201,
     ACCEPTED = 202,

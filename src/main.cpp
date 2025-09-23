@@ -3,6 +3,9 @@
 #include "http/HttpRequest/HttpRequest.hpp"
 #include "http/HttpResponse/HttpResponse.hpp"
 
+
+#include "http/http_tester.hpp"
+
 #include "tests.hpp"
 
 int main(void)
@@ -17,5 +20,7 @@ int main(void)
     //------------------------ This is meant for whoever will review my PR. Feel free to delete when it's merged - Clement
 
     std::cout << "Web Server Starting..." << std::endl;
+    http_tester();
+    std::cout << "Web Server Ending..." << std::endl;
     return 0;
 }
