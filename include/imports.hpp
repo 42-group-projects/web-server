@@ -6,6 +6,7 @@
 #include <vector>
 #include <sstream>
 #include <unistd.h>
+#include <algorithm>
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>

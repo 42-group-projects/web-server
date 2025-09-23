@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <algorithm>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <stdexcept>
