@@ -1,9 +1,9 @@
 #ifndef HTTP_RESPONSE_MOCK_DATA_HPP
-    #define HTTP_RESPONSE_MOCK_DATA_HPP
+#define HTTP_RESPONSE_MOCK_DATA_HPP
 #include <string>
 
 //GET response
-const std::string simple_get_response = 
+const std::string simple_get_response =
     "HTTP/1.1 200 OK\r\n"
     "Server: WebServer/1.0\r\n"
     "Date: Mon, 27 Jul 2023 12:28:53 GMT\r\n"
@@ -20,7 +20,7 @@ const std::string simple_get_response =
     "</body>\r\n"
     "</html>";
 
-const std::string get_with_params_response = 
+const std::string get_with_params_response =
     "HTTP/1.1 200 OK\r\n"
     "Server: WebServer/1.0\r\n"
     "Date: Mon, 27 Jul 2023 12:30:15 GMT\r\n"
@@ -39,7 +39,7 @@ const std::string get_with_params_response =
     "</html>";
 
 //POST response
-const std::string simple_post_response = 
+const std::string simple_post_response =
     "HTTP/1.1 201 Created\r\n"
     "Server: WebServer/1.0\r\n"
     "Date: Mon, 27 Jul 2023 12:35:42 GMT\r\n"
@@ -48,7 +48,7 @@ const std::string simple_post_response =
     "\r\n"
     "Form submitted successfully. Thank you!";
 
-const std::string post_response_json = 
+const std::string post_response_json =
     "HTTP/1.1 200 OK\r\n"
     "Server: WebServer/1.0\r\n"
     "Date: Mon, 27 Jul 2023 12:40:21 GMT\r\n"
@@ -58,7 +58,7 @@ const std::string post_response_json =
     "{\"status\":\"success\",\"message\":\"Data received\",\"user\":{\"id\":42,\"name\":\"John Doe\"}}";
 
 //DELETE response
-const std::string delete_response = 
+const std::string delete_response =
     "HTTP/1.1 200 OK\r\n"
     "Server: WebServer/1.0\r\n"
     "Date: Mon, 27 Jul 2023 12:45:30 GMT\r\n"
@@ -68,7 +68,7 @@ const std::string delete_response =
     "{\"status\":\"success\",\"message\":\"Resource successfully deleted\"}";
 
 //BAD RESPONSE
-const std::string bad_request_400 = 
+const std::string bad_request_400 =
     "HTTP/1.1 400 Bad Request\r\n"
     "Server: WebServer/1.0\r\n"
     "Date: Mon, 27 Jul 2023 12:50:10 GMT\r\n"
@@ -77,7 +77,7 @@ const std::string bad_request_400 =
     "\r\n"
     "400 Bad Request: Malformed request syntax.";
 
-const std::string not_found_404 = 
+const std::string not_found_404 =
     "HTTP/1.1 404 Not Found\r\n"
     "Server: WebServer/1.0\r\n"
     "Date: Mon, 27 Jul 2023 12:55:05 GMT\r\n"
