@@ -1,4 +1,4 @@
-#include "SafePath.hpp"
+#include "../src/filesystem/SafePath.hpp"
 
 SafePath::SafePath(const std::string& path) : requestedPath(path), serverRoot("./www")
 {

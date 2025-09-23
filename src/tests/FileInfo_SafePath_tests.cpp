@@ -1,7 +1,7 @@
 #include <iostream>
 #include <vector>
-#include "SafePath.hpp"
-#include "FileInfo.hpp"
+#include "../src/filesystem/SafePath.hpp"
+#include "../src/filesystem/FileInfo.hpp"
 
 std::string mimeTypeToString(e_mimeType type) {
     switch (type) {

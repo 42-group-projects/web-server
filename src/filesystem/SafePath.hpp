@@ -3,7 +3,8 @@
 #include <string>
 #include <stdexcept>
 
-class SafePath {
+class SafePath
+{
 private:
     std::string requestedPath;
     std::string fullPath;

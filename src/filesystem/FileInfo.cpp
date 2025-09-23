@@ -1,10 +1,11 @@
-#include "FileInfo.hpp"
-#include "SafePath.hpp"
+#include "../src/filesystem/FileInfo.hpp"
+#include "../src/filesystem/SafePath.hpp"
 
 FileInfo::FileInfo(SafePath path) : fullPath(path)
 {
     struct stat sb;
-    if (stat(fullPath.getFullPath().c_str(), &sb) == 0) {
+    if (stat(fullPath.getFullPath().c_str(), &sb) == 0)
+    {
         isExists = true;
         size = sb.st_size;
         lastModified = sb.st_mtime;
