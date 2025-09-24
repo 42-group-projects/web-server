@@ -21,9 +21,10 @@ class   HttpRequest
         std::string uri;
         std::string version;
         std::map<std::string, std::string> headers;
+        std::string body;
         void parse_request_line(std::istringstream& line_stream);
         void parse_headers(std::istringstream& line_stream);
-        // void get_body(std::istringstream line_stream);
+        void parse_body(std::istringstream& line_stream);
         // Add other necessary members;
 };
 

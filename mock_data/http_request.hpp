@@ -18,10 +18,10 @@ const std::string simple_broken_get_request =
     "\n";
 
 const std::string simple_missing_request_line_request =
-    "Host: www.example.com\n"
-    "User-Agent: Mozilla/5.0\n"
-    "Accept: text/html\n"
-    "\n";
+    "Host: www.example.com\r\n"
+    "User-Agent: Mozilla/5.0\r\n"
+    "Accept: text/html\r\n"
+    "\r\n";
 
 const std::string get_request_with_params =
     "GET /search?q=test&lang=en HTTP/1.1\r\n"

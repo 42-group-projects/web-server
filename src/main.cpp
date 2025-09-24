@@ -2,11 +2,7 @@
 #include "../include/enums.hpp"
 #include "http/HttpRequest/HttpRequest.hpp"
 #include "http/HttpResponse/HttpResponse.hpp"
-
-
 #include "http/http_tester.hpp"
-
-#include "tests.hpp"
 
 int main(void)
 {

@@ -20,6 +20,8 @@ HttpRequest &HttpRequest::operator=(const HttpRequest &other)
         this->method = other.method;
         this->uri = other.uri;
         this->version = other.version;
+        this->headers = other.headers;
+        this->body = other.body;
         // Copy other necessary members
     }
     return *this;
@@ -54,6 +56,12 @@ void HttpRequest::parseRequest(const std::string &request)
     }
 
     // Parse body
+    while (std::getline(request_stream, line))
+    {
+        body += line + "\n";
+    }
+    // if (!body.empty() && body.back() == '\n')
+        // body.pop_back(); // Remove the last newline character
 }
 
 
@@ -63,13 +71,13 @@ void HttpRequest::parse_request_line(std::istringstream& line_stream)
     if (line_stream >> method_str >> uri >> version)
     {
         if (method_str == "GET")
-        method = GET;
+            method = GET;
         else if (method_str == "POST")
-        method = POST;
+            method = POST;
         else if (method_str == "DELETE")
-        method = DELETE;
+            method = DELETE;
         else
-        method = UNDEFINED;
+            method = UNDEFINED;
     }
 }
 
@@ -81,13 +89,14 @@ void HttpRequest::parse_headers(std::istringstream& line_stream)
         key.erase(key.find_last_not_of(" \t\r\n") + 1);
         value.erase(0, value.find_first_not_of(" \t\r\n"));
         if(key.empty() || value.empty())
-        throw std::runtime_error("Malformed header line: key or value is empty");
+            throw std::runtime_error("Malformed header line: key or value is empty");
         headers[key] = value;
     }
 }
 
 void HttpRequest::displayRequest() const
-{
+{   
+    std::cout << "-------HTTP REQUEST-------" << std::endl;
     std::cout << "Method: " << get_method_string(method)
               << "\nURI: " << uri
               << "\nVersion: " << version
@@ -98,4 +107,6 @@ void HttpRequest::displayRequest() const
     {
         std::cout << it->first << ": " << it->second << std::endl;
     }
+    std::cout << "-----------Body-----------" << std::endl;
+    std::cout << body << std::endl;
 }
