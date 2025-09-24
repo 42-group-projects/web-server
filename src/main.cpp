@@ -7,7 +7,7 @@
 int main(void)
 {
     std::cout << "Web Server Starting..." << std::endl;
-    http_tester();
+    // http_tester();
     std::cout << "Web Server Ending..." << std::endl;
     return 0;
 }
