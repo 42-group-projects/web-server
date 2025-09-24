@@ -9,16 +9,11 @@ int http_tester(void)
 {
     HttpRequest  req;
     HttpResponse res;
-    std::cout << "-------------------------------" << std::endl;
     req.parseRequest(simple_get_request);
-    std::cout << "-------------------------------" << std::endl;
     req.displayRequest();
     try
     {
-        std::cout << "-------------------------------" << std::endl;
         req.parseRequest(simple_broken_get_request);
-        std::cout << "-------------------------------" << std::endl;
-        req.displayRequest();
     }
     catch (const std::exception &e)
     {
@@ -27,9 +22,7 @@ int http_tester(void)
         std::cout << std::endl;
     }
 
-    std::cout << "-------------------------------" << std::endl;
     req.parseRequest(simple_post_request);
-    std::cout << "-------------------------------" << std::endl;
     req.displayRequest();
     return 0;
 }

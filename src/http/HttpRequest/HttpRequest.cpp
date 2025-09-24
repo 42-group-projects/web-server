@@ -60,8 +60,6 @@ void HttpRequest::parseRequest(const std::string &request)
     {
         body += line + "\n";
     }
-    // if (!body.empty() && body.back() == '\n')
-        // body.pop_back(); // Remove the last newline character
 }
 
 

@@ -24,7 +24,7 @@ class   HttpRequest
         std::string body;
         void parse_request_line(std::istringstream& line_stream);
         void parse_headers(std::istringstream& line_stream);
-        void parse_body(std::istringstream& line_stream);
+        // void parse_body(std::istringstream& line_stream);
         // Add other necessary members;
 };
 

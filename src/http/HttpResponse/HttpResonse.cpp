@@ -13,6 +13,5 @@ void HttpResponse::generateResponse(const std::string &status, const std::string
     // This is just to show that the function is called
     (void)status;
     (void)body;
-    // this->status = status;
     std::cout << "Status: " << this->status << "\nBody: " << body << std::endl;
 }

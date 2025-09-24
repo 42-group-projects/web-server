@@ -65,6 +65,9 @@
         "type_traits": "cpp",
         "utility": "cpp",
         "numbers": "cpp",
-        "ostream": "cpp"
+        "ostream": "cpp",
+        "*.tcc": "cpp",
+        "ranges": "cpp",
+        "span": "cpp"
     }
 }
