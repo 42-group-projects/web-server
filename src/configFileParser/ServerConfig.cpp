@@ -35,7 +35,7 @@ ServerConfig::ServerConfig(int argc, char **argv)
 
 std::vector<std::string> ServerConfig::loadConfigFile(const std::string& path)
 {
-	std::ifstream file(path);
+	std::ifstream file(path.c_str());
 
 	if(!file)
 	{
