@@ -7,8 +7,8 @@
 
 int http_tester(void)
 {
-    HttpRequest  req;
-    HttpResponse res;
+	HttpRequest req;
+	HttpResponse res;
 
-    return 0;
+	return 0;
 }

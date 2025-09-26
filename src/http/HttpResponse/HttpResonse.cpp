@@ -1,18 +1,18 @@
 #include "./HttpResponse.hpp"
 
-HttpResponse::HttpResponse() : status(UNSET), body("") 
+HttpResponse::HttpResponse() : status(UNSET), body("")
 {
-    std::cout << "HttpResponse constructor called" << std::endl;
+	std::cout << "HttpResponse constructor called" << std::endl;
 }
-HttpResponse::~HttpResponse() 
+HttpResponse::~HttpResponse()
 {
-    std::cout << "HttpResponse destructor called" << std::endl;
+	std::cout << "HttpResponse destructor called" << std::endl;
 }
 void HttpResponse::generateResponse(const std::string &status, const std::string &body)
 {
-    // This is just to show that the function is called
-    (void)status;
-    (void)body;
-    // this->status = status;
-    std::cout << "Status: " << this->status << "\nBody: " << body << std::endl;
+	// This is just to show that the function is called
+	(void)status;
+	(void)body;
+	// this->status = status;
+	std::cout << "Status: " << this->status << "\nBody: " << body << std::endl;
 }
