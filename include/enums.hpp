@@ -18,10 +18,10 @@ enum e_mimeType
 
 enum e_method
 {
-	GET,
-	POST,
-	DELETE,
-	UNDEFINED
+    UNDEFINED,
+    GET,
+    POST,
+    DELETE
 };
 
 enum e_status_code
