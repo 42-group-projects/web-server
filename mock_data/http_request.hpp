@@ -1,5 +1,5 @@
 #ifndef HTTP_REQUEST_MOCK_DATA_HPP
-    #define HTTP_REQUEST_MOCK_DATA_HPP
+#define HTTP_REQUEST_MOCK_DATA_HPP
 #include <string>
 
 //GET request

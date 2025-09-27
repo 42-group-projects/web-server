@@ -2,12 +2,18 @@
 #include "../include/enums.hpp"
 #include "http/HttpRequest/HttpRequest.hpp"
 #include "http/HttpResponse/HttpResponse.hpp"
-#include "http/http_tester.hpp"
 
-int main(void)
+#include "../src/configFileParser/ServerConfig.hpp"
+
+#include "http/http_tester.hpp"
+#include "../src/tests/tests.hpp"
+
+int main(int argc, char *argv[])
 {
-    std::cout << "Web Server Starting..." << std::endl;
-    // http_tester();
-    std::cout << "Web Server Ending..." << std::endl;
-    return 0;
+	ServerConfig config(argc, argv);
+
+	std::cout << "Web Server Starting..." << std::endl;
+	http_tester();
+	std::cout << "Web Server Ending..." << std::endl;
+	return 0;
 }

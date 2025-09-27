@@ -2,9 +2,8 @@
 #include "../../../include/imports.hpp"
 #include "../include/enums.hpp"
 
-
 #ifndef HTTP_REQUEST_HPP
-    #define HTTP_REQUEST_HPP
+#define HTTP_REQUEST_HPP
 
 class   HttpRequest
 {

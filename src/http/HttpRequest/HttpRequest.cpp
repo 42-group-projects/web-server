@@ -4,7 +4,7 @@
 
 HttpRequest::HttpRequest() : method(UNDEFINED), uri(""), version("")
 {
-    std::cout << "HttpRequest constructor called" << std::endl;
+	std::cout << "HttpRequest constructor called" << std::endl;
 }
 
 HttpRequest::HttpRequest(const std::string &raw_request) : method(UNDEFINED), uri(""), version("")
@@ -29,7 +29,7 @@ HttpRequest &HttpRequest::operator=(const HttpRequest &other)
 
 HttpRequest::~HttpRequest()
 {
-    std::cout << "HttpRequest destructor called" << std::endl;
+	std::cout << "HttpRequest destructor called" << std::endl;
 }
 
 void HttpRequest::parseRequest(const std::string &request)

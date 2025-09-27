@@ -1,4 +1,4 @@
-NAME		=	webserver
+NAME		=	webserv
 INCLUDES	=	-I include
 
 CXXFLAGS 	= 	-std=c++98 $(INCLUDES) -Wall -Werror -Wextra
