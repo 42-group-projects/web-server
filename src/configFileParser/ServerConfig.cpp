@@ -32,6 +32,7 @@ LocationConfig ServerConfig::operator[](const std::string& path) const
 	defaultConfig.autoindex = AUTOINDEX;
 	defaultConfig.redirect_enabled = REDIRECT_ENABLED;
 	defaultConfig.redirect_url = REDIRECT_URL;
+	defaultConfig.redirect_code = 0;
 	defaultConfig.upload_enabled = UPLOAD_ENABLED;
 	defaultConfig.upload_store = UPLOAD_STORE;
 
@@ -181,7 +182,11 @@ void ServerConfig::setListen(std::vector<std::string>& tokens)
 	size_t colon = tokens[1].find(':');
 	std::string ip = tokens[1].substr(0, colon);
 	std::string portStr = tokens[1].substr(colon + 1);
-	listen.push_back(std::make_pair(ip, std::stoi(portStr)));
+	int port;
+	std::stringstream ss(portStr);
+	if (!(ss >> port) || !ss.eof())
+		argumentError(portStr, tokens[0]);
+	listen.push_back(std::make_pair(ip, port));
 }
 
 void ServerConfig::setServerName(std::vector<std::string>& tokens)
@@ -212,7 +217,11 @@ void ServerConfig::setErrorPage(std::vector<std::string>& tokens)
 	if(tokens.size() > 3)
 		argumentError(tokens[3], tokens[0]);
 
-	error_pages[std::stoi(tokens[1])] = tokens[2];
+	int code;
+	std::stringstream ss(tokens[1]);
+	if (!(ss >> code) || !ss.eof())
+		argumentError(tokens[1], tokens[0]);
+	error_pages[code] = tokens[2];
 }
 
 void ServerConfig::setClientMaxBodySize(std::vector<std::string>& tokens)
@@ -239,7 +248,11 @@ void ServerConfig::setClientMaxBodySize(std::vector<std::string>& tokens)
 	if(!std::all_of(tokens[1].begin(), tokens[1].end(), ::isdigit))
 		argumentError(tokens[1], tokens[0]);
 
-	client_max_body_size = static_cast<size_t>(std::stoull(tokens[1]) * multiplier);
+	unsigned long long value;
+	std::stringstream ss(tokens[1]);
+	if (!(ss >> value) || !ss.eof())
+		argumentError(tokens[1], tokens[0]);
+	client_max_body_size = static_cast<size_t>(value * multiplier);
 }
 
 void ServerConfig::setLocation(std::vector<std::string>& tokens, std::vector<std::string>& configVect, size_t *i)
@@ -273,7 +286,7 @@ void ServerConfig::setLocation(std::vector<std::string>& tokens, std::vector<std
 
 LocationConfig ServerConfig::fillLocationConfig(std::vector<std::string>& locationVect, std::string location)
 {
-	if(location.front() != '/')
+	if(location[0] != '/')
 		error("location path '" + location + "' must start with '/'", "Configuration file");
 
 	LocationConfig c = setupDefaultLocationConfig(location);
@@ -433,7 +446,11 @@ void ServerConfig::setLocationRedirect(std::vector<std::string>& tokens, Locatio
 		error(tokens[2] + " is not a valid redirect target.", "Configuration file");
 
 	c.redirect_url = tokens[2];
-	c.redirect_code = std::stoi(tokens[1]);
+	int code;
+	std::stringstream ss(tokens[1]);
+	if (!(ss >> code) || !ss.eof())
+		argumentError(tokens[1], tokens[0]);
+	c.redirect_code = code;
 	c.redirect_enabled = true;
 }
 

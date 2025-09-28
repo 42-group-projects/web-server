@@ -37,6 +37,7 @@ void printConfig(const ServerConfig& config)
 		          << ", POST: " << (loc.postAllowed ? "yes" : "no")
 		          << ", DELETE: " << (loc.deleteAllowed ? "yes" : "no") << std::endl;
 		std::cout << "    Redirect: " << (loc.redirect_enabled ? loc.redirect_url : "none") << std::endl;
+		std::cout << "    Redirect: " << loc.redirect_code << std::endl;
 		std::cout << "    Upload: " << (loc.upload_enabled ? loc.upload_store : "disabled") << std::endl;
 
 		if(!loc.cgi_pass.empty())
@@ -51,7 +52,7 @@ void printConfig(const ServerConfig& config)
 	}
 
 	std::cout << "Accessing a location by name" << std::endl;
-	const LocationConfig& loc = config["/static"];
+	const LocationConfig& loc = config["/redirection/old.html"];
 
 	std::cout << "Path: " << loc.path << std::endl;
 	std::cout << "  Root: " << loc.root << std::endl;
@@ -61,6 +62,7 @@ void printConfig(const ServerConfig& config)
 	          << ", POST: " << (loc.postAllowed ? "yes" : "no")
 	          << ", DELETE: " << (loc.deleteAllowed ? "yes" : "no") << std::endl;
 	std::cout << "  Redirect: " << (loc.redirect_enabled ? loc.redirect_url : "none") << std::endl;
+	std::cout << "  Redirect code: " << loc.redirect_code << std::endl;
 	std::cout << "  Upload: " << (loc.upload_enabled ? loc.upload_store : "disabled") << std::endl;
 
 	if(!loc.cgi_pass.empty())
@@ -82,6 +84,7 @@ void printConfig(const ServerConfig& config)
 	          << ", POST: " << (loc2.postAllowed ? "yes" : "no")
 	          << ", DELETE: " << (loc2.deleteAllowed ? "yes" : "no") << std::endl;
 	std::cout << "  Redirect: " << (loc2.redirect_enabled ? loc2.redirect_url : "none") << std::endl;
+	std::cout << "  Redirect code: " << loc2.redirect_code << std::endl;
 	std::cout << "  Upload: " << (loc2.upload_enabled ? loc2.upload_store : "disabled") << std::endl;
 
 	if(!loc2.cgi_pass.empty())
