@@ -27,7 +27,6 @@ for f in $FILES; do
 	--squeeze-lines=1 \
 	--squeeze-ws \
 	--break-closing-braces \
-	--break-elseifs \
 	--break-one-line-headers \
 	--remove-braces "$f"
 

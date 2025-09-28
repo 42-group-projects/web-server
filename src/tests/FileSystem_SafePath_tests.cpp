@@ -1,7 +1,8 @@
 #include <iostream>
 #include <vector>
 #include "../src/filesystem/SafePath.hpp"
-#include "../src/filesystem/FileInfo.hpp"
+#include "../src/filesystem/FileSystem.hpp"
+#include "../src/configFileParser/ServerConfig.hpp"
 
 std::string mimeTypeToString(e_mimeType type)
 {
@@ -35,7 +36,7 @@ std::string mimeTypeToString(e_mimeType type)
 	}
 }
 
-void testDetectMimeType()
+void testDetectMimeType(ServerConfig& config)
 {
 	std::vector<std::string> paths;
 	paths.push_back("mimeTypeDetectionTestFiles/index.html");
@@ -55,22 +56,22 @@ void testDetectMimeType()
 	for(std::vector<std::string>::const_iterator it = paths.begin(); it != paths.end(); ++it)
 	{
 		const std::string& p = *it;
-		SafePath sp(p);
-		FileInfo file(sp);
+		SafePath sp(p, config);
+		FileSystem file(sp);
 		e_mimeType type = file.getMimeType();
 		std::cout << "Path: " << p << " -> MIME: " << mimeTypeToString(type) << std::endl;
 	}
 }
 
-void FileInfo_SafePath_tests(std::string path)
+void FileSystem_SafePath_tests(std::string path, ServerConfig& config)
 {
 	try
 	{
-		SafePath sp(path);
+		SafePath sp(path, config);
 		std::cout << "Safe path OK: " << sp.getFullPath() << std::endl;
 		std::cout << "Requested path: " << sp.getRequestedPath() << std::endl;
 
-		FileInfo info(sp);
+		FileSystem info(sp);
 		std::cout << "Exists: " << (info.exists() ? "yes" : "no") << std::endl;
 		std::cout << "Readable: " << (info.readable() ? "yes" : "no") << std::endl;
 		std::cout << "Writable: " << (info.writable() ? "yes" : "no") << std::endl;

@@ -1,7 +1,7 @@
-#include "../src/filesystem/FileInfo.hpp"
+#include "../src/filesystem/FileSystem.hpp"
 #include "../src/filesystem/SafePath.hpp"
 
-FileInfo::FileInfo(SafePath path) : fullPath(path)
+FileSystem::FileSystem(SafePath path) : fullPath(path)
 {
 	struct stat sb;
 
@@ -29,7 +29,7 @@ FileInfo::FileInfo(SafePath path) : fullPath(path)
 	}
 }
 
-e_mimeType FileInfo::detectMimeType(const SafePath& safePath)
+e_mimeType FileSystem::detectMimeType(const SafePath& safePath)
 {
 	std::string path = safePath;
 	std::transform(path.begin(), path.end(), path.begin(), ::tolower);
@@ -73,12 +73,12 @@ e_mimeType FileInfo::detectMimeType(const SafePath& safePath)
 	return APPLICATION_OCTET_STREAM;
 }
 
-const SafePath& FileInfo::getPath() const { return fullPath; }
-size_t FileInfo::getSize() const { return size; }
-time_t FileInfo::getLastModified() const { return lastModified; }
-e_mimeType FileInfo::getMimeType() const { return mimeType; }
-bool FileInfo::exists() const { return isExists; }
-bool FileInfo::directory() const { return isDirectory; }
-bool FileInfo::readable() const { return isReadable; }
-bool FileInfo::writable() const { return isWritable; }
-bool FileInfo::executable() const { return isExecutable; }
+const SafePath& FileSystem::getPath() const { return fullPath; }
+size_t FileSystem::getSize() const { return size; }
+time_t FileSystem::getLastModified() const { return lastModified; }
+e_mimeType FileSystem::getMimeType() const { return mimeType; }
+bool FileSystem::exists() const { return isExists; }
+bool FileSystem::directory() const { return isDirectory; }
+bool FileSystem::readable() const { return isReadable; }
+bool FileSystem::writable() const { return isWritable; }
+bool FileSystem::executable() const { return isExecutable; }

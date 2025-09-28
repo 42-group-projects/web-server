@@ -11,6 +11,7 @@
 int main(int argc, char *argv[])
 {
 	ServerConfig config(argc, argv);
+	printConfig(config);
 
 	std::cout << "Web Server Starting..." << std::endl;
 	http_tester();

@@ -10,8 +10,8 @@ HttpResponse::~HttpResponse()
 }
 void HttpResponse::generateResponse(const std::string &status, const std::string &body)
 {
-    // This is just to show that the function is called
-    (void)status;
-    (void)body;
-    std::cout << "Status: " << this->status << "\nBody: " << body << std::endl;
+	// This is just to show that the function is called
+	(void)status;
+	(void)body;
+	std::cout << "Status: " << this->status << "\nBody: " << body << std::endl;
 }

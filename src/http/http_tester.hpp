@@ -7,22 +7,23 @@
 
 int http_tester(void)
 {
-    HttpRequest  req;
-    HttpResponse res;
-    req.parseRequest(simple_get_request);
-    req.displayRequest();
-    try
-    {
-        req.parseRequest(simple_broken_get_request);
-    }
-    catch (const std::exception &e)
-    {
-        std::cout << "-----------Error--------------" << std::endl;
-        std::cerr << "Error parsing broken request: " << e.what() << std::endl;
-        std::cout << std::endl;
-    }
+	HttpRequest req;
+	HttpResponse res;
+	req.parseRequest(simple_get_request);
+	req.displayRequest();
 
-    req.parseRequest(simple_post_request);
-    req.displayRequest();
-    return 0;
+	try
+	{
+		req.parseRequest(simple_broken_get_request);
+	}
+	catch(const std::exception &e)
+	{
+		std::cout << "-----------Error--------------" << std::endl;
+		std::cerr << "Error parsing broken request: " << e.what() << std::endl;
+		std::cout << std::endl;
+	}
+
+	req.parseRequest(simple_post_request);
+	req.displayRequest();
+	return 0;
 }
