@@ -43,7 +43,7 @@ void HttpRequest::parseRequest(const std::string &request)
         if (line.empty())
             throw std::runtime_error("Empty request line encountered");
         std::istringstream line_stream(line);
-        parse_request_line(line_stream);
+        parseRequestLine(line_stream);
     }
 
     // Parse headers
@@ -52,7 +52,7 @@ void HttpRequest::parseRequest(const std::string &request)
         if (line.empty())
             throw std::runtime_error("Empty header line encountered");
         std::istringstream line_stream(line);
-        parse_headers(line_stream);
+        parseHeaders(line_stream);
     }
     // Extract query parameters if present in URI
     if(uri.find('?') != std::string::npos)
@@ -60,7 +60,7 @@ void HttpRequest::parseRequest(const std::string &request)
         size_t pos = uri.find('?');
         std::string query_string = uri.substr(pos + 1);
         uri = uri.substr(0, pos);
-        parse_query_params(query_string);
+        parseQueryParams(query_string);
     }
 
     // Parse body
@@ -70,8 +70,7 @@ void HttpRequest::parseRequest(const std::string &request)
     }
 }
 
-
-void HttpRequest::parse_request_line(std::istringstream& line_stream)
+void HttpRequest::parseRequestLine(std::istringstream& line_stream)
 {
     std::string method_str;
     if (line_stream >> method_str >> uri >> version)
@@ -87,7 +86,7 @@ void HttpRequest::parse_request_line(std::istringstream& line_stream)
     }
 }
 
-void HttpRequest::parse_headers(std::istringstream& line_stream)
+void HttpRequest::parseHeaders(std::istringstream& line_stream)
 {
     std::string key, value;
     if (std::getline(line_stream, key, ':') && std::getline(line_stream, value))
@@ -100,7 +99,7 @@ void HttpRequest::parse_headers(std::istringstream& line_stream)
     }
 }
 
-void HttpRequest::parse_query_params(std::string const &query_string)
+void HttpRequest::parseQueryParams(std::string const &query_string)
 {
     std::istringstream query_stream(query_string);
     std::string pair;

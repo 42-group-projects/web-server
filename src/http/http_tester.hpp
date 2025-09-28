@@ -17,12 +17,12 @@ namespace std
         request.displayRequest();
         
         HttpResponse response;
-        response.mock_data("<response>");
-        response.set_header("Custom-Header", "CustomValue");
-        response.set_header("Another-Header", "AnotherValue");
-        response.set_mime_type("test/html");
-        response.set_version("HTTP/1.1");
-        response.set_status(OK);
+        response.mockData("<response>");
+        response.setHeader("Custom-Header", "CustomValue");
+        response.setHeader("Another-Header", "AnotherValue");
+        response.setMimeType("test/html");
+        response.setVersion("HTTP/1.1");
+        response.setStatus(OK);
         
         string res = response.generateResponse(OK , "<html><body><h1>Hello, World!</h1></body></html>");
         cout << "Generated HTTP Response:\n" << res << endl;

@@ -37,10 +37,10 @@ std::string HttpResponse::generateResponse(e_status_code status, const std::stri
 {   
     this->status = status;
     this->body = body;
-    return serialize_headers() + body;
+    return serializeHeaders() + body;
 }
 
-std::string HttpResponse::serialize_headers(void)
+std::string HttpResponse::serializeHeaders(void)
 {   
     std::ostringstream res;
     res << version << " " << status << "\r\n";
@@ -68,10 +68,10 @@ std::string HttpResponse::generateMockResponse(void)
     headers["Cache-Control"] = "no-cache";
     headers["Access-Control-Allow-Origin"] = "*";
     body = "<html><body><h1>Hello, World!</h1></body></html>";
-    return serialize_headers() + body;
+    return serializeHeaders() + body;
 }
 
-void HttpResponse::mock_data(std::string const &data)
+void HttpResponse::mockData(std::string const &data)
 {   
     if(!data.empty())
     {

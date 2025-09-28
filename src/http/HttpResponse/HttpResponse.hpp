@@ -20,27 +20,27 @@ public:
 
 
 	std::string generateResponse(e_status_code status, const std::string &body);
-	std::string serialize_headers(void);
+	std::string serializeHeaders(void);
 
 	// Getters and Setters
-	void set_version(const std::string &ver) { version = ver; };
-	std::string get_version() const { return version; };
+	void setVersion(const std::string &ver) { version = ver; };
+	std::string getVersion() const { return version; };
 
-	void set_status(e_status_code stat) { status = stat; };
-	e_status_code get_status() const { return status; };
+	void setStatus(e_status_code stat) { status = stat; };
+	e_status_code getStatus() const { return status; };
 
-	void set_mime_type(const std::string &type) { mime_type = type; };
-	std::string get_mime_type() const { return mime_type; };
+	void setMimeType(const std::string &type) { mime_type = type; };
+	std::string getMimeType() const { return mime_type; };
 
-	void set_body(const std::string &b) { body = b; };
-	std::string get_body() const { return body; }
+	void setBody(const std::string &b) { body = b; };
+	std::string getBody() const { return body; }
 
-	void set_header(const std::string &key, const std::string &value) { headers[key] = value; };
-	std::string get_header(const std::string &key) const { return headers.at(key); };
+	void setHeader(const std::string &key, const std::string &value) { headers[key] = value; };
+	std::string getHeader(const std::string &key) const { return headers.at(key); };
 	
 	// For testing purposes
 	std::string generateMockResponse(void);
-	void mock_data(std::string const &body);
+	void mockData(std::string const &body);
 };
 
 #endif
