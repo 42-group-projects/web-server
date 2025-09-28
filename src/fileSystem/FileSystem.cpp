@@ -1,5 +1,5 @@
-#include "../src/filesystem/FileSystem.hpp"
-#include "../src/filesystem/SafePath.hpp"
+#include "../src/fileSystem/FileSystem.hpp"
+#include "../src/fileSystem/SafePath.hpp"
 
 FileSystem::FileSystem(SafePath path) : fullPath(path)
 {
