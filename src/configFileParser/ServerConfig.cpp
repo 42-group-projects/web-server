@@ -232,7 +232,7 @@ void ServerConfig::setClientMaxBodySize(std::vector<std::string>& tokens)
 	if(tokens.size() > 2)
 		argumentError(tokens[2], tokens[0]);
 
-	char last = std::tolower(tokens[1].back());
+	char last = std::tolower(tokens[1][tokens[1].size() -1]);
 	size_t multiplier = 1;
 
 	if(last == 'k')
@@ -245,8 +245,11 @@ void ServerConfig::setClientMaxBodySize(std::vector<std::string>& tokens)
 	if(multiplier != 1)
 		tokens[1] = tokens[1].substr(0, tokens[1].size() - 1);
 
-	if(!std::all_of(tokens[1].begin(), tokens[1].end(), ::isdigit))
-		argumentError(tokens[1], tokens[0]);
+	for (size_t i = 0; i < tokens[1].size(); ++i)
+	{
+		if (!std::isdigit(tokens[1][i]))
+			argumentError(tokens[1], tokens[0]);
+	}
 
 	unsigned long long value;
 	std::stringstream ss(tokens[1]);
