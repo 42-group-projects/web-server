@@ -8,23 +8,21 @@
 
 namespace std
 {
-    int http_tester(void)
-    {
-        cout << "Starting HTTP Tester..." << endl;
-        HttpRequest request(get_request_with_params);
-        request.parseRequest(get_request_with_params);
-        request.displayRequest();
-        
-        HttpResponse response;
-        response.mockData("<response>");
-        response.setHeader("Custom-Header", "CustomValue");
-        response.setHeader("Another-Header", "AnotherValue");
-        response.setMimeType("test/html");
-        response.setVersion("HTTP/1.1");
-        response.setStatus(OK);
-        
-        string res = response.generateResponse(OK , "<html><body><h1>Hello, World!</h1></body></html>");
-        cout << "Generated HTTP Response:\n" << res << endl;
-        return 0;
-    }
+int http_tester(void)
+{
+	cout << "Starting HTTP Tester..." << endl;
+	HttpRequest request(get_request_with_params);
+	request.parseRequest(get_request_with_params);
+	request.displayRequest();
+	HttpResponse response;
+	response.mockData("<response>");
+	response.setHeader("Custom-Header", "CustomValue");
+	response.setHeader("Another-Header", "AnotherValue");
+	response.setMimeType("test/html");
+	response.setVersion("HTTP/1.1");
+	response.setStatus(OK);
+	string res = response.generateResponse(OK, "<html><body><h1>Hello, World!</h1></body></html>");
+	cout << "Generated HTTP Response:\n" << res << endl;
+	return 0;
+}
 }

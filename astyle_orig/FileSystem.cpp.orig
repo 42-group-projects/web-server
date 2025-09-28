@@ -5,7 +5,7 @@ FileSystem::FileSystem(SafePath path) : fullPath(path)
 {
 	struct stat sb;
 
-	if (stat(fullPath.getFullPath().c_str(), &sb) == 0)
+	if(stat(fullPath.getFullPath().c_str(), &sb) == 0)
 	{
 		isExists = true;
 		size = sb.st_size;
@@ -33,40 +33,41 @@ e_mimeType FileSystem::detectMimeType(const SafePath& safePath)
 {
 	std::string path = safePath;
 	std::transform(path.begin(), path.end(), path.begin(), ::tolower);
+
 	std::string extension;
 	size_t dot = path.rfind('.');
 
-	if (dot != std::string::npos)
+	if(dot != std::string::npos)
 		extension = path.substr(dot);
 
-	if (extension == ".html" || extension == ".htm")
+	if(extension == ".html" || extension == ".htm")
 		return TEXT_HTML;
 
-	if (extension == ".css")
+	if(extension == ".css")
 		return TEXT_CSS;
 
-	if (extension == ".js")
+	if(extension == ".js")
 		return APPLICATION_JAVASCRIPT;
 
-	if (extension == ".json")
+	if(extension == ".json")
 		return APPLICATION_JSON;
 
-	if (extension == ".txt")
+	if(extension == ".txt")
 		return TEXT_PLAIN;
 
-	if (extension == ".png")
+	if(extension == ".png")
 		return IMAGE_PNG;
 
-	if (extension == ".jpg" || extension == ".jpeg")
+	if(extension == ".jpg" || extension == ".jpeg")
 		return IMAGE_JPEG;
 
-	if (extension == ".gif")
+	if(extension == ".gif")
 		return IMAGE_GIF;
 
-	if (extension == ".pdf")
+	if(extension == ".pdf")
 		return APPLICATION_PDF;
 
-	if (extension == ".svg")
+	if(extension == ".svg")
 		return IMAGE_SVG;
 
 	return APPLICATION_OCTET_STREAM;
