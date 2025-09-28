@@ -14,15 +14,20 @@ class   HttpRequest
         std::map<std::string, std::string> headers;
         std::map<std::string, std::string> query_params;
         std::string body;
+
+        // Helper parsing functions
         void parseRequestLine(std::istringstream& line_stream);
         void parseHeaders(std::istringstream& line_stream);
         void parseQueryParams(const std::string& query_string);
+
     public:
+        // Constructors, destructor, and assignment operator
         HttpRequest();
         HttpRequest(const std::string &raw_request);
         HttpRequest &operator=(const HttpRequest &other);
         ~HttpRequest();
-
+        
+        // Main parsing function
         void parseRequest(const std::string &request);
         void displayRequest() const;
 

@@ -8,7 +8,6 @@
 
 namespace std
 {
-
     int http_tester(void)
     {
         cout << "Starting HTTP Tester..." << endl;
@@ -26,7 +25,6 @@ namespace std
         
         string res = response.generateResponse(OK , "<html><body><h1>Hello, World!</h1></body></html>");
         cout << "Generated HTTP Response:\n" << res << endl;
-        // cout << "HTTP Tester finished." << endl;
         return 0;
     }
 }
