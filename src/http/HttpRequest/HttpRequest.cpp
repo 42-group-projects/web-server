@@ -54,6 +54,14 @@ void HttpRequest::parseRequest(const std::string &request)
         std::istringstream line_stream(line);
         parse_headers(line_stream);
     }
+    // Extract query parameters if present in URI
+    if(uri.find('?') != std::string::npos)
+    {
+        size_t pos = uri.find('?');
+        std::string query_string = uri.substr(pos + 1);
+        uri = uri.substr(0, pos);
+        parse_query_params(query_string);
+    }
 
     // Parse body
     while (std::getline(request_stream, line))
@@ -92,6 +100,26 @@ void HttpRequest::parse_headers(std::istringstream& line_stream)
     }
 }
 
+void HttpRequest::parse_query_params(std::string const &query_string)
+{
+    std::istringstream query_stream(query_string);
+    std::string pair;
+    while (std::getline(query_stream, pair, '&'))
+    {
+        size_t pos = pair.find('=');
+        if (pos != std::string::npos)
+        {
+            std::string key = pair.substr(0, pos);
+            std::string value = pair.substr(pos + 1);
+            query_params[key] = value;
+        }
+        else
+        {
+            query_params[pair] = "";
+        }
+    }
+}
+
 void HttpRequest::displayRequest() const
 {   
     std::cout << "-------HTTP REQUEST-------" << std::endl;
@@ -105,6 +133,13 @@ void HttpRequest::displayRequest() const
     {
         std::cout << it->first << ": " << it->second << std::endl;
     }
+
+    std::cout << "--------Query Params--------" << std::endl;
+    for (std::map<std::string, std::string>::const_iterator it = query_params.begin(); it != query_params.end(); ++it)
+    {
+        std::cout << it->first << ": " << it->second << std::endl;
+    }
+
     std::cout << "-----------Body-----------" << std::endl;
     std::cout << body << std::endl;
 }

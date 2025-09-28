@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
 	ServerConfig config(argc, argv);
 
 	std::cout << "Web Server Starting..." << std::endl;
-	http_tester();
+	std::http_tester();
 	std::cout << "Web Server Ending..." << std::endl;
 	return 0;
 }
