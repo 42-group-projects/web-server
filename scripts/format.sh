@@ -1,7 +1,11 @@
 #!/bin/bash
 
-# Ensure AStyle is installed
-command -v astyle >/dev/null 2>&1 || { echo "AStyle is not installed. Aborting."; exit 1; }
+# Use the local AStyle binary in the same folder
+ASTYLE="./astyle"
+if [ ! -x "$ASTYLE" ]; then
+    echo "AStyle binary not found or not executable in the script folder. Aborting."
+    exit 1
+fi
 
 # Base directory is one level up from the script
 BASE_DIR=$(realpath "$(dirname "$0")/..")
@@ -16,7 +20,7 @@ FILES=$(find "$BASE_DIR" -type f \( -iname "*.cpp" -o -iname "*.hpp" \))
 # Apply AStyle formatting with backups
 echo "Running AStyle..."
 for f in $FILES; do
-        astyle --style=allman --indent=tab \
+        "$ASTYLE" --style=allman --indent=tab \
         --break-blocks \
         --pad-oper \
         --keep-one-line-statements \
@@ -36,3 +40,4 @@ for f in $FILES; do
 done
 
 echo "AStyle formatting completed. Backups are in '$BACKUP_DIR'."
+
