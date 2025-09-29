@@ -1,7 +1,7 @@
 NAME		=	webserv
 INCLUDES	=	-I include
 
-CXXFLAGS 	= 	-std=c++98 $(INCLUDES) #-Wall -Werror -Wextra
+CXXFLAGS 	= 	-std=c++98 $(INCLUDES) -Wall -Werror -Wextra
 
 OBJ_DIR 	=	obj
 SRC_DIR 	=	src

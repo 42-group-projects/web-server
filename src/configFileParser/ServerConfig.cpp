@@ -628,7 +628,7 @@ bool isValidStatusCode(const std::string &s)
 		500, 501, 502, 503, 504, 505, 506, 507, 508, 510, 511
 	};
 
-	for (int i = 0; i < sizeof(codes) / sizeof(codes[0]); ++i)
+	for (size_t i = 0; i < sizeof(codes) / sizeof(codes[0]); ++i)
 	{
 		if (code == codes[i])
 			return true;
