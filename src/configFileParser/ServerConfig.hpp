@@ -28,7 +28,8 @@ struct LocationConfig
 class ServerConfig
 {
 public:
-	ServerConfig(int argc, char **argv);
+	ServerConfig();
+	void initServerConfig(int argc, char **argv);
 
 	const std::string& getRoot() const;
 	const std::vector<std::pair<std::string, int> >& getListen() const;

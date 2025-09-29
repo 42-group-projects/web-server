@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Check for at least one argument
+if [ $# -lt 1 ]; then
+    echo "Usage: $0 <file1.cpp|file1.hpp> [file2.cpp|file2.hpp ...]"
+    exit 1
+fi
+
 # Use the local AStyle binary in the same folder as the script
 ASTYLE="$(dirname "$0")/astyle"
 if [ ! -x "$ASTYLE" ]; then
@@ -7,19 +13,18 @@ if [ ! -x "$ASTYLE" ]; then
     exit 1
 fi
 
-# Base directory is one level up from the script
-BASE_DIR=$(realpath "$(dirname "$0")/..")
-
 # Backup directory for .orig files
-BACKUP_DIR="$BASE_DIR/astyle_orig"
+BACKUP_DIR="$(dirname "$0")/astyle_orig"
 mkdir -p "$BACKUP_DIR"
 
-# Find all .cpp and .hpp files recursively
-FILES=$(find "$BASE_DIR" -type f \( -iname "*.cpp" -o -iname "*.hpp" \))
+# Loop through all provided files
+for FILE in "$@"; do
+    if [ ! -f "$FILE" ]; then
+        echo "File not found: $FILE"
+        continue
+    fi
 
-# Apply AStyle formatting with backups
-echo "Running AStyle..."
-for f in $FILES; do
+    # Apply AStyle formatting with backup
     "$ASTYLE" --style=allman --indent=tab \
         --break-blocks \
         --pad-oper \
@@ -30,14 +35,15 @@ for f in $FILES; do
         --delete-empty-lines \
         --break-closing-braces \
         --break-one-line-headers \
-        --remove-braces "$f"
+        --remove-braces "$FILE"
 
     # Move the .orig to the backup folder if it exists
-    ORIG_FILE="${f}.orig"
+    ORIG_FILE="${FILE}.orig"
     if [ -f "$ORIG_FILE" ]; then
         mv "$ORIG_FILE" "$BACKUP_DIR/"
     fi
+
+    echo "Formatted '$FILE'. Backup (if any) is in '$BACKUP_DIR'."
 done
 
-echo "AStyle formatting completed. Backups are in '$BACKUP_DIR'."
-
+echo "AStyle formatting completed."

@@ -38,7 +38,9 @@ LocationConfig ServerConfig::operator[](const std::string& path) const
 	return defaultConfig;
 }
 
-ServerConfig::ServerConfig(int argc, char **argv)
+ServerConfig::ServerConfig() {}
+
+void ServerConfig::initServerConfig(int argc, char **argv)
 {
 	std::vector<std::string> rawConfig;
 	setupDefaultConfig();

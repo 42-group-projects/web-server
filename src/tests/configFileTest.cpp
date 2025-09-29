@@ -2,28 +2,29 @@
 #include <iostream>
 #include <map>
 #include "../src/configFileParser/ServerConfig.hpp"
+#include "../include/globals.hpp"
 
-void printConfig(const ServerConfig& config)
+void printConfig()
 {
 	std::cout << "\033[32mServer configuration (comes from printConfig function, feel free to comment out) " << "\033[0m" << std::endl;
-	std::cout << "Server root: " << config.getRoot() << std::endl;
-	std::cout << "Server name: " << config.getServerName() << std::endl;
-	std::cout << "Client max body size: " << config.getClientMaxBodySize() << std::endl;
+	std::cout << "Server root: " << g_config.getRoot() << std::endl;
+	std::cout << "Server name: " << g_config.getServerName() << std::endl;
+	std::cout << "Client max body size: " << g_config.getClientMaxBodySize() << std::endl;
 	std::cout << "Listen:" << std::endl;
-	const std::vector<std::pair<std::string, int> >& listen = config.getListen();
+	const std::vector<std::pair<std::string, int> >& listen = g_config.getListen();
 
 	for (std::vector<std::pair<std::string, int> >::const_iterator it = listen.begin(); it != listen.end(); ++it)
 		std::cout << "  " << it->first << ":" << it->second << std::endl;
 
 	std::cout << "Error pages:" << std::endl;
-	const std::map<int, std::string>& error_pages = config.getErrorPages();
+	const std::map<int, std::string>& error_pages = g_config.getErrorPages();
 
 	for (std::map<int, std::string>::const_iterator it = error_pages.begin(); it != error_pages.end(); ++it)
 		std::cout << "  " << it->first << " -> " << it->second << std::endl;
 
 	std::cout << std::endl;
 	std::cout << "Locations:" << std::endl;
-	const std::map<std::string, LocationConfig>& locations = config.getLocations();
+	const std::map<std::string, LocationConfig>& locations = g_config.getLocations();
 
 	for (std::map<std::string, LocationConfig>::const_iterator it = locations.begin(); it != locations.end(); ++it)
 	{
@@ -51,7 +52,7 @@ void printConfig(const ServerConfig& config)
 	}
 
 	std::cout << "Accessing a location by name" << std::endl;
-	const LocationConfig& loc = config["/redirection/old.html"];
+	const LocationConfig& loc = g_config["/redirection/old.html"];
 	std::cout << "Path: " << loc.path << std::endl;
 	std::cout << "  Root: " << loc.root << std::endl;
 	std::cout << "  Index: " << loc.index << std::endl;
@@ -72,7 +73,7 @@ void printConfig(const ServerConfig& config)
 	}
 
 	std::cout << "Accessing a non existent location by name (should generate default configs)" << std::endl;
-	const LocationConfig& loc2 = config["/test"];
+	const LocationConfig& loc2 = g_config["/test"];
 	std::cout << "Path: " << loc2.path << std::endl;
 	std::cout << "  Root: " << loc2.root << std::endl;
 	std::cout << "  Index: " << loc2.index << std::endl;

@@ -12,7 +12,7 @@ private:
 	std::string fullPath;
 
 public:
-	SafePath(const std::string& path, const ServerConfig& config);
+	SafePath(const std::string& path);
 
 	std::string getRequestedPath() const;
 	std::string getFullPath() const;
