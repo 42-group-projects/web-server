@@ -1,18 +1,18 @@
 #include "../src/fileSystem/SafePath.hpp"
 
-SafePath::SafePath(const std::string& path) : requestedPath(path), serverRoot("./www")
+SafePath::SafePath(const std::string& path, const ServerConfig& config)
+	: requestedPath(path)
 {
-	if(path.find("..") != std::string::npos)
-		throw std::runtime_error("Path escapes server root");
+	if (path.find("..") != std::string::npos)
+		throw std::runtime_error("Unsafe path");
 
-	fullPath = serverRoot;
+	fullPath = config[path].root;
 
-	if(!requestedPath.empty() && requestedPath[0] != '/')
+	if (!requestedPath.empty() && requestedPath[0] != '/')
 		fullPath += '/';
 
 	fullPath += requestedPath;
 }
-
 std::string SafePath::getRequestedPath() const { return requestedPath; }
 std::string SafePath::getFullPath() const { return fullPath; }
 SafePath::operator std::string() const { return fullPath; }

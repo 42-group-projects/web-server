@@ -1,0 +1,73 @@
+  ______ _ _       _____           _                    _____ _               
+ │  ____(_) │     ╱ ____│         │ │                  ╱ ____│ │              
+ │ │__   _│ │ ___│ (___  _   _ ___│ │_ ___ _ __ ___   │ │    │ │ __ _ ___ ___ 
+ │  __│ │ │ │╱ _ ╲╲___ ╲│ │ │ ╱ __│ __╱ _ ╲ '_ ` _ ╲  │ │    │ │╱ _` ╱ __╱ __│
+ │ │    │ │ │  __╱____) │ │_│ ╲__ ╲ ││  __╱ │ │ │ │ │ │ │____│ │ (_│ ╲__ ╲__ ╲
+ │_│    │_│_│╲___│_____╱ ╲__, │___╱╲__╲___│_│ │_│ │_│  ╲_____│_│╲__,_│___╱___╱
+                          __╱ │                                               
+                         │___╱                                                                         
+---------------------------------------------------------------------------------------
+
+Still a work in progress, I will soon add a method to get the file contents in the cache
+or by reading from the file.
+This method will not be called upon construction of the object to not waste time on getting
+a file that shouldnt be accessed for whatever reason.
+
+FILESSYSTEM USAGE:
+
+- FileSystem::FileSystem(SafePath path)  
+  Constructs a FileSystem object for a given SafePath.  
+  - Checks if the file exists using stat()  
+  - Sets file size, last modified time, MIME type, and file permissions (readable, writable, executable)  
+  - Determines if the path is a directory  
+  - If file does not exist, sets defaults: size=0, lastModified=0, mimeType=NO_FILE, isDirectory=false, readable=false, writable=false, executable=false  
+
+- getPath()  
+  Returns the SafePath object used to create the FileSystem  
+  Return type: const SafePath&  
+  Usage: fileSystem.getPath()
+
+- getSize()  
+  Returns the file size in bytes  
+  Return type: size_t  
+  Usage: fileSystem.getSize()
+
+- getLastModified()  
+  Returns the last modification time as time_t  
+  Usage: fileSystem.getLastModified()
+
+- getMimeType()  
+  Returns the MIME type of the file  
+  Return type: e_mimeType  
+  Usage: fileSystem.getMimeType()
+
+- exists()  
+  Returns true if the file exists  
+  Usage: fileSystem.exists()
+
+- directory()  
+  Returns true if the path is a directory  
+  Usage: fileSystem.directory()
+
+- readable()  
+  Returns true if the file is readable  
+  Usage: fileSystem.readable()
+
+- writable()  
+  Returns true if the file is writable  
+  Usage: fileSystem.writable()
+
+- executable()  
+  Returns true if the file is executable  
+  Usage: fileSystem.executable()
+
+---------------------------------------------------------------------------------------
+EXAMPLE:
+
+SafePath path("/upload/file.txt", config);
+FileSystem file(path);
+
+if (file.exists()) {
+    std::cout << "File size: " << file.getSize() << " bytes\n";
+    std::cout << "MIME type: " << file.getMimeType() << "\n";
+}

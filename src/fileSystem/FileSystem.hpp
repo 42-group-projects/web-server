@@ -8,7 +8,7 @@
 #include "SafePath.hpp"
 #include "enums.hpp"
 
-class FileInfo
+class FileSystem
 {
 private:
 	SafePath fullPath;        // "/var/www/html/images/photo.jpg"
@@ -24,7 +24,7 @@ private:
 	e_mimeType detectMimeType(const SafePath& safePath);
 
 public:
-	FileInfo(SafePath path);
+	FileSystem(SafePath path);
 
 	const SafePath& getPath() const;
 	size_t getSize() const;

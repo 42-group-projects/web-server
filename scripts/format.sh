@@ -1,7 +1,11 @@
 #!/bin/bash
 
-# Ensure AStyle is installed
-command -v astyle >/dev/null 2>&1 || { echo "AStyle is not installed. Aborting."; exit 1; }
+# Use the local AStyle binary in the same folder as the script
+ASTYLE="$(dirname "$0")/astyle"
+if [ ! -x "$ASTYLE" ]; then
+    echo "AStyle binary not found or not executable. Aborting."
+    exit 1
+fi
 
 # Base directory is one level up from the script
 BASE_DIR=$(realpath "$(dirname "$0")/..")
@@ -16,26 +20,24 @@ FILES=$(find "$BASE_DIR" -type f \( -iname "*.cpp" -o -iname "*.hpp" \))
 # Apply AStyle formatting with backups
 echo "Running AStyle..."
 for f in $FILES; do
-	# Tell AStyle to put the backup in a temp location first
-	astyle --style=allman --indent=tab \
-	--break-blocks \
-	--pad-oper \
-	--keep-one-line-statements \
-	--keep-one-line-blocks \
-	--pad-include \
-	--unpad-paren \
-	--squeeze-lines=1 \
-	--squeeze-ws \
-	--break-closing-braces \
-	--break-elseifs \
-	--break-one-line-headers \
-	--remove-braces "$f"
+    "$ASTYLE" --style=allman --indent=tab \
+        --break-blocks \
+        --pad-oper \
+        --keep-one-line-statements \
+        --keep-one-line-blocks \
+        --pad-header \
+        --unpad-paren \
+        --delete-empty-lines \
+        --break-closing-braces \
+        --break-one-line-headers \
+        --remove-braces "$f"
 
-	# Move the .orig to the backup folder if it exists
-	ORIG_FILE="${f}.orig"
-	if [ -f "$ORIG_FILE" ]; then
-		mv "$ORIG_FILE" "$BACKUP_DIR/"
-	fi
+    # Move the .orig to the backup folder if it exists
+    ORIG_FILE="${f}.orig"
+    if [ -f "$ORIG_FILE" ]; then
+        mv "$ORIG_FILE" "$BACKUP_DIR/"
+    fi
 done
 
 echo "AStyle formatting completed. Backups are in '$BACKUP_DIR'."
+

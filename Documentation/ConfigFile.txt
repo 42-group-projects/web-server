@@ -1,0 +1,110 @@
+               _                                            __ _          __ _ _      
+              | |                                          / _(_)        / _(_) |     
+ __      _____| |__  ___  ___ _ ____   __   ___ ___  _ __ | |_ _  __ _  | |_ _| | ___ 
+ \ \ /\ / / _ \ '_ \/ __|/ _ \ '__\ \ / /  / __/ _ \| '_ \|  _| |/ _` | |  _| | |/ _ \
+  \ V  V /  __/ |_) \__ \  __/ |   \ V /  | (_| (_) | | | | | | | (_| | | | | | |  __/
+   \_/\_/ \___|_.__/|___/\___|_|    \_/    \___\___/|_| |_|_| |_|\__, | |_| |_|_|\___|
+                                                                  __/ |               
+                                                                 |___/        
+                                                                 
+---------------------------------------------------------------------------------------
+The configuration file must have a '.conf' extension.
+If no configuration file is provided, the server will use: ./configFiles/webserv.conf
+'#' Can be used to write comments.
+If any mandatory directives are missing or syntax errors are detected, the server will fail to start.
+
+---------------------------------------------------------------------------------------
+GLOBAL DIRECTIVES:
+
+listen <IP>:<PORT>          # Bind server to interface and port. E.g., listen 127.0.0.1:8080
+server_name <NAME>          # Server name for virtual hosting. E.g., server_name webserv
+root <PATH>                 # Global root folder for files. E.g., root /var/www
+error_page <CODE> <PATH>    # Custom error page. E.g., error_page 404 /errors/404.html
+client_max_body_size <SIZE> # Max request body size (bytes or suffix K/M/G/k/m/g). E.g., 10M
+
+---------------------------------------------------------------------------------------
+PER LOCATION DIRECTIVES:
+
+location <PATH> {                # Define settings for a specific path
+    methods <GET|POST|DELETE>    # Allowed HTTP methods for this location
+    root <PATH>                  # Optional, overrides global root
+    index <FILE>                 # Default file when directory requested
+    autoindex <on|off>           # Directory listing if index file missing
+    upload_enabled <on|off>      # Enable file uploads
+    upload_path <PATH>           # Destination folder for uploaded files (required if uploads enabled)
+    cgi <EXT> <EXECUTABLE>       # Associate extension with CGI interpreter. E.g., cgi .php /usr/bin/php-cgi
+    return <CODE> <PATH|URL>     # Redirect to another path or URL. E.g., return 301 /new-page.html
+}
+
+---------------------------------------------------------------------------------------
+DIRECTIVES                     Mandatory                Default
+
+- listen <IP>:<PORT>           YES
+- server_name <NAME>           NO_______________________"mySite.local"
+- root <PATH>                  YES
+- error_page <CODE> <PATH>     NO_______________________none
+- client_max_body_size <SIZE>  NO_______________________1MB
+
+- methods <GET|POST|DELETE>    NO_______________________GET=yes, POST=no, DELETE=no
+- root <PATH>                  NO_______________________global root
+- index <FILE>                 NO_______________________"index.html"
+- autoindex <on|off>           NO_______________________off
+- upload_enabled <on|off>      NO_______________________off
+- upload_path <PATH>           if upload_enabled=on
+- cgi <EXT> <EXECUTABLE>       NO_______________________none
+- return <CODE> <PATH|URL>     NO_______________________disabled
+
+---------------------------------------------------------------------------------------
+
+EXEMPLE:
+
+listen 127.0.0.1:8080
+listen 0.0.0.0:80
+
+server_name webserv
+root /var/www
+
+error_page 400 /errors/400.html
+error_page 403 /errors/403.html
+error_page 404 /errors/404.html
+error_page 405 /errors/405.html
+error_page 413 /errors/413.html
+error_page 500 /errors/500.html
+
+client_max_body_size 10M
+
+location / {
+    methods GET POST
+    index index.html
+    autoindex on
+    upload_enabled on
+    upload_path /var/www/upload
+}
+
+location /mimeTypeDetectionTestFiles {
+    methods GET
+    root /var/www/
+    autoindex on
+}
+
+location /cgi-bin {
+    methods GET POST
+    root /var/www/cgi-bin
+    cgi .php /usr/bin/php-cgi
+    cgi .py /usr/bin/python
+    autoindex off
+}
+
+location /redirection/old.html {
+    methods GET
+    return 301 /redirection/new.html
+}
+
+location /upload {
+    methods POST
+    root /var/www/upload
+    upload_enabled on
+    upload_path /var/www/upload
+    autoindex off
+}
+
