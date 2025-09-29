@@ -7,10 +7,13 @@
 #include "http/httpTester.hpp"
 #include "../src/tests/tests.hpp"
 
+#include "../include/linuxOrMac.hpp"
+
 ServerConfig g_config;
 
 int main(int argc, char *argv[])
 {
+	std::cout << LINUX << std::endl;
 	try {g_config.initServerConfig(argc, argv);}
 	catch (const std::runtime_error& e) {std::cerr << e.what() << std::endl; return 1;} 
 	printConfig();
