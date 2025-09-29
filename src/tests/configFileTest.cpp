@@ -6,24 +6,24 @@
 void printConfig(const ServerConfig& config)
 {
 	std::cout << "\033[32mServer configuration (comes from printConfig function, feel free to comment out) " << "\033[0m" << std::endl;
-	std::cout << "Server root: " << config[ROOT] << std::endl;
-	std::cout << "Server name: " << config[SERVER_NAME] << std::endl;
-	std::cout << "Client max body size: " << config[CLIENT_MAX_BODY_SIZE] << std::endl;
+	std::cout << "Server root: " << config.getRoot() << std::endl;
+	std::cout << "Server name: " << config.getServerName() << std::endl;
+	std::cout << "Client max body size: " << config.getClientMaxBodySize() << std::endl;
 	std::cout << "Listen:" << std::endl;
-	const std::vector<std::pair<std::string, int> >& listen = config[LISTEN];
+	const std::vector<std::pair<std::string, int> >& listen = config.getListen();
 
 	for (std::vector<std::pair<std::string, int> >::const_iterator it = listen.begin(); it != listen.end(); ++it)
 		std::cout << "  " << it->first << ":" << it->second << std::endl;
 
 	std::cout << "Error pages:" << std::endl;
-	const std::map<int, std::string>& error_pages = config[ERROR_PAGES];
+	const std::map<int, std::string>& error_pages = config.getErrorPages();
 
 	for (std::map<int, std::string>::const_iterator it = error_pages.begin(); it != error_pages.end(); ++it)
 		std::cout << "  " << it->first << " -> " << it->second << std::endl;
 
 	std::cout << std::endl;
 	std::cout << "Locations:" << std::endl;
-	const std::map<std::string, LocationConfig>& locations = config[LOCATIONS];
+	const std::map<std::string, LocationConfig>& locations = config.getLocations();
 
 	for (std::map<std::string, LocationConfig>::const_iterator it = locations.begin(); it != locations.end(); ++it)
 	{

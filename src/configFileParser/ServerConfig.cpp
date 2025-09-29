@@ -8,14 +8,12 @@
 #include <sstream>
 #include <fstream>
 
-#include "ServerConfig.hpp"
-
-const std::string& ServerConfig::operator[](e_rootMember) const { return root; }
-const std::vector<std::pair<std::string, int> >& ServerConfig::operator[](e_listenMember) const { return listen; }
-const std::map<int, std::string>& ServerConfig::operator[](e_errorPagesMember) const { return error_pages; }
-size_t ServerConfig::operator[](e_clientMaxBodyMember) const { return client_max_body_size; }
-const std::map<std::string, LocationConfig>& ServerConfig::operator[](e_locationsMember) const { return locations; }
-const std::string& ServerConfig::operator[](e_serverNameMember) const { return server_name; }
+const std::string& ServerConfig::getRoot() const { return root; }
+const std::vector<std::pair<std::string, int> >& ServerConfig::getListen() const { return listen; }
+const std::map<int, std::string>& ServerConfig::getErrorPages() const { return error_pages; }
+size_t ServerConfig::getClientMaxBodySize() const { return client_max_body_size; }
+const std::string& ServerConfig::getServerName() const { return server_name; }
+const std::map<std::string, LocationConfig>& ServerConfig::getLocations() const { return locations; }
 
 LocationConfig ServerConfig::operator[](const std::string& path) const
 {
@@ -26,23 +24,21 @@ LocationConfig ServerConfig::operator[](const std::string& path) const
 
 	LocationConfig defaultConfig;
 	defaultConfig.path = path;
-	defaultConfig.getAllowed = GET_ALLOWED_DEFAULT;
-	defaultConfig.postAllowed = POST_ALLOWED_DEFAULT;
-	defaultConfig.deleteAllowed = DELETE_ALLOWED_DEFAULT;
+	defaultConfig.getAllowed = GET_ALLOWED;
+	defaultConfig.postAllowed = POST_ALLOWED;
+	defaultConfig.deleteAllowed = DELETE_ALLOWED;
 	defaultConfig.root = root;
-	defaultConfig.index = INDEX_DEFAULT;
-	defaultConfig.autoindex = AUTOINDEX_DEFAULT;
-	defaultConfig.redirect_enabled = REDIRECT_ENABLED_DEFAULT;
-	defaultConfig.redirect_url = REDIRECT_URL_DEFAULT;
+	defaultConfig.index = INDEX;
+	defaultConfig.autoindex = AUTOINDEX;
+	defaultConfig.redirect_enabled = REDIRECT_ENABLED;
+	defaultConfig.redirect_url = REDIRECT_URL;
 	defaultConfig.redirect_code = 0;
-	defaultConfig.upload_enabled = UPLOAD_ENABLED_URL_DEFAULT;
-	defaultConfig.upload_store = UPLOAD_STORE_DEFAULT;
+	defaultConfig.upload_enabled = UPLOAD_ENABLED;
+	defaultConfig.upload_store = UPLOAD_STORE;
 	return defaultConfig;
 }
 
-ServerConfig::ServerConfig() {}
-
-void ServerConfig::initServerConfig(int argc, char **argv)
+ServerConfig::ServerConfig(int argc, char **argv)
 {
 	std::vector<std::string> rawConfig;
 	setupDefaultConfig();
@@ -73,9 +69,9 @@ void ServerConfig::setupDefaultConfig()
 {
 	root = "";
 	listen.clear();
-	server_name = SERVER_NAME_DEFAULT;
+	server_name = SERVER_NAME;
 	error_pages.clear();
-	client_max_body_size = CLIENT_MAX_BODY_SIZE_DEFAULT;
+	client_max_body_size = CLIENT_MAX_BODY_SIZE;
 }
 
 std::vector<std::string> ServerConfig::loadConfigFile(const std::string& path)
@@ -332,15 +328,15 @@ LocationConfig ServerConfig::setupDefaultLocationConfig(const std::string& locat
 	LocationConfig c;
 	c.root = "";
 	c.path = location;
-	c.getAllowed = GET_ALLOWED_DEFAULT;
-	c.postAllowed = POST_ALLOWED_DEFAULT;
-	c.deleteAllowed = DELETE_ALLOWED_DEFAULT;
-	c.index = INDEX_DEFAULT;
-	c.autoindex = AUTOINDEX_DEFAULT;
-	c.redirect_enabled = REDIRECT_ENABLED_DEFAULT;
-	c.redirect_url = REDIRECT_URL_DEFAULT;
+	c.getAllowed = GET_ALLOWED;
+	c.postAllowed = POST_ALLOWED;
+	c.deleteAllowed = DELETE_ALLOWED;
+	c.index = INDEX;
+	c.autoindex = AUTOINDEX;
+	c.redirect_enabled = REDIRECT_ENABLED;
+	c.redirect_url = REDIRECT_URL;
 	c.redirect_code = 0;
-	c.upload_enabled = UPLOAD_ENABLED_URL_DEFAULT;
+	c.upload_enabled = UPLOAD_ENABLED;
 	c.upload_store = "";
 	c.cgi_pass.clear();
 	return c;

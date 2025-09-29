@@ -10,56 +10,50 @@
 SERVER CONFIG ACCESS
 
 Use the ServerConfig class to retrieve server and location settings after parsing a .conf file.
-The config is global and accessible using g_config from any file 
-that includes #include "../include/globals.hpp"
 
-- Constructor
-  Does nothing but create the object. (Because it is called outside of main)
-
-- initServerConfig(int argc, char *argv[]):
+Constructor:
+- ServerConfig(int argc, char **argv)  
   Loads the configuration file. If none is provided, uses ./configFiles/webserv.conf
 
 ---------------------------------------------------------------------------------------
 GLOBAL CONFIG ACCESS:
 
-Use the `operator[]` of `ServerConfig` with these enums to access each field:
-
-- g_config[ROOT]  
+- getRoot()  
   Returns the global server root path (std::string)
 
-- g_config[LISTEN] 
+- getListen()  
   Returns vector<pair<string, int>> of IP:PORT bindings
 
-- g_config[ERROR_PAGES]  
+- getErrorPages()  
   Returns map<int, string> of HTTP error codes to custom error page paths
 
-- g_config[MAX_CLIENT_BODY_SIZE] 
+- getClientMaxBodySize()  
   Returns max allowed request body size in bytes (size_t)
 
-- g_config[SERVER_NAME] 
+- getServerName()  
   Returns the server name (std::string)
 
 ---------------------------------------------------------------------------------------
 LOCATION CONFIG ACCESS:
 
-Use the `operator[]` of `ServerConfig` with the location path (string) to access each field:
+Use the `operator[]` of `ServerConfig` with the location path to access each field:
 
-Example: g_config["/upload"].upload_enabled
+Example: config["/upload"].upload_enabled
 Using this with a location path that isn't mentioned in the configuration file
 will access location struct filled with default settings.
 
 Fields in LocationConfig:
 
-- g_config[locationPath].path                  : location path (std::string)
-- g_config[locationPath].getAllowed            : GET allowed (bool)
-- g_config[locationPath].postAllowed           : POST allowed (bool)
-- g_config[locationPath].deleteAllowed         : DELETE allowed (bool)
-- g_config[locationPath].root                  : location root path (std::string)
-- g_config[locationPath].index                 : default index file (std::string)
-- g_config[locationPath].autoindex             : directory listing enabled (bool)
-- g_config[locationPath].redirect_enabled      : redirection enabled (bool)
-- g_config[locationPath].redirect_url          : redirection target (std::string)
-- g_config[locationPath].redirect_code         : HTTP status code for redirection (int)
-- g_config[locationPath].upload_enabled        : uploads enabled (bool)
-- g_config[locationPath].upload_store          : upload destination folder (std::string)
-- g_config[locationPath].cgi_pass              : map of file extensions to CGI executables (std::map<std::string, std::string>)
+- config[locationPath].path                  : location path (std::string)
+- config[locationPath].getAllowed            : GET allowed (bool)
+- config[locationPath].postAllowed           : POST allowed (bool)
+- config[locationPath].deleteAllowed         : DELETE allowed (bool)
+- config[locationPath].root                  : location root path (std::string)
+- config[locationPath].index                 : default index file (std::string)
+- config[locationPath].autoindex             : directory listing enabled (bool)
+- config[locationPath].redirect_enabled      : redirection enabled (bool)
+- config[locationPath].redirect_url          : redirection target (std::string)
+- config[locationPath].redirect_code         : HTTP status code for redirection (int)
+- config[locationPath].upload_enabled        : uploads enabled (bool)
+- config[locationPath].upload_store          : upload destination folder (std::string)
+- config[locationPath].cgi_pass              : map of file extensions to CGI executables (std::map<std::string, std::string>)

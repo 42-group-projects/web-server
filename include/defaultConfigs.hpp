@@ -12,16 +12,16 @@
 #define DEFAULT_CONF_FILE "configFiles/webserv.conf"
 
 //Server
-#define SERVER_NAME_DEFAULT "mySite.local"
-#define CLIENT_MAX_BODY_SIZE_DEFAULT 1024 * 1024 // 1 MB
+#define SERVER_NAME "mySite.local"
+#define CLIENT_MAX_BODY_SIZE 1024 * 1024 // 1 MB
 
 //Location specific
-#define GET_ALLOWED_DEFAULT         true
-#define POST_ALLOWED_DEFAULT        false
-#define DELETE_ALLOWED_DEFAULT      false
-#define INDEX_DEFAULT               "index.html"
-#define AUTOINDEX_DEFAULT           false
-#define REDIRECT_ENABLED_DEFAULT    false
-#define REDIRECT_URL_DEFAULT        ""
-#define UPLOAD_ENABLED_URL_DEFAULT  false
-#define UPLOAD_STORE_DEFAULT        ""
+#define GET_ALLOWED      true
+#define POST_ALLOWED     false
+#define DELETE_ALLOWED   false
+#define INDEX            "index.html"
+#define AUTOINDEX        false
+#define REDIRECT_ENABLED false
+#define REDIRECT_URL     ""
+#define UPLOAD_ENABLED   false
+#define UPLOAD_STORE     ""
