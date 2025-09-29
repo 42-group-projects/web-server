@@ -4,6 +4,13 @@
 #include <vector>
 #include <map>
 
+enum e_rootMember { ROOT };
+enum e_listenMember { LISTEN };
+enum e_errorPagesMember { ERROR_PAGES };
+enum e_clientMaxBodyMember { CLIENT_MAX_BODY_SIZE };
+enum e_locationsMember { LOCATIONS };
+enum e_serverNameMember { SERVER_NAME };
+
 struct LocationConfig
 {
 	std::string path;
@@ -28,14 +35,16 @@ struct LocationConfig
 class ServerConfig
 {
 public:
-	ServerConfig(int argc, char **argv);
+	ServerConfig();
 
-	const std::string& getRoot() const;
-	const std::vector<std::pair<std::string, int> >& getListen() const;
-	const std::map<int, std::string>& getErrorPages() const;
-	size_t getClientMaxBodySize() const;
-	const std::map<std::string, LocationConfig>& getLocations() const;
-	const std::string& getServerName() const;
+	void initServerConfig(int argc, char **argv);
+
+	const std::string& operator[](e_rootMember) const;
+	const std::vector<std::pair<std::string, int> >& operator[](e_listenMember) const;
+	const std::map<int, std::string>& operator[](e_errorPagesMember) const;
+	size_t operator[](e_clientMaxBodyMember) const;
+	const std::map<std::string, LocationConfig>& operator[](e_locationsMember) const;
+	const std::string& operator[](e_serverNameMember) const;
 
 	LocationConfig operator[](const std::string& path) const;
 
