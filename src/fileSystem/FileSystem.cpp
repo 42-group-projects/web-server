@@ -18,6 +18,7 @@ FileSystem::FileSystem(SafePath path) : fullPath(path)
 	}
 	else
 	{
+		std::cout << "File does not exist: " << fullPath.getFullPath() << std::endl;
 		isExists = false;
 		size = 0;
 		lastModified = 0;

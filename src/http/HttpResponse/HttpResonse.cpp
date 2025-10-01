@@ -1,14 +1,10 @@
 #include "./HttpResponse.hpp"
 #include "../utils.hpp"
 
-HttpResponse::HttpResponse() : version("Http1.1"), status(UNSET), mime_type(""), body("")
-{
-	std::cout << "HttpResponse constructor called" << std::endl;
-}
-HttpResponse::~HttpResponse()
-{
-	std::cout << "HttpResponse destructor called" << std::endl;
-}
+HttpResponse::HttpResponse() : version("Http1.1"), status(UNSET), mime_type(""), body("") {}
+
+HttpResponse::~HttpResponse() {}
+
 HttpResponse::HttpResponse(HttpResponse const &other)
 {
 	if (this != &other)

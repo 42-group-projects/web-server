@@ -2,14 +2,12 @@
 #include "../utils.hpp"
 #include "../../../include/imports.hpp"
 
-HttpRequest::HttpRequest() : method(UNDEFINED), uri(""), version("")
-{
-	std::cout << "HttpRequest constructor called" << std::endl;
-}
+HttpRequest::HttpRequest() : method(UNDEFINED), uri(""), version("") {}
+
+HttpRequest::~HttpRequest() {}
 
 HttpRequest::HttpRequest(const std::string &raw_request) : method(UNDEFINED), uri(""), version("")
 {
-	std::cout << "HttpRequest parameterized constructor called" << std::endl;
 	this->parseRequest(raw_request);
 }
 
@@ -28,10 +26,6 @@ HttpRequest &HttpRequest::operator=(const HttpRequest &other)
 	return *this;
 }
 
-HttpRequest::~HttpRequest()
-{
-	std::cout << "HttpRequest destructor called" << std::endl;
-}
 
 void HttpRequest::parseRequest(const std::string &request)
 {
