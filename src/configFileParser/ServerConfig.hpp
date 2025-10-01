@@ -1,12 +1,13 @@
 #pragma once
 
+#include "../src/fileSystem/FileSystem.hpp"
 #include <iostream>
 #include <vector>
 #include <map>
 
 struct LocationConfig
 {
-	std::string path;
+	std::string location;
 
 	bool getAllowed;
 	bool postAllowed;
@@ -38,7 +39,10 @@ public:
 	const std::map<std::string, LocationConfig>& getLocations() const;
 	const std::string& getServerName() const;
 
-	LocationConfig operator[](const std::string& path) const;
+	LocationConfig operator[](const SafePath& safePath) const;
+	LocationConfig operator[](const std::string& location) const;
+	LocationConfig operator[](const FileSystem& file) const;
+	LocationConfig getLocationConfigOrDefault(std::map<std::string, LocationConfig>::const_iterator it) const;
 
 private:
 	std::string root;
@@ -90,3 +94,6 @@ bool isValidRedirectTarget(const std::string& target);
 void directiveError(std::string dir);
 void argumentError(std::string arg, std::string dir);
 void missingArgument(std::string dir);
+
+std::ostream& operator<<(std::ostream& os, const LocationConfig& loc);
+std::ostream& operator<<(std::ostream& os, const ServerConfig& server);

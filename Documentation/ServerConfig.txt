@@ -49,16 +49,19 @@ will access location struct filled with default settings.
 
 Fields in LocationConfig:
 
-- g_config[locationPath].path                  : location path (std::string)
-- g_config[locationPath].getAllowed            : GET allowed (bool)
-- g_config[locationPath].postAllowed           : POST allowed (bool)
-- g_config[locationPath].deleteAllowed         : DELETE allowed (bool)
-- g_config[locationPath].root                  : location root path (std::string)
-- g_config[locationPath].index                 : default index file (std::string)
-- g_config[locationPath].autoindex             : directory listing enabled (bool)
-- g_config[locationPath].redirect_enabled      : redirection enabled (bool)
-- g_config[locationPath].redirect_url          : redirection target (std::string)
-- g_config[locationPath].redirect_code         : HTTP status code for redirection (int)
-- g_config[locationPath].upload_enabled        : uploads enabled (bool)
-- g_config[locationPath].upload_store          : upload destination folder (std::string)
-- g_config[locationPath].cgi_pass              : map of file extensions to CGI executables (std::map<std::string, std::string>)
+"arg" can be either a FileSystem object, a SafePath object, or a string.
+I made a []operator that takes a string just in case but best not use it unless you're sure the path is ok.
+
+- g_config[arg].path                  : location (std::string)
+- g_config[arg].getAllowed            : GET allowed (bool)
+- g_config[arg].postAllowed           : POST allowed (bool)
+- g_config[arg].deleteAllowed         : DELETE allowed (bool)
+- g_config[arg].root                  : location root path (std::string)
+- g_config[arg].index                 : default index file (std::string)
+- g_config[arg].autoindex             : directory listing enabled (bool)
+- g_config[arg].redirect_enabled      : redirection enabled (bool)
+- g_config[arg].redirect_url          : redirection target (std::string)
+- g_config[arg].redirect_code         : HTTP status code for redirection (int)
+- g_config[arg].upload_enabled        : uploads enabled (bool)
+- g_config[arg].upload_store          : upload destination folder (std::string)
+- g_config[arg].cgi_pass              : map of file extensions to CGI executables (std::map<std::string, std::string>)

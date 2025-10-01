@@ -1,7 +1,7 @@
 #include <vector>
 #include <iostream>
 #include <map>
-#include "../src/configFileParser/ServerConfig.hpp"
+#include "../src/fileSystem/SafePath.hpp"
 #include "../include/globals.hpp"
 
 void printConfig()
@@ -29,7 +29,7 @@ void printConfig()
 	for (std::map<std::string, LocationConfig>::const_iterator it = locations.begin(); it != locations.end(); ++it)
 	{
 		const LocationConfig& loc = it->second;
-		std::cout << "  Path: " << loc.path << std::endl;
+		std::cout << "  Location: " << loc.location << std::endl;
 		std::cout << "    Root: " << loc.root << std::endl;
 		std::cout << "    Index: " << loc.index << std::endl;
 		std::cout << "    Autoindex: " << (loc.autoindex ? "on" : "off") << std::endl;
@@ -52,8 +52,8 @@ void printConfig()
 	}
 
 	std::cout << "Accessing a location by name" << std::endl;
-	const LocationConfig& loc = g_config["/redirection/old.html"];
-	std::cout << "Path: " << loc.path << std::endl;
+	const LocationConfig& loc = g_config[SafePath("/cgi")];
+	std::cout << "Location: " << loc.location << std::endl;
 	std::cout << "  Root: " << loc.root << std::endl;
 	std::cout << "  Index: " << loc.index << std::endl;
 	std::cout << "  Autoindex: " << (loc.autoindex ? "on" : "off") << std::endl;
@@ -73,8 +73,8 @@ void printConfig()
 	}
 
 	std::cout << "Accessing a non existent location by name (should generate default configs)" << std::endl;
-	const LocationConfig& loc2 = g_config["/test"];
-	std::cout << "Path: " << loc2.path << std::endl;
+	const LocationConfig& loc2 = g_config[SafePath("/test")];
+	std::cout << "Location: " << loc2.location << std::endl;
 	std::cout << "  Root: " << loc2.root << std::endl;
 	std::cout << "  Index: " << loc2.index << std::endl;
 	std::cout << "  Autoindex: " << (loc2.autoindex ? "on" : "off") << std::endl;
