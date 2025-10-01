@@ -21,4 +21,4 @@ public:
 	operator std::string() const;
 };
 
-std::ostream& operator <<(std::ostream& os, const SafePath& sp);
+std::ostream& operator<<(std::ostream& os, const SafePath& sp);

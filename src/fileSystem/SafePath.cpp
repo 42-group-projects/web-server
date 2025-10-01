@@ -55,4 +55,4 @@ std::string SafePath::getFullPath() const { return fullPath; }
 std::string SafePath::getLocation() const { return location; }
 SafePath::operator std::string() const { return fullPath; }
 
-std::ostream& operator <<(std::ostream& os, const SafePath& sp) { return os << std::string(sp); }
+std::ostream& operator<<(std::ostream& os, const SafePath& sp) { return os << std::string(sp); }

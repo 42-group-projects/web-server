@@ -39,3 +39,5 @@ public:
 	bool writable() const;
 	bool executable() const;
 };
+
+std::ostream& operator<<(std::ostream& os, const FileSystem& file);

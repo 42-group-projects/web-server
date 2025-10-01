@@ -22,7 +22,8 @@ int main(int argc, char *argv[])
 		// printConfig();
 		try 
 		{
-			FileSystem file(SafePath("/index.html"));
+			FileSystem file(SafePath("/mimeType/testFile.html"));
+			std::cout << file;
 			if (file.exists())
 				std::cout << file.getFileContents() << std::endl;
 		}
