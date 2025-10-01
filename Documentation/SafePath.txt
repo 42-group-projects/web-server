@@ -21,6 +21,11 @@ SAFEPATH USAGE
   Return type: std::string  
   Usage: sp.getFullPath()
 
+- getLocation()
+  Returns the location to which the path belongs
+  Return type: std::string  
+  Usage: sp.getLocation()
+
 - getRequestedPath() (!unsafe!)
   Returns the raw requested path  
   Return type: std::string  

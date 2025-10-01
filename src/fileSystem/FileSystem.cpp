@@ -1,5 +1,5 @@
 #include "../src/fileSystem/FileSystem.hpp"
-#include "../src/fileSystem/SafePath.hpp"
+#include "../src/errorHandling/ErrorWarning.hpp"
 
 FileSystem::FileSystem(SafePath path) : fullPath(path)
 {
@@ -70,6 +70,18 @@ e_mimeType FileSystem::detectMimeType(const SafePath& safePath)
 		return IMAGE_SVG;
 
 	return APPLICATION_OCTET_STREAM;
+}
+
+const std::string FileSystem::getFileContents()
+{
+	std::ifstream file(fullPath.getFullPath().c_str(), std::ios::binary);
+
+	if (!file)
+		error("Couldn't open file '" + fullPath.getFullPath() + "'", "File system");
+
+	std::ostringstream oss;
+	oss << file.rdbuf();
+	return oss.str();
 }
 
 const SafePath& FileSystem::getPath() const { return fullPath; }
