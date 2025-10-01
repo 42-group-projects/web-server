@@ -14,8 +14,8 @@ ServerConfig g_config;
 
 int main(int argc, char *argv[])
 {
-	(void)argc;
-	(void)argv;
+	std::cout << "Web Server Starting..." << std::endl;
+
 	try {g_config.initServerConfig(argc, argv);}
 		catch (const std::runtime_error& e) {std::cerr << e.what() << std::endl; return 1;}
 
@@ -32,9 +32,8 @@ int main(int argc, char *argv[])
 		// catch (const std::runtime_error& e) {std::cerr << e.what() << std::endl; return 1;}
 	//}
 
-	std::cout << "Web Server Starting..." << std::endl;
 	//uncommnet to run tests
-	http_tester();
+	// http_tester();
 	std::cout << "Web Server Ending..." << std::endl;
 	return 0;
 }
