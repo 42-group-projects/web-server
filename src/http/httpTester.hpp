@@ -25,10 +25,19 @@ int http_tester(void)
 	// string res = response.generateResponse(OK, "<html><body><h1>Hello, World!</h1></body></html>");
 	// cout << "Generated HTTP Response:\n" << res << endl;
 
+	std::string test_request =
+    "GET /index.html HTTP/1.1\r\n"
+    "Host: www.example.com\r\n"
+    "User-Agent: Mozilla/5.0\r\n"
+    "Accept: text/html\r\n"
+    "\r\n";
+
 	HttpHandler handler;
 	// HttpRequest request = HttpRequest(simple_get_request);
 	// request.displayRequest();
-	HttpResponse res = handler.handleRequest(HttpRequest(simple_get_request));
+	HttpResponse res = handler.handleRequest(HttpRequest(test_request));
+	std::string response = res.generateResponse(res.getStatus(), res.getBody());
+	std::cout << response << endl;
 	cout << "HTTP Tester Finished." << endl;
 	return 0;
 }

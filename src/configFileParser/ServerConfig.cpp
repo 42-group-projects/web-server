@@ -15,15 +15,31 @@ size_t ServerConfig::getClientMaxBodySize() const { return client_max_body_size;
 const std::string& ServerConfig::getServerName() const { return server_name; }
 const std::map<std::string, LocationConfig>& ServerConfig::getLocations() const { return locations; }
 
-LocationConfig ServerConfig::operator[](const std::string& path) const
+LocationConfig ServerConfig::operator[](const SafePath& safePath) const
 {
-	std::map<std::string, LocationConfig>::const_iterator it = locations.find(path);
+	std::map<std::string, LocationConfig>::const_iterator it = locations.find(safePath.getLocation());
+	return getLocationConfigOrDefault(it);
+}
 
+LocationConfig ServerConfig::operator[](const std::string& location) const
+{
+	std::map<std::string, LocationConfig>::const_iterator it = locations.find(location);
+	return getLocationConfigOrDefault(it);
+}
+
+LocationConfig ServerConfig::operator[](const FileSystem& file) const
+{
+	std::map<std::string, LocationConfig>::const_iterator it = locations.find(file.getPath().getLocation());
+	return getLocationConfigOrDefault(it);
+}
+
+LocationConfig ServerConfig::getLocationConfigOrDefault(std::map<std::string, LocationConfig>::const_iterator it) const
+{
 	if (it != locations.end())
 		return it->second;
 
-	LocationConfig defaultConfig;
-	defaultConfig.path = path;
+	static LocationConfig defaultConfig;
+	defaultConfig.location = "/";
 	defaultConfig.getAllowed = GET_ALLOWED;
 	defaultConfig.postAllowed = POST_ALLOWED;
 	defaultConfig.deleteAllowed = DELETE_ALLOWED;
@@ -137,7 +153,7 @@ void ServerConfig::checkConfig()
 
 	for (std::map<std::string, LocationConfig>::iterator it = locations.begin(); it != locations.end(); ++it)
 	{
-		const std::string& path = it->first;
+		const std::string& location = it->first;
 		LocationConfig& config = it->second;
 
 		if (config.root.empty())
@@ -145,7 +161,7 @@ void ServerConfig::checkConfig()
 
 		if (config.upload_enabled)
 			if (config.upload_store.empty())
-				error("Missing upload path directive for location " + path, "Configuration file");
+				error("Missing upload path directive for location " + location, "Configuration file");
 	}
 }
 
@@ -159,6 +175,9 @@ void ServerConfig::setRoot(std::vector<std::string>& tokens)
 
 	if (tokens[1][0] != '/')
 		error(tokens[1] + " is not an absolute path.", "Configuration file");
+
+	if (tokens[1][tokens[1].size() - 1] == '/')
+		error("Invalid root argument: '" + tokens[1] + "' should not end with '/'", "Configuration file.");
 
 	root = tokens[1];
 }
@@ -284,16 +303,16 @@ void ServerConfig::setLocation(std::vector<std::string>& tokens, std::vector<std
 	std::vector<std::string> locationVect(configVect.begin() + *i + 2, configVect.begin() + j);
 	*i = j;
 	LocationConfig c = fillLocationConfig(locationVect, tokens[1]);
-	locations[c.path] = c;
+	locations[c.location] = c;
 }
 
 LocationConfig ServerConfig::fillLocationConfig(std::vector<std::string>& locationVect, std::string location)
 {
 	if (location[0] != '/')
-		error("location path '" + location + "' must start with '/'", "Configuration file");
+		error("location '" + location + "' must start with '/'", "Configuration file");
 
 	LocationConfig c = setupDefaultLocationConfig(location);
-	c.path = location;
+	c.location = location;
 
 	for (size_t i = 0; i < locationVect.size(); i++)
 	{
@@ -329,7 +348,7 @@ LocationConfig ServerConfig::setupDefaultLocationConfig(const std::string& locat
 {
 	LocationConfig c;
 	c.root = "";
-	c.path = location;
+	c.location = location;
 	c.getAllowed = GET_ALLOWED;
 	c.postAllowed = POST_ALLOWED;
 	c.deleteAllowed = DELETE_ALLOWED;
@@ -379,6 +398,9 @@ void ServerConfig::setLocationRoot(std::vector<std::string>& tokens, LocationCon
 
 	if (tokens[1][0] != '/')
 		error(tokens[1] + " is not an absolute path.", "Configuration file");
+
+	if (tokens[1][tokens[1].size() - 1] == '/')
+		error("Invalid root argument: '" + tokens[1] + "' should not end with '/'", "Configuration file.");
 
 	c.root = tokens[1];
 }
@@ -672,4 +694,52 @@ void argumentError(std::string arg, std::string dir)
 void missingArgument(std::string dir)
 {
 	error("missing argument for directive '" + dir + "'.", "Configuration file");
+}
+
+std::ostream& operator<<(std::ostream& os, const LocationConfig& loc)
+{
+	os << "Location: " << loc.location << "\n";
+	os << "  GET allowed: " << loc.getAllowed << "\n";
+	os << "  POST allowed: " << loc.postAllowed << "\n";
+	os << "  DELETE allowed: " << loc.deleteAllowed << "\n";
+	os << "  Root: " << loc.root << "\n";
+	os << "  Index: " << loc.index << "\n";
+	os << "  Autoindex: " << loc.autoindex << "\n";
+	os << "  Redirect enabled: " << loc.redirect_enabled << "\n";
+	os << "  Redirect URL: " << loc.redirect_url << "\n";
+	os << "  Redirect code: " << loc.redirect_code << "\n";
+	os << "  Upload enabled: " << loc.upload_enabled << "\n";
+	os << "  Upload store: " << loc.upload_store << "\n";
+	os << "  CGI passes:\n";
+
+	for (std::map<std::string, std::string>::const_iterator it = loc.cgi_pass.begin(); it != loc.cgi_pass.end(); ++it)
+		os << "    " << it->first << " -> " << it->second << "\n";
+
+	return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const ServerConfig& server)
+{
+	os << "Server name: " << server.getServerName() << "\n";
+	os << "Root: " << server.getRoot() << "\n";
+	os << "Listen:\n";
+	const std::vector<std::pair<std::string, int> >& listenVec = server.getListen();
+
+	for (std::vector<std::pair<std::string, int> >::const_iterator it = listenVec.begin(); it != listenVec.end(); ++it)
+		os << "  " << it->first << ":" << it->second << "\n";
+
+	os << "Error pages:\n";
+	const std::map<int, std::string>& errorMap = server.getErrorPages();
+
+	for (std::map<int, std::string>::const_iterator it = errorMap.begin(); it != errorMap.end(); ++it)
+		os << "  " << it->first << " -> " << it->second << "\n";
+
+	os << "Client max body size: " << server.getClientMaxBodySize() << "\n";
+	os << "Locations:\n";
+	const std::map<std::string, LocationConfig>& locMap = server.getLocations();
+
+	for (std::map<std::string, LocationConfig>::const_iterator it = locMap.begin(); it != locMap.end(); ++it)
+		os << "  " << it->first << ":\n" << it->second;
+
+	return os;
 }

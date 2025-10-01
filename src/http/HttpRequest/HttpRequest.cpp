@@ -1,14 +1,25 @@
 #include "HttpRequest.hpp"
 #include "../utils.hpp"
 #include "../../../include/imports.hpp"
+#include "../../errorHandling/ErrorWarning.hpp"
 
-HttpRequest::HttpRequest() : method(UNDEFINED), uri(""), version("") {}
+HttpRequest::HttpRequest() : method(UNDEFINED), uri(""), version(""), parsing_error(""){}
 
 HttpRequest::~HttpRequest() {}
 
-HttpRequest::HttpRequest(const std::string &raw_request) : method(UNDEFINED), uri(""), version("")
+HttpRequest::HttpRequest(const std::string &raw_request) : method(UNDEFINED), uri(""), version(""), parsing_error("")
 {
-	this->parseRequest(raw_request);
+	//comment out if nessisary
+		this->displayRequest();
+	try
+	{
+		this->parseRequest(raw_request);
+	}
+	catch (const std::runtime_error& e)
+	{
+		std::cout << e.what() << std::endl;
+		parsing_error = e.what();
+	}
 }
 
 HttpRequest &HttpRequest::operator=(const HttpRequest &other)
@@ -20,6 +31,8 @@ HttpRequest &HttpRequest::operator=(const HttpRequest &other)
 		this->version = other.version;
 		this->headers = other.headers;
 		this->body = other.body;
+		this->query_params = other.query_params;
+		this->parsing_error = other.parsing_error;
 		// Copy other necessary members
 	}
 
@@ -35,24 +48,30 @@ void HttpRequest::parseRequest(const std::string &request)
 	// Parse request line
 	if (std::getline(request_stream, line))
 	{
-		if (line.empty())
-			throw std::runtime_error("Empty request line encountered");
+		if (line.empty() || line == "\r" || line == "\n")
+			error("Empty request line encountered", "Request Parser");
 
 		std::istringstream line_stream(line);
 		parseRequestLine(line_stream);
+		if (method == UNDEFINED || uri.empty() || version.empty())
+			error("Malformed request line", "Request Parser");
 	}
 
 	// Parse headers
-	while (std::getline(request_stream, line) && line != "\r")
+	while (std::getline(request_stream, line))
 	{
-		if (line.empty())
-			throw std::runtime_error("Empty header line encountered");
+
+		// Need to figure out how to handle the last empty newline with out triggering a runtime error
+		if (line.empty() || line == "\r" || line == "\n")
+		{
+			// throw std::runtime_error("Empty header line encountered");
+		}
 
 		std::istringstream line_stream(line);
 		parseHeaders(line_stream);
 	}
 
-	// Extract query parameters if present in URI
+	// Parse query parameters if present in URI
 	if (uri.find('?') != std::string::npos)
 	{
 		size_t pos = uri.find('?');
@@ -79,7 +98,9 @@ void HttpRequest::parseRequestLine(std::istringstream& line_stream)
 		else if (method_str == "DELETE")
 			method = DELETE;
 		else
-			method = UNDEFINED;
+		{
+			error("Unsupported HTTP method: " + UNDEFINED, "Request Parser");
+		}
 	}
 }
 
@@ -93,7 +114,7 @@ void HttpRequest::parseHeaders(std::istringstream& line_stream)
 		value.erase(0, value.find_first_not_of(" \t\r\n"));
 
 		if (key.empty() || value.empty())
-			throw std::runtime_error("Malformed header line: key or value is empty");
+			error("Malformed header line: key or value is empty", "Request Parser");
 
 		headers[key] = value;
 	}

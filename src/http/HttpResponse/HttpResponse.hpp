@@ -1,5 +1,6 @@
 #include "../include/imports.hpp"
 #include "../include/enums.hpp"
+#include "../HttpRequest/HttpRequest.hpp"
 
 #ifndef HTTP_RESPONSE_HPP
 #define HTTP_RESPONSE_HPP
@@ -23,6 +24,14 @@ public:
 	// Main functions
 	std::string generateResponse(e_status_code status, const std::string &body);
 	std::string serializeHeaders(void);
+
+	//Status code
+	HttpResponse badRequest(HttpRequest const &req);
+	// HttpResponse notFound(void);
+	// HttpResponse internalServerSrror(void);
+	// HttpResponse methodNotAllowed(void);
+	// HttpResponse notImplemented(void);
+	// HttpResponse forbidden(void);
 
 	// Getters
 	std::string getVersion() const { return version; };

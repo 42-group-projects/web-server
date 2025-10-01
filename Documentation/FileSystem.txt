@@ -8,11 +8,6 @@
                          │___╱                                                                         
 ---------------------------------------------------------------------------------------
 
-Still a work in progress, I will soon add a method to get the file contents in the cache
-or by reading from the file.
-This method will not be called upon construction of the object to not waste time on getting
-a file that shouldnt be accessed for whatever reason.
-
 FILESSYSTEM USAGE:
 
 - FileSystem::FileSystem(SafePath path)  
@@ -21,6 +16,11 @@ FILESSYSTEM USAGE:
   - Sets file size, last modified time, MIME type, and file permissions (readable, writable, executable)  
   - Determines if the path is a directory  
   - If file does not exist, sets defaults: size=0, lastModified=0, mimeType=NO_FILE, isDirectory=false, readable=false, writable=false, executable=false  
+
+- getFileContents()
+  Returns the contents of the file. The string is not stored at FileSystem construction to not read files for nothing.
+  Return type: const std::string  
+  Usage: fileSystem.getFileContents()
 
 - getPath()  
   Returns the SafePath object used to create the FileSystem  

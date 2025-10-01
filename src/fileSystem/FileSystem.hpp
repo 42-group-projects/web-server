@@ -4,28 +4,31 @@
 #include <algorithm>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <fstream>
+#include <sstream>
 #include <stdexcept>
-#include "SafePath.hpp"
+#include "../src/fileSystem/SafePath.hpp"
 #include "enums.hpp"
 
 class FileSystem
 {
 private:
-	SafePath fullPath;        // "/var/www/html/images/photo.jpg"
-	size_t size;                 // 1024768 (bytes)
-	time_t lastModified;        // 1640995200 (Unix timestamp)
+	SafePath fullPath;
+	size_t size;
+	time_t lastModified;
 	e_mimeType mimeType;
-	bool isExists;                 // true/false
-	bool isDirectory;           // true/false
-	bool isReadable;            // true/false
-	bool isWritable;            // true/false
-	bool isExecutable;            // true/false
+	bool isExists;
+	bool isDirectory;
+	bool isReadable;
+	bool isWritable;
+	bool isExecutable;
 
 	e_mimeType detectMimeType(const SafePath& safePath);
 
 public:
 	FileSystem(SafePath path);
 
+	const std::string getFileContents();
 	const SafePath& getPath() const;
 	size_t getSize() const;
 	time_t getLastModified() const;
@@ -36,3 +39,5 @@ public:
 	bool writable() const;
 	bool executable() const;
 };
+
+std::ostream& operator<<(std::ostream& os, const FileSystem& file);

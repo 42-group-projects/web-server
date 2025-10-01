@@ -1,5 +1,6 @@
 #include "../src/fileSystem/FileSystem.hpp"
-#include "../src/fileSystem/SafePath.hpp"
+#include "../include/globals.hpp"
+#include "../src/errorHandling/ErrorWarning.hpp"
 
 FileSystem::FileSystem(SafePath path) : fullPath(path)
 {
@@ -73,6 +74,18 @@ e_mimeType FileSystem::detectMimeType(const SafePath& safePath)
 	return APPLICATION_OCTET_STREAM;
 }
 
+const std::string FileSystem::getFileContents()
+{
+	std::ifstream file(fullPath.getFullPath().c_str(), std::ios::binary);
+
+	if (!file)
+		error("Couldn't open file '" + fullPath.getFullPath() + "'", "File system");
+
+	std::ostringstream oss;
+	oss << file.rdbuf();
+	return oss.str();
+}
+
 const SafePath& FileSystem::getPath() const { return fullPath; }
 size_t FileSystem::getSize() const { return size; }
 time_t FileSystem::getLastModified() const { return lastModified; }
@@ -82,3 +95,19 @@ bool FileSystem::directory() const { return isDirectory; }
 bool FileSystem::readable() const { return isReadable; }
 bool FileSystem::writable() const { return isWritable; }
 bool FileSystem::executable() const { return isExecutable; }
+
+std::ostream& operator<<(std::ostream& os, const FileSystem& file)
+{
+	os << "Path: " << file.getPath().getFullPath() << std::endl;
+	os << "Requested path: " << file.getPath().getRequestedPath() << std::endl;
+	os << "Size: " << file.getSize() << " bytes\n";
+	os << "Last modified: " << file.getLastModified() << std::endl;
+	os << "MIME type: " << file.getMimeType() << std::endl;
+	os << "Exists: " << file.exists() << std::endl;
+	os << "Directory: " << file.directory() << std::endl;
+	os << "Readable: " << file.readable() << std::endl;
+	os << "Writable: " << file.writable() << std::endl;
+	os << "Executable: " << file.executable() << std::endl << std::endl;
+	os << g_config[file.getPath()] << std::endl;
+	return os;
+}

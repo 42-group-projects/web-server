@@ -14,6 +14,7 @@ private:
 	std::map<std::string, std::string> headers;
 	std::map<std::string, std::string> query_params;
 	std::string body;
+	std::string parsing_error;
 
 	// Helper parsing functions
 	void parseRequestLine(std::istringstream& line_stream);
@@ -38,13 +39,15 @@ public:
 	std::map<std::string, std::string> getHeaders() const { return headers; }
 	std::map<std::string, std::string> getQueryParams() const { return query_params; }
 	std::string getBody() const { return body; }
+	std::string getParsingError() const { return parsing_error; }
 	// Setters
 	void setMethod(e_method m) { method = m; }
 	void setUri(const std::string &u) { uri = u; }
 	void setVersion(const std::string &v) { version = v; }
-	void setBody(const std::string &b) { body = b; }
 	void setHeader(const std::string &key, const std::string &value) { headers[key] = value; }
 	void setQueryParam(const std::string &key, const std::string &value) { query_params[key] = value; }
+	void setBody(const std::string &b) { body = b; }
+	void setParsingError(std::string message ) { parsing_error = message; }
 
 };
 

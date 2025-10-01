@@ -13,6 +13,14 @@ HttpHandler::~HttpHandler()
 HttpResponse HttpHandler::handleRequest(const HttpRequest& req)
 {
 	// will need to implemnt CGI handling here as well
+
+	if(!req.getParsingError().empty())
+	{
+		HttpResponse res;
+		return res.badRequest(req);
+	}
+
+	// also parsing handling error here as well
 	switch (req.getMethod())
 	{
 		case GET:
@@ -36,13 +44,13 @@ HttpResponse HttpHandler::handleGet(const HttpRequest& req)
 	HttpResponse res;
 
 	(void)req; // to avoid unused parameter warning for now
-
-	FileSystem fs(SafePath("/html/index.html"));
-
-	// if (!fs.exists())
-	// {
+	req.displayRequest();
+	FileSystem fs(SafePath(req.getUri()));
+	std::cout << "after fs creation" << std::endl;
+	if (fs.exists())
+	{
 		displayFileSystemInfo(fs);
-	// }
+	}
 	// Implement GET handling logic here
 	return res;
 }
