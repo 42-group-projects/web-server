@@ -22,7 +22,7 @@ public:
 	~HttpResponse();
 
 	// Main functions
-	std::string generateResponse(e_status_code status, const std::string &body);
+	std::string generateResponse(e_status_code status);
 	std::string serializeHeaders(void);
 
 	//Status code

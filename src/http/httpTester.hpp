@@ -7,11 +7,9 @@
 #include "./HttpHandler/HttpHandler.hpp"
 
 
-namespace std
-{
 int http_tester(void)
 {
-	cout << "Starting HTTP Tester..." << endl;
+	std::cout << "Starting HTTP Tester..." <<std::endl;
 	// HttpRequest request(get_request_with_params);
 	// request.parseRequest(get_request_with_params);
 	// request.displayRequest();
@@ -26,7 +24,7 @@ int http_tester(void)
 	// cout << "Generated HTTP Response:\n" << res << endl;
 
 	std::string test_request =
-    "GET /index.html HTTP/1.1\r\n"
+    "GET /index.html http1.1\r\n"
     "Host: www.example.com\r\n"
     "User-Agent: Mozilla/5.0\r\n"
     "Accept: text/html\r\n"
@@ -34,11 +32,11 @@ int http_tester(void)
 
 	HttpHandler handler;
 	HttpResponse res = handler.handleRequest(HttpRequest(test_request));
-	std::string response = res.generateResponse(res.getStatus(), res.getBody());
+	std::string response = res.generateResponse(res.getStatus());
 
 	std::cout << "Generated HTTP Response:\n";
-	std::cout << response << endl;
-	cout << "HTTP Tester Finished." << endl;
+	std::cout << response << std::endl;
+	std::cout << "HTTP Tester Finished." << std::endl;
 	return 0;
 }
-}
+

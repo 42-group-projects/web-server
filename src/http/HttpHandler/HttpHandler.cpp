@@ -49,6 +49,7 @@ HttpResponse HttpHandler::handleGet(const HttpRequest& req)
 	{
 		// displayFileSystemInfo(fs);
 		// std::cout << "File exists and is readable. Preparing response..." << std::endl;
+
 		res.setStatus(OK);
 		res.setVersion(req.getVersion());
 		res.setMimeType(getMimeTypeString(fs.getMimeType()));
