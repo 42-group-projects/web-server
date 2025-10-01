@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
 
 	std::cout << "Web Server Starting..." << std::endl;
 	//uncommnet to run tests
-	std::http_tester();
+	// std::http_tester();
 	std::cout << "Web Server Ending..." << std::endl;
 	return 0;
 }

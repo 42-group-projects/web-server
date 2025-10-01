@@ -40,10 +40,10 @@ std::string HttpResponse::generateResponse(e_status_code status, const std::stri
 std::string HttpResponse::serializeHeaders(void)
 {
 	std::ostringstream res;
-	res << version << " " << status << "\r\n";
+	res << version << " " << status << " " <<  getStatusString(status) <<"\r\n";
 	res << "Content-Type: " << mime_type << "\r\n";
 	res << "Content-Length: " << body.size() << "\r\n";
-	res << "Date: " << get_current_time() << "\r\n";
+	res << "Date: " << getCurrentTime() << "\r\n";
 
 	for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); ++it)
 		res << it->first << ": " << it->second << "\r\n";
@@ -62,7 +62,6 @@ HttpResponse HttpResponse::badRequest(HttpRequest const &req)
 	return *this;
 }
 
-
 std::string HttpResponse::generateMockResponse(void)
 {
 	std::cout << "Generating mock HTTP response..." << std::endl;
@@ -70,7 +69,7 @@ std::string HttpResponse::generateMockResponse(void)
 	status = OK;
 	mime_type = "text/html";
 	// Adding mock header data
-	headers["Date"] = get_current_time();
+	headers["Date"] = getCurrentTime();
 	headers["Server"] = "WebServer/1.0";
 	headers["Connection"] = "keep-alive";
 	headers["Cache-Control"] = "no-cache";
@@ -87,7 +86,7 @@ void HttpResponse::mockData(std::string const &data)
 		status = OK;
 		mime_type = "text/html";
 		headers["Content-Type"] = "text/html";
-		headers["Date"] = get_current_time();
+		headers["Date"] = getCurrentTime();
 		headers["Server"] = "WebServer/1.0";
 		headers["Connection"] = "close";
 		body = "<html><body><h1>Hello, World!</h1></body></html>";
@@ -98,7 +97,7 @@ void HttpResponse::mockData(std::string const &data)
 		status = OK;
 		mime_type = "text/html";
 		headers["Content-Type"] = "text/html";
-		headers["Date"] = get_current_time();
+		headers["Date"] = getCurrentTime();
 		headers["Server"] = "WebServer/1.0";
 		headers["Connection"] = "close";
 		body = data;

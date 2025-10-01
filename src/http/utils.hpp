@@ -6,6 +6,8 @@
 #include "./../fileSystem/FileSystem.hpp"
 #include <string>
 
-std::string get_method_string(e_method method);
-std::string get_current_time();
+std::string getMethodString(e_method method);
+std::string getMimeTypeString(e_mimeType mimeType);
+std::string getStatusString(e_status_code status);
+std::string getCurrentTime();
 void displayFileSystemInfo(FileSystem const &fs);

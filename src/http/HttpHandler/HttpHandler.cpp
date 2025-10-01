@@ -1,4 +1,5 @@
 #include "HttpHandler.hpp"
+#include "../utils.hpp"
 
 HttpHandler::HttpHandler()
 {
@@ -14,13 +15,12 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req)
 {
 	// will need to implemnt CGI handling here as well
 
+	//checking for all parsing errors first
 	if(!req.getParsingError().empty())
 	{
 		HttpResponse res;
 		return res.badRequest(req);
 	}
-
-	// also parsing handling error here as well
 	switch (req.getMethod())
 	{
 		case GET:
@@ -42,16 +42,18 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req)
 HttpResponse HttpHandler::handleGet(const HttpRequest& req)
 {
 	HttpResponse res;
-
-	(void)req; // to avoid unused parameter warning for now
 	req.displayRequest();
+
 	FileSystem fs(SafePath(req.getUri()));
-	std::cout << "after fs creation" << std::endl;
-	if (fs.exists())
+	if (fs.exists() && fs.readable() && !fs.directory())
 	{
-		displayFileSystemInfo(fs);
+		// displayFileSystemInfo(fs);
+		// std::cout << "File exists and is readable. Preparing response..." << std::endl;
+		res.setStatus(OK);
+		res.setVersion(req.getVersion());
+		res.setMimeType(getMimeTypeString(fs.getMimeType()));
+		res.setBody(fs.getFileContents());
 	}
-	// Implement GET handling logic here
 	return res;
 }
 

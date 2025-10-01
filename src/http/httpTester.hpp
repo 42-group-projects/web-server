@@ -33,10 +33,10 @@ int http_tester(void)
     "\r\n";
 
 	HttpHandler handler;
-	// HttpRequest request = HttpRequest(simple_get_request);
-	// request.displayRequest();
 	HttpResponse res = handler.handleRequest(HttpRequest(test_request));
 	std::string response = res.generateResponse(res.getStatus(), res.getBody());
+
+	std::cout << "Generated HTTP Response:\n";
 	std::cout << response << endl;
 	cout << "HTTP Tester Finished." << endl;
 	return 0;

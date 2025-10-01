@@ -143,7 +143,7 @@ void HttpRequest::parseQueryParams(std::string const &query_string)
 void HttpRequest::displayRequest() const
 {
 	std::cout << "-------HTTP REQUEST-------" << std::endl;
-	std::cout << "Method: " << get_method_string(method)
+	std::cout << "Method: " << getMethodString(method)
 	          << "\nURI: " << uri
 	          << "\nVersion: " << version
 	          << std::endl;
