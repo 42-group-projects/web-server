@@ -228,5 +228,3 @@ void displayConfigDetails(ServerConfig const &config)
 		std::cout << "  " << it->first << ": " << it->second << std::endl;
 	}
 }
-
-

@@ -51,13 +51,3 @@ std::string HttpResponse::serializeHeaders(void)
 	res << "\r\n";
 	return res.str();
 }
-
-HttpResponse HttpResponse::badRequest(HttpRequest const &req)
-{
-	this->status = BAD_REQUEST;
-	this->version = req.getVersion();
-	this->mime_type = "text/html";
-	this->body = "<html><body><h1>400 Bad Request</h1></body></html>";
-	this->headers["Connection"] = "close";
-	return *this;
-}

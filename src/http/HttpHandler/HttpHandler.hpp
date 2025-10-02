@@ -16,7 +16,10 @@ class HttpHandler
 		// HttpResponse handlePost(const HttpRequest& req);
 		// HttpResponse handleDelete(const HttpRequest& req);
 		// HttpResponse handleCgi(const HttpRequest& req);
+
+		//Common Http Errors TODO: need to abstract the internal logic of these methods
 		HttpResponse methodNotAllowed(const HttpRequest& req);
+		HttpResponse badRequest(const HttpRequest& req);
 
 	public:
 		// HttpHandler();

@@ -33,7 +33,6 @@ HttpRequest &HttpRequest::operator=(const HttpRequest &other)
 		this->body = other.body;
 		this->query_params = other.query_params;
 		this->parsing_error = other.parsing_error;
-		// Copy other necessary members
 	}
 
 	return *this;

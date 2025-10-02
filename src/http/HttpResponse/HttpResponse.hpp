@@ -25,14 +25,6 @@ public:
 	std::string generateResponse(e_status_code status);
 	std::string serializeHeaders(void);
 
-	//Status code
-	HttpResponse badRequest(HttpRequest const &req);
-	// HttpResponse notFound(void);
-	// HttpResponse internalServerSrror(void);
-	// HttpResponse methodNotAllowed(void);
-	// HttpResponse notImplemented(void);
-	// HttpResponse forbidden(void);
-
 	// Getters
 	std::string getVersion() const { return version; };
 	e_status_code getStatus() const { return status; };
@@ -46,10 +38,6 @@ public:
 	void setMimeType(const std::string &type) { mime_type = type; };
 	void setBody(const std::string &b) { body = b; };
 	void setHeader(const std::string &key, const std::string &value) { headers[key] = value; };
-
-	// For testing purposes
-	std::string generateMockResponse(void);
-	void mockData(std::string const &body);
 };
 
 #endif
