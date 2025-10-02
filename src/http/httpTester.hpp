@@ -6,7 +6,6 @@
 #include "../mock_data/http_response.hpp"
 #include "./HttpHandler/HttpHandler.hpp"
 
-
 int http_tester(ServerConfig g_config)
 {
 	std::cout << "Starting HTTP Tester..." <<std::endl;
@@ -36,4 +35,3 @@ int http_tester(ServerConfig g_config)
 	std::cout << "HTTP Tester Finished." << std::endl;
 	return 0;
 }
-

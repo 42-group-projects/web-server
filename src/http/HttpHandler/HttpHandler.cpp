@@ -1,15 +1,9 @@
 #include "HttpHandler.hpp"
 #include "../utils.hpp"
 
-HttpHandler::HttpHandler(const ServerConfig &config) : config(config)
-{
-	std::cout << "HttpHandler constructor called" << std::endl;
-}
+HttpHandler::HttpHandler(const ServerConfig &config) : config(config) {}
 
-HttpHandler::~HttpHandler()
-{
-	std::cout << "HttpHandler destructor called" << std::endl;
-}
+HttpHandler::~HttpHandler() {}
 
 HttpResponse HttpHandler::handleRequest(const HttpRequest& req)
 {
@@ -77,5 +71,3 @@ HttpResponse HttpHandler::badRequest(const HttpRequest& req)
 	res.setBody(fs.getFileContents());
 	return res;
 }
-
-

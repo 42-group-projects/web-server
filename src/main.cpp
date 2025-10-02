@@ -4,11 +4,9 @@
 #include "http/HttpRequest/HttpRequest.hpp"
 #include "fileSystem/SafePath.hpp"
 #include "http/HttpResponse/HttpResponse.hpp"
-
 #include "http/httpTester.hpp"
 #include "../src/tests/tests.hpp"
-
-#include "fileSystem/FileSystem.hpp" // just for tests
+#include "fileSystem/FileSystem.hpp"
 
 ServerConfig g_config;
 

@@ -13,6 +13,7 @@ class HttpHandler
 	private:
 		const ServerConfig &config;
 		HttpResponse handleGet(const HttpRequest& req);
+		// TODO: implement POST AND DELETE AND CGI
 		// HttpResponse handlePost(const HttpRequest& req);
 		// HttpResponse handleDelete(const HttpRequest& req);
 		// HttpResponse handleCgi(const HttpRequest& req);
@@ -22,7 +23,6 @@ class HttpHandler
 		HttpResponse badRequest(const HttpRequest& req);
 
 	public:
-		// HttpHandler();
 		HttpHandler(const ServerConfig &config);
 		~HttpHandler();
 		HttpResponse handleRequest(const HttpRequest& req);
