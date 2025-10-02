@@ -1,5 +1,6 @@
 #include "../include/imports.hpp"
 #include "../include/enums.hpp"
+#include "../HttpRequest/HttpRequest.hpp"
 
 #ifndef HTTP_RESPONSE_HPP
 #define HTTP_RESPONSE_HPP
@@ -21,7 +22,7 @@ public:
 	~HttpResponse();
 
 	// Main functions
-	std::string generateResponse(e_status_code status, const std::string &body);
+	std::string generateResponse(e_status_code status);
 	std::string serializeHeaders(void);
 
 	// Getters
@@ -37,10 +38,6 @@ public:
 	void setMimeType(const std::string &type) { mime_type = type; };
 	void setBody(const std::string &b) { body = b; };
 	void setHeader(const std::string &key, const std::string &value) { headers[key] = value; };
-
-	// For testing purposes
-	std::string generateMockResponse(void);
-	void mockData(std::string const &body);
 };
 
 #endif
