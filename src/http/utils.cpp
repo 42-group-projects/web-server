@@ -206,13 +206,27 @@ void displayFileSystemInfo(FileSystem const &fs)
 	std::cout << "-------FILESYSTEM INFO-------" << std::endl;
 	std::cout << "Path: " << fs.getPath().getFullPath() << std::endl;
 	std::cout << "Size: " << fs.getSize() << " bytes" << std::endl;
-	// std::cout << "Last Modified: " << ctime(&fs.getLastModified());
 	std::cout << "MIME Type: " << fs.getMimeType() << std::endl;
 	std::cout << "Exists: " << (fs.exists() ? "Yes" : "No") << std::endl;
 	std::cout << "Directory: " << (fs.directory() ? "Yes" : "No") << std::endl;
 	std::cout << "Readable: " << (fs.readable() ? "Yes" : "No") << std::endl;
 	std::cout << "Writable: " << (fs.writable() ? "Yes" : "No") << std::endl;
 	std::cout << "Executable: " << (fs.executable() ? "Yes" : "No") << std::endl;
+}
+
+void displayConfigDetails(ServerConfig const &config)
+{
+	std::cout << "-------SERVER CONFIG DETAILS-------" << std::endl;
+	std::cout << "Root: " << config.getRoot() << std::endl;
+	std::cout << "Server Name: " << config.getServerName() << std::endl;
+	std::cout << "Client Max Body Size: " << config.getClientMaxBodySize() << " bytes" << std::endl;
+
+	std::cout << "\nError Pages:" << std::endl;
+	std::map<int, std::string> errorPages = config.getErrorPages();
+	for (std::map<int, std::string>::const_iterator it = errorPages.begin(); it != errorPages.end(); ++it)
+	{
+		std::cout << "  " << it->first << ": " << it->second << std::endl;
+	}
 }
 
 

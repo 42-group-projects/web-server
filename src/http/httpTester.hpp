@@ -7,7 +7,7 @@
 #include "./HttpHandler/HttpHandler.hpp"
 
 
-int http_tester(void)
+int http_tester(ServerConfig g_config)
 {
 	std::cout << "Starting HTTP Tester..." <<std::endl;
 	// HttpRequest request(get_request_with_params);
@@ -24,13 +24,15 @@ int http_tester(void)
 	// cout << "Generated HTTP Response:\n" << res << endl;
 
 	std::string test_request =
-    "GET /index.html http1.1\r\n"
+    "YEET /index.html http1.1\r\n"
     "Host: www.example.com\r\n"
     "User-Agent: Mozilla/5.0\r\n"
     "Accept: text/html\r\n"
     "\r\n";
 
-	HttpHandler handler;
+	displayConfigDetails(g_config);
+
+	HttpHandler handler(g_config);
 	HttpResponse res = handler.handleRequest(HttpRequest(test_request));
 	std::string response = res.generateResponse(res.getStatus());
 

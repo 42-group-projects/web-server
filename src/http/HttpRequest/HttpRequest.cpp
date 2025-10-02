@@ -53,7 +53,7 @@ void HttpRequest::parseRequest(const std::string &request)
 
 		std::istringstream line_stream(line);
 		parseRequestLine(line_stream);
-		if (method == UNDEFINED || uri.empty() || version.empty())
+		if (uri.empty() || version.empty())
 			error("Malformed request line", "Request Parser");
 	}
 
@@ -98,9 +98,7 @@ void HttpRequest::parseRequestLine(std::istringstream& line_stream)
 		else if (method_str == "DELETE")
 			method = DELETE;
 		else
-		{
-			error("Unsupported HTTP method: " + UNDEFINED, "Request Parser");
-		}
+			method = UNDEFINED;
 	}
 }
 
