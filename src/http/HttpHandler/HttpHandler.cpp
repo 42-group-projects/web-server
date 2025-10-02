@@ -66,18 +66,12 @@ HttpResponse HttpHandler::handleGet(const HttpRequest& req)
 HttpResponse HttpHandler::methodNotAllowed(const HttpRequest& req)
 {
 	HttpResponse res;
-	// config.getErrorPages();
 	std::map<int, std::string> errorPages = config.getErrorPages();
-	for (std::map<int, std::string>::const_iterator it = errorPages.begin(); it != errorPages.end(); ++it)
-	{
-		std::cout << "  " << it->first << ": " << it->second << std::endl;
-	}
+	FileSystem fs(errorPages[METHOD_NOT_ALLOWED]);
 
 	res.setStatus(METHOD_NOT_ALLOWED);
 	res.setVersion(req.getVersion());
-	res.setMimeType("text/html"); // need to figure this out later
-	res.setBody(errorPages[METHOD_NOT_ALLOWED]); // need to figure this out later
-
-	res.setHeader("Connection", "close");
+	res.setMimeType(getMimeTypeString(fs.getMimeType()));
+	res.setBody(fs.getFileContents());
 	return res;
 }
