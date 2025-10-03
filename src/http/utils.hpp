@@ -14,4 +14,4 @@ std::string getCurrentTime();
 void displayFileSystemInfo(FileSystem const &fs);
 void displayConfig(ServerConfig const &config);
 void displayServerConfigDetails(ServerConfig const &config);
-void displayLocationConfigDetails(std::map<std::string, LocationConfig> const &locations);
+void displayLocationConfigDetails(LocationConfig const &location);

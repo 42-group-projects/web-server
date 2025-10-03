@@ -10,7 +10,7 @@ HttpRequest::~HttpRequest() {}
 HttpRequest::HttpRequest(const std::string &raw_request) : method(UNDEFINED), uri(""), version(""), parsing_error("")
 {
 	//comment out if nessisary
-		this->displayRequest();
+		// this->displayRequest();
 	try
 	{
 		this->parseRequest(raw_request);
@@ -34,7 +34,6 @@ HttpRequest &HttpRequest::operator=(const HttpRequest &other)
 		this->query_params = other.query_params;
 		this->parsing_error = other.parsing_error;
 	}
-
 	return *this;
 }
 
@@ -143,7 +142,7 @@ void HttpRequest::parseQueryParams(std::string const &query_string)
 
 void HttpRequest::displayRequest() const
 {
-	std::cout << "-------HTTP REQUEST-------" << std::endl;
+	std::cout << "\n-------HTTP REQUEST-------" << std::endl;
 	std::cout << "Method: " << getMethodString(method)
 	          << "\nURI: " << uri
 	          << "\nVersion: " << version

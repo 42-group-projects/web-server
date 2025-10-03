@@ -48,8 +48,6 @@ public:
 	void setQueryParam(const std::string &key, const std::string &value) { query_params[key] = value; }
 	void setBody(const std::string &b) { body = b; }
 	void setParsingError(std::string message ) { parsing_error = message; }
-
 };
-
 
 #endif

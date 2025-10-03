@@ -29,20 +29,19 @@ int http_tester(ServerConfig g_config)
 	"Host: www.example.com\r\n"
 	"User-Agent: Mozilla/5.0\r\n"
 	"Content-Type: application/json\r\n"
-	"Content-Length: 27\r\n"
+	"Content-Length: 32\r\n"
 	"\r\n"
 	"{\"key1\":\"value1\",\"key2\":2}";
 
-	// displayConfig(g_config);
 	HttpHandler handler(g_config);
 	HttpRequest req(post_request_with_json);
 	req.displayRequest();
 
 	HttpResponse res = handler.handleRequest(HttpRequest(post_request_with_json));
-	// std::string response = res.generateResponse(res.getStatus());
-
+	std::string response = res.generateResponse(res.getStatus());
+	std::cout << "\n-------HTTP RESPONSE-------" << std::endl;
 	std::cout << "Generated HTTP Response:\n";
-	// std::cout << response << std::endl;
+	std::cout << response << std::endl;
 	std::cout << "HTTP Tester Finished." << std::endl;
 	return 0;
 }

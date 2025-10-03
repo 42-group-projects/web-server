@@ -65,7 +65,7 @@ HttpResponse HttpHandler::handlePost(const HttpRequest& req)
 
 	FileSystem fs(SafePath(req.getUri()));
 	LocationConfig location_config = config[fs];
-	// displayLocationConfigDetails(location_config);
+	displayLocationConfigDetails(location_config);
 	// displayServerConfigDetails(config);
 	// displayFileSystemInfo(fs);
 	

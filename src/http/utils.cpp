@@ -253,6 +253,26 @@ void displayServerConfigDetails(ServerConfig const &config)
 	// displayLocationConfigDetails(config.getLocations());
 }
 
+// struct LocationConfig
+// {
+// 	std::string location;
+
+// 	bool getAllowed;
+// 	bool postAllowed;
+// 	bool deleteAllowed;
+// 	std::string root;
+// 	std::string index;
+// 	bool autoindex;
+
+// 	bool redirect_enabled;
+// 	std::string redirect_url;
+// 	int redirect_code;
+
+// 	bool upload_enabled;
+// 	std::string upload_store;
+
+// 	std::map<std::string, std::string> cgi_pass;
+// };
 
 void displayLocationConfigDetails(LocationConfig const &location)
 {
@@ -260,53 +280,19 @@ void displayLocationConfigDetails(LocationConfig const &location)
 	std::cout << "Location: " << location.location << std::endl;
 	std::cout << "Root: " << location.root << std::endl;
 	std::cout << "Index: " << location.index << std::endl;
-	std::cout << "Autoindex: " << (location.autoindex ? "Enabled" : "Disabled") << std::endl;
-
-	std::cout << "Allowed Methods:" << std::endl;
-	std::cout << "  GET: " << (location.getAllowed ? "Yes" : "No") << std::endl;
-	std::cout << "  POST: " << (location.postAllowed ? "Yes" : "No") << std::endl;
-	std::cout << "  DELETE: " << (location.deleteAllowed ? "Yes" : "No") << std::endl;
-
-	std::cout << "Redirection:" << std::endl;
-	if (location.redirect_enabled)
-	{
-		std::cout << "  Enabled: Yes" << std::endl;
-		std::cout << "  URL: " << location.redirect_url << std::endl;
-		std::cout << "  Code: " << location.redirect_code << std::endl;
-	}
-	else
-	{
-		std::cout << "  Enabled: No" << std::endl;
-	}
-
-	std::cout << "Upload:" << std::endl;
-	if (location.upload_enabled)
-	{
-		std::cout << "  Enabled: Yes" << std::endl;
-		std::cout << "  Store: " << location.upload_store << std::endl;
-	}
-	else
-	{
-		std::cout << "  Enabled: No" << std::endl;
-	}
-
+	std::cout << "Autoindex: " << (location.autoindex ? "Enabled" :	 "Disabled") << std::endl;
+	std::cout << "GET Allowed: " << (location.getAllowed ? "Yes" : "No") << std::endl;
+	std::cout << "POST Allowed: " << (location.postAllowed ? "Yes" : "No") << std::endl;
+	std::cout << "DELETE Allowed: " << (location.deleteAllowed ? "Yes" : "No") << std::endl;
+	std::cout << "Redirect Enabled: " << (location.redirect_enabled ? "Yes" : "No") << std::endl;
+	std::cout << "Redirect Enabled: " << (location.redirect_enabled ? "Yes" : "No") << std::endl;
+	std::cout << "Redirect URL: " << location.redirect_url << std::endl;
+	std::cout << "Redirect Code: " << location.redirect_code << std::endl;
+	std::cout << "Upload Enabled: " << (location.upload_enabled ? "Yes" : "No") << std::endl;
+	std::cout << "Upload Store: " << location.upload_store << std::endl;
 	std::cout << "CGI Pass:" << std::endl;
-	if (!location.cgi_pass.empty())
+	for (std::map<std::string, std::string>::const_iterator it = location.cgi_pass.begin(); it != location.cgi_pass.end(); ++it)
 	{
-		for (std::map<std::string, std::string>::const_iterator it = location.cgi_pass.begin(); it != location.cgi_pass.end(); ++it)
-		{
-			std::cout << "  " << it->first << ": " << it->second << std::endl;
-		}
+		std::cout << "  " << it->first << ": " << it->second << std::endl;
 	}
 }
-
-// void displayLocationConfigDetails(std::map<std::string, LocationConfig> const &locations)
-// {
-//     std::cout << "=== ALL LOCATION CONFIGS ===" << std::endl;
-//     for (const auto &pair : locations) {
-//         std::cout << "Location path: " << pair.first << std::endl;
-//         displayLocationConfigDetails(pair.second);
-//         std::cout << std::endl;
-//     }
-//     std::cout << "===========================" << std::endl;
-// }
