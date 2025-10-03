@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
 		catch (const std::runtime_error& e) {std::cerr << e.what() << std::endl; return 1;}
 
 	//uncommnet to run tests
-	// http_tester(g_config);
+	http_tester(g_config);
 	std::cout << "Web Server Ending..." << std::endl;
 	return 0;
 }

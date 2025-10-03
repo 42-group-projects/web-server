@@ -214,7 +214,7 @@ void displayFileSystemInfo(FileSystem const &fs)
 	std::cout << "Executable: " << (fs.executable() ? "Yes" : "No") << std::endl;
 }
 
-void displayConfigDetails(ServerConfig const &config)
+void displayConfig(ServerConfig const &config)
 {
 	std::cout << "-------SERVER CONFIG DETAILS-------" << std::endl;
 	std::cout << "Root: " << config.getRoot() << std::endl;
@@ -228,3 +228,85 @@ void displayConfigDetails(ServerConfig const &config)
 		std::cout << "  " << it->first << ": " << it->second << std::endl;
 	}
 }
+
+void displayServerConfigDetails(ServerConfig const &config)
+{
+	std::cout << "-------SERVER CONFIG DETAILS-------" << std::endl;
+	std::cout << "Root: " << config.getRoot() << std::endl;
+	std::cout << "Server Name: " << config.getServerName() << std::endl;
+	std::cout << "Client Max Body Size: " << config.getClientMaxBodySize() << " bytes" << std::endl;
+
+	std::cout << "\nError Pages:" << std::endl;
+	std::map<int, std::string> errorPages = config.getErrorPages();
+	for (std::map<int, std::string>::const_iterator it = errorPages.begin(); it != errorPages.end(); ++it)
+	{
+		std::cout << "  " << it->first << ": " << it->second << std::endl;
+	}
+
+	std::cout << "\nListening on:" << std::endl;
+	std::vector<std::pair<std::string, int> > listen = config.getListen();
+	for (size_t i = 0; i < listen.size(); ++i)
+	{
+		std::cout << "  " << listen[i].first << ":" << listen[i].second << std::endl;
+	}
+
+	// displayLocationConfigDetails(config.getLocations());
+}
+
+
+void displayLocationConfigDetails(LocationConfig const &location)
+{
+	std::cout << "-------LOCATION CONFIG DETAILS-------" << std::endl;
+	std::cout << "Location: " << location.location << std::endl;
+	std::cout << "Root: " << location.root << std::endl;
+	std::cout << "Index: " << location.index << std::endl;
+	std::cout << "Autoindex: " << (location.autoindex ? "Enabled" : "Disabled") << std::endl;
+
+	std::cout << "Allowed Methods:" << std::endl;
+	std::cout << "  GET: " << (location.getAllowed ? "Yes" : "No") << std::endl;
+	std::cout << "  POST: " << (location.postAllowed ? "Yes" : "No") << std::endl;
+	std::cout << "  DELETE: " << (location.deleteAllowed ? "Yes" : "No") << std::endl;
+
+	std::cout << "Redirection:" << std::endl;
+	if (location.redirect_enabled)
+	{
+		std::cout << "  Enabled: Yes" << std::endl;
+		std::cout << "  URL: " << location.redirect_url << std::endl;
+		std::cout << "  Code: " << location.redirect_code << std::endl;
+	}
+	else
+	{
+		std::cout << "  Enabled: No" << std::endl;
+	}
+
+	std::cout << "Upload:" << std::endl;
+	if (location.upload_enabled)
+	{
+		std::cout << "  Enabled: Yes" << std::endl;
+		std::cout << "  Store: " << location.upload_store << std::endl;
+	}
+	else
+	{
+		std::cout << "  Enabled: No" << std::endl;
+	}
+
+	std::cout << "CGI Pass:" << std::endl;
+	if (!location.cgi_pass.empty())
+	{
+		for (std::map<std::string, std::string>::const_iterator it = location.cgi_pass.begin(); it != location.cgi_pass.end(); ++it)
+		{
+			std::cout << "  " << it->first << ": " << it->second << std::endl;
+		}
+	}
+}
+
+// void displayLocationConfigDetails(std::map<std::string, LocationConfig> const &locations)
+// {
+//     std::cout << "=== ALL LOCATION CONFIGS ===" << std::endl;
+//     for (const auto &pair : locations) {
+//         std::cout << "Location path: " << pair.first << std::endl;
+//         displayLocationConfigDetails(pair.second);
+//         std::cout << std::endl;
+//     }
+//     std::cout << "===========================" << std::endl;
+// }

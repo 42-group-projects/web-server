@@ -46,7 +46,16 @@ std::string HttpResponse::serializeHeaders(void)
 	res << "Date: " << getCurrentTime() << "\r\n";
 
 	for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); ++it)
-		res << it->first << ": " << it->second << "\r\n";
+	{
+		if(!it->first.empty() && !it->second.empty())
+		{
+			res << it->first << ": " << it->second << "\r\n";
+		}
+		else
+		{
+			error("Malformed header: key or value is empty", "Response Serializer");
+		}
+	}
 
 	res << "\r\n";
 	return res.str();

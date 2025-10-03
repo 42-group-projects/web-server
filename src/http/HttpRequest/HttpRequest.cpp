@@ -1,7 +1,7 @@
 #include "HttpRequest.hpp"
 #include "../utils.hpp"
 #include "../../../include/imports.hpp"
-#include "../../errorHandling/ErrorWarning.hpp"
+// #include "../../errorHandling/ErrorWarning.hpp"
 
 HttpRequest::HttpRequest() : method(UNDEFINED), uri(""), version(""), parsing_error(""){}
 
@@ -59,11 +59,10 @@ void HttpRequest::parseRequest(const std::string &request)
 	// Parse headers
 	while (std::getline(request_stream, line))
 	{
-
-		// Need to figure out how to handle the last empty newline with out triggering a runtime error
 		if (line.empty() || line == "\r" || line == "\n")
 		{
-			// throw std::runtime_error("Empty header line encountered");
+			// Empty line indicates the end of headers and start of body
+			break;
 		}
 
 		std::istringstream line_stream(line);
@@ -80,8 +79,13 @@ void HttpRequest::parseRequest(const std::string &request)
 	}
 
 	// Parse body
-	while (std::getline(request_stream, line))
-		body += line + "\n";
+	std::string body_line;
+	while (std::getline(request_stream, body_line))
+	{
+		if (!body.empty())
+			body += "\n";
+		body += body_line;
+	}
 }
 
 void HttpRequest::parseRequestLine(std::istringstream& line_stream)

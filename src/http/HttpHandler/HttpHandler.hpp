@@ -13,14 +13,12 @@ class HttpHandler
 	private:
 		const ServerConfig &config;
 		HttpResponse handleGet(const HttpRequest& req);
+		HttpResponse handlePost(const HttpRequest& req);
 		// TODO: implement POST AND DELETE AND CGI
-		// HttpResponse handlePost(const HttpRequest& req);
 		// HttpResponse handleDelete(const HttpRequest& req);
 		// HttpResponse handleCgi(const HttpRequest& req);
 
-		//Common Http Errors TODO: need to abstract the internal logic of these methods
-		HttpResponse methodNotAllowed(const HttpRequest& req);
-		HttpResponse badRequest(const HttpRequest& req);
+		HttpResponse handleErrorPages(const HttpRequest& req, e_status_code code);
 
 	public:
 		HttpHandler(const ServerConfig &config);
