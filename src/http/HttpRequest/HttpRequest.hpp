@@ -1,6 +1,6 @@
-
 #include "../../../include/imports.hpp"
 #include "../include/enums.hpp"
+#include "../../errorHandling/ErrorWarning.hpp"
 
 #ifndef HTTP_REQUEST_HPP
 #define HTTP_REQUEST_HPP
@@ -48,8 +48,6 @@ public:
 	void setQueryParam(const std::string &key, const std::string &value) { query_params[key] = value; }
 	void setBody(const std::string &b) { body = b; }
 	void setParsingError(std::string message ) { parsing_error = message; }
-
 };
-
 
 #endif

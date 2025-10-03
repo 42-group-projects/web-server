@@ -1,7 +1,7 @@
 #include "HttpRequest.hpp"
 #include "../utils.hpp"
 #include "../../../include/imports.hpp"
-#include "../../errorHandling/ErrorWarning.hpp"
+// #include "../../errorHandling/ErrorWarning.hpp"
 
 HttpRequest::HttpRequest() : method(UNDEFINED), uri(""), version(""), parsing_error(""){}
 
@@ -9,8 +9,6 @@ HttpRequest::~HttpRequest() {}
 
 HttpRequest::HttpRequest(const std::string &raw_request) : method(UNDEFINED), uri(""), version(""), parsing_error("")
 {
-	//comment out if nessisary
-		this->displayRequest();
 	try
 	{
 		this->parseRequest(raw_request);
@@ -34,10 +32,8 @@ HttpRequest &HttpRequest::operator=(const HttpRequest &other)
 		this->query_params = other.query_params;
 		this->parsing_error = other.parsing_error;
 	}
-
 	return *this;
 }
-
 
 void HttpRequest::parseRequest(const std::string &request)
 {
@@ -59,11 +55,10 @@ void HttpRequest::parseRequest(const std::string &request)
 	// Parse headers
 	while (std::getline(request_stream, line))
 	{
-
-		// Need to figure out how to handle the last empty newline with out triggering a runtime error
 		if (line.empty() || line == "\r" || line == "\n")
 		{
-			// throw std::runtime_error("Empty header line encountered");
+			// Empty line indicates the end of headers and start of body
+			break;
 		}
 
 		std::istringstream line_stream(line);
@@ -80,8 +75,13 @@ void HttpRequest::parseRequest(const std::string &request)
 	}
 
 	// Parse body
-	while (std::getline(request_stream, line))
-		body += line + "\n";
+	std::string body_line;
+	while (std::getline(request_stream, body_line))
+	{
+		if (!body.empty())
+			body += "\n";
+		body += body_line;
+	}
 }
 
 void HttpRequest::parseRequestLine(std::istringstream& line_stream)
@@ -139,7 +139,7 @@ void HttpRequest::parseQueryParams(std::string const &query_string)
 
 void HttpRequest::displayRequest() const
 {
-	std::cout << "-------HTTP REQUEST-------" << std::endl;
+	std::cout << "\n-------HTTP REQUEST-------" << std::endl;
 	std::cout << "Method: " << getMethodString(method)
 	          << "\nURI: " << uri
 	          << "\nVersion: " << version
