@@ -9,8 +9,6 @@ HttpRequest::~HttpRequest() {}
 
 HttpRequest::HttpRequest(const std::string &raw_request) : method(UNDEFINED), uri(""), version(""), parsing_error("")
 {
-	//comment out if nessisary
-		// this->displayRequest();
 	try
 	{
 		this->parseRequest(raw_request);
@@ -36,7 +34,6 @@ HttpRequest &HttpRequest::operator=(const HttpRequest &other)
 	}
 	return *this;
 }
-
 
 void HttpRequest::parseRequest(const std::string &request)
 {

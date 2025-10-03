@@ -19,13 +19,14 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req)
 		{
 			case GET:
 				return handleGet(req);
-			
+
 			case POST:
 			 	return handlePost(req);
-				// return handleErrorPages(req, METHOD_NOT_ALLOWED);
+
 			case DELETE:
-			//  return handleDelete(req);
 				return handleErrorPages(req, METHOD_NOT_ALLOWED);
+			//  return handleDelete(req);
+
 			default:
 				return handleErrorPages(req, METHOD_NOT_ALLOWED);
 		}
@@ -33,7 +34,7 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req)
 	catch(const std::exception& e)
 	{	
 		std::cerr << e.what() << '\n';
-		// return handleErrorPages(req, INTERNAL_SERVER_ERROR);
+		//TODO: fiuger out what kind of response we want to send back here...
 		return HttpResponse();
 	}
 }
@@ -41,7 +42,6 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req)
 HttpResponse HttpHandler::handleGet(const HttpRequest& req)
 {
 	HttpResponse res;
-	// req.displayRequest();
 	res.setVersion(req.getVersion());
 
 	FileSystem fs(SafePath(req.getUri()));
@@ -65,14 +65,9 @@ HttpResponse HttpHandler::handlePost(const HttpRequest& req)
 
 	FileSystem fs(SafePath(req.getUri()));
 	LocationConfig location_config = config[fs];
-	displayLocationConfigDetails(location_config);
+	// displayLocationConfigDetails(location_config);
 	// displayServerConfigDetails(config);
 	// displayFileSystemInfo(fs);
-	
-
-
-	//post handling logic to be implemented
-
 	return res;
 }
 

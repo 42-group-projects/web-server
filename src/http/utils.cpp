@@ -249,30 +249,7 @@ void displayServerConfigDetails(ServerConfig const &config)
 	{
 		std::cout << "  " << listen[i].first << ":" << listen[i].second << std::endl;
 	}
-
-	// displayLocationConfigDetails(config.getLocations());
 }
-
-// struct LocationConfig
-// {
-// 	std::string location;
-
-// 	bool getAllowed;
-// 	bool postAllowed;
-// 	bool deleteAllowed;
-// 	std::string root;
-// 	std::string index;
-// 	bool autoindex;
-
-// 	bool redirect_enabled;
-// 	std::string redirect_url;
-// 	int redirect_code;
-
-// 	bool upload_enabled;
-// 	std::string upload_store;
-
-// 	std::map<std::string, std::string> cgi_pass;
-// };
 
 void displayLocationConfigDetails(LocationConfig const &location)
 {

@@ -26,13 +26,11 @@ HttpResponse &HttpResponse::operator=(HttpResponse const &other)
 		this->headers = other.headers;
 		this->body = other.body;
 	}
-
 	return *this;
 }
 
 std::string HttpResponse::generateResponse(e_status_code status)
 {
-	// this is where i want to generate the final response string.
 	this->status = status;
 	return serializeHeaders() + this->getBody();
 }

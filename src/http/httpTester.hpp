@@ -34,10 +34,10 @@ int http_tester(ServerConfig g_config)
 	"{\"key1\":\"value1\",\"key2\":2}";
 
 	HttpHandler handler(g_config);
-	HttpRequest req(post_request_with_json);
+	HttpRequest req(test_request);
 	req.displayRequest();
 
-	HttpResponse res = handler.handleRequest(HttpRequest(post_request_with_json));
+	HttpResponse res = handler.handleRequest(HttpRequest(test_request));
 	std::string response = res.generateResponse(res.getStatus());
 	std::cout << "\n-------HTTP RESPONSE-------" << std::endl;
 	std::cout << "Generated HTTP Response:\n";
