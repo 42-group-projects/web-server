@@ -58,14 +58,16 @@ HttpResponse HttpHandler::handlePost(const HttpRequest& req)
 			}
 			
 			std::cout << "Location config .root " << location_config.root << std::endl;
-
-			// i think i might want to make this a child process so that it does not affect the main process and what directory its in.
+			
+			//TODO: need to change back to original working directory after upload is done
+			// Change to the upload directory
 			if(chdir(location_config.root.c_str()) != 0)
 			{
 				std::cerr << "Failed to change directory to " << location_config.root << std::endl;
 				return handleErrorPages(req, INTERNAL_SERVER_ERROR);
 			}
 			
+			//opening/creating thie file here
 			std::ofstream outfile(filename.c_str(), std::ios::binary);
 			if (!outfile.is_open())
 			{
@@ -76,6 +78,8 @@ HttpResponse HttpHandler::handlePost(const HttpRequest& req)
 				// Write the body to the file
 				outfile << req.getBody();
 				outfile.close();
+
+				// set all the response details here
 				res.setStatus(CREATED);
 				res.setMimeType("text/plain");
 				res.setBody("File uploaded successfully as " + filename + "\n");
@@ -91,9 +95,5 @@ HttpResponse HttpHandler::handlePost(const HttpRequest& req)
 		
 		
 	}
-
-
-
-
 	return res;
 }
