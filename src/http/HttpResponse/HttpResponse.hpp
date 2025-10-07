@@ -1,6 +1,7 @@
 #include "../include/imports.hpp"
 #include "../include/enums.hpp"
 #include "../HttpRequest/HttpRequest.hpp"
+#include "../../errorHandling/ErrorWarning.hpp"
 
 #ifndef HTTP_RESPONSE_HPP
 #define HTTP_RESPONSE_HPP

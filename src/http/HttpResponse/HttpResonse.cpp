@@ -26,13 +26,11 @@ HttpResponse &HttpResponse::operator=(HttpResponse const &other)
 		this->headers = other.headers;
 		this->body = other.body;
 	}
-
 	return *this;
 }
 
 std::string HttpResponse::generateResponse(e_status_code status)
 {
-	// this is where i want to generate the final response string.
 	this->status = status;
 	return serializeHeaders() + this->getBody();
 }
@@ -46,7 +44,16 @@ std::string HttpResponse::serializeHeaders(void)
 	res << "Date: " << getCurrentTime() << "\r\n";
 
 	for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); ++it)
-		res << it->first << ": " << it->second << "\r\n";
+	{
+		if(!it->first.empty() && !it->second.empty())
+		{
+			res << it->first << ": " << it->second << "\r\n";
+		}
+		else
+		{
+			error("Malformed header: key or value is empty", "Response Serializer");
+		}
+	}
 
 	res << "\r\n";
 	return res.str();

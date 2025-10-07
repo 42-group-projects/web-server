@@ -8,66 +8,79 @@ HttpHandler::~HttpHandler() {}
 HttpResponse HttpHandler::handleRequest(const HttpRequest& req)
 {
 	// TODO: will need to implemnt CGI handling here as well
-	if(!req.getParsingError().empty())
+	try
 	{
-		return badRequest(req);
+		if(!req.getParsingError().empty())
+		{
+			return handleErrorPages(req, BAD_REQUEST);
+		}
+		
+		switch (req.getMethod())
+		{
+			case GET:
+				return handleGet(req);
+
+			case POST:
+			 	return handlePost(req);
+
+			case DELETE:
+				return handleErrorPages(req, METHOD_NOT_ALLOWED);
+			//  return handleDelete(req);
+
+			default:
+				return handleErrorPages(req, METHOD_NOT_ALLOWED);
+		}
 	}
-
-	switch (req.getMethod())
-	{
-		case GET:
-			return handleGet(req);
-
-		case POST:
-			// return handlePost(req);
-
-		case DELETE:
-			// return handleDelete(req);
-
-		default:
-			return methodNotAllowed(req);
+	catch(const std::exception& e)
+	{	
+		std::cerr << e.what() << '\n';
+		//TODO: fiuger out what kind of response we want to send back here...
+		return HttpResponse();
 	}
-	return HttpResponse();
 }
 
 HttpResponse HttpHandler::handleGet(const HttpRequest& req)
 {
 	HttpResponse res;
-	req.displayRequest();
+	res.setVersion(req.getVersion());
 
 	FileSystem fs(SafePath(req.getUri()));
-	if (fs.exists() && fs.readable() && !fs.directory())
-	{
-		res.setStatus(OK);
-		res.setVersion(req.getVersion());
-		res.setMimeType(getMimeTypeString(fs.getMimeType()));
-		res.setBody(fs.getFileContents());
-	}
-	return res;
-}
-
-HttpResponse HttpHandler::methodNotAllowed(const HttpRequest& req)
-{
-	HttpResponse res;
-	std::map<int, std::string> errorPages = config.getErrorPages();
-	FileSystem fs(errorPages[METHOD_NOT_ALLOWED]);
-
-	res.setStatus(METHOD_NOT_ALLOWED);
-	res.setVersion(req.getVersion());
+	if(!fs.exists())
+		return handleErrorPages(req, NOT_FOUND);
+	if(!fs.readable())
+		return handleErrorPages(req, FORBIDDEN);
+	if(fs.directory())
+		return handleErrorPages(req, FORBIDDEN);
+	
+	res.setStatus(OK);
 	res.setMimeType(getMimeTypeString(fs.getMimeType()));
 	res.setBody(fs.getFileContents());
 	return res;
 }
 
-HttpResponse HttpHandler::badRequest(const HttpRequest& req)
+HttpResponse HttpHandler::handlePost(const HttpRequest& req)
+{
+	HttpResponse res;
+	res.setVersion(req.getVersion());
+
+	FileSystem fs(SafePath(req.getUri()));
+	LocationConfig location_config = config[fs];
+	// displayLocationConfigDetails(location_config);
+	// displayServerConfigDetails(config);
+	// displayFileSystemInfo(fs);
+	return res;
+}
+
+HttpResponse HttpHandler::handleErrorPages(const HttpRequest& req, e_status_code response_code)
 {
 	HttpResponse res;
 	std::map<int, std::string> errorPages = config.getErrorPages();
-	FileSystem fs(errorPages[BAD_REQUEST]);
+	FileSystem fs(errorPages[response_code]);
 
-	res.setStatus(BAD_REQUEST);
+	res.setStatus(response_code);
 	res.setVersion(req.getVersion());
 	res.setMimeType(getMimeTypeString(fs.getMimeType()));
+	// add more headers if needed
 	res.setBody(fs.getFileContents());
 	return res;
 }

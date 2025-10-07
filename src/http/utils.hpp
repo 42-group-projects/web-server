@@ -12,4 +12,6 @@ std::string getMimeTypeString(e_mimeType mimeType);
 std::string getStatusString(e_status_code status);
 std::string getCurrentTime();
 void displayFileSystemInfo(FileSystem const &fs);
-void displayConfigDetails(ServerConfig const &config);
+void displayConfig(ServerConfig const &config);
+void displayServerConfigDetails(ServerConfig const &config);
+void displayLocationConfigDetails(LocationConfig const &location);
