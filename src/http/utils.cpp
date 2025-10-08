@@ -151,47 +151,112 @@ std::string getMimeTypeString(e_mimeType mimeType)
 {
 	switch (mimeType)
 	{
-		case NO_FILE:
-			return "no_file";
-
 		case TEXT_HTML:
 			return "text/html";
-
 		case TEXT_CSS:
 			return "text/css";
-
 		case APPLICATION_JAVASCRIPT:
 			return "application/javascript";
-
 		case APPLICATION_JSON:
 			return "application/json";
-
 		case TEXT_PLAIN:
 			return "text/plain";
-
 		case IMAGE_PNG:
 			return "image/png";
-
 		case IMAGE_JPEG:
 			return "image/jpeg";
-
 		case IMAGE_GIF:
 			return "image/gif";
-
 		case APPLICATION_PDF:
 			return "application/pdf";
-
 		case IMAGE_SVG:
 			return "image/svg+xml";
-
 		case APPLICATION_OCTET_STREAM:
 			return "application/octet-stream";
-
 		default:
 			return "unknown";
 	}
 }
 
+e_mimeType getMimeTypeEnum(const std::string mimeTypeStr)
+{
+	// Trim whitespace and control characters (like \r, \n) from the string
+	std::string trimmed = mimeTypeStr;
+	
+	// Remove trailing whitespace and control characters
+	size_t end = trimmed.find_last_not_of(" \t\r\n");
+	if (end != std::string::npos) {
+		trimmed = trimmed.substr(0, end + 1);
+	}
+	
+	// Remove leading whitespace and control characters
+	size_t start = trimmed.find_first_not_of(" \t\r\n");
+	if (start != std::string::npos) {
+		trimmed = trimmed.substr(start);
+	}
+	
+	std::cout << "DEBUG: Original: '" << mimeTypeStr << "' (length: " << mimeTypeStr.length() << ")" << std::endl;
+	std::cout << "DEBUG: Trimmed: '" << trimmed << "' (length: " << trimmed.length() << ")" << std::endl;
+
+	if (trimmed == "text/html")
+		return TEXT_HTML;
+	else if (trimmed == "text/css")
+		return TEXT_CSS;
+	else if (trimmed == "application/javascript")
+		return APPLICATION_JAVASCRIPT;
+	else if (trimmed == "application/json")
+		return APPLICATION_JSON;
+	else if (trimmed == "text/plain")
+		return TEXT_PLAIN;
+	else if (trimmed == "image/png")
+		return IMAGE_PNG;
+	else if (trimmed == "image/jpeg")
+		return IMAGE_JPEG;
+	else if (trimmed == "image/gif")
+		return IMAGE_GIF;
+	else if (trimmed == "application/pdf")
+		return APPLICATION_PDF;
+	else if (trimmed == "image/svg+xml")
+		return IMAGE_SVG;
+	else if (trimmed == "application/octet-stream")
+		return APPLICATION_OCTET_STREAM;
+	else
+	{
+		std::cout << "DEBUG: No match found for trimmed string '" << trimmed << "'" << std::endl;
+		return NO_FILE;
+	}
+}
+
+std::string getMimeTypeExtention(e_mimeType mimeType)
+{
+	switch (mimeType)
+	{
+		case TEXT_HTML:
+			return ".html";
+		case TEXT_CSS:
+			return ".css";
+		case APPLICATION_JAVASCRIPT:
+			return ".js";
+		case APPLICATION_JSON:
+			return ".json";
+		case TEXT_PLAIN:
+			return ".txt";
+		case IMAGE_PNG:
+			return ".png";
+		case IMAGE_JPEG:
+			return ".jpg";
+		case IMAGE_GIF:
+			return ".gif";
+		case APPLICATION_PDF:
+			return ".pdf";
+		case IMAGE_SVG:
+			return ".svg";
+		case APPLICATION_OCTET_STREAM:
+			return ".bin";
+		default:
+			return ".unknown";
+	}
+}
 std:: string getCurrentTime()
 {
 	time_t now = time(NULL);

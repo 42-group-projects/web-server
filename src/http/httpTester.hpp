@@ -28,7 +28,8 @@ int http_tester(ServerConfig g_config)
 	"POST /upload http1.1\r\n"
 	"Host: www.example.com\r\n"
 	"User-Agent: Mozilla/5.0\r\n"
-	"Content-Type: application/json\r\n"
+	"Content-Type: text/plain\r\n"
+
 	"Content-Length: 32\r\n"
 	"Content-Disposition: form-data; name=\"uploadedfile\"; filename=\"hello.o\" \r\n"
 	"\r\n"

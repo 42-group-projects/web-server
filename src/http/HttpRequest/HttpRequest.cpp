@@ -137,6 +137,36 @@ void HttpRequest::parseQueryParams(std::string const &query_string)
 	}
 }
 
+std::string HttpRequest::getMimeTypeString() const
+{
+
+	std::map<std::string, std::string>::const_iterator it = headers.find("Content-Type");
+	if (it != headers.end())
+	{
+
+		std::string trimmed = it->second;
+
+		// Remove trailing whitespace and control characters
+		size_t end = trimmed.find_last_not_of(" \t\r\n");
+		if (end != std::string::npos) {
+			trimmed = trimmed.substr(0, end + 1);
+		}
+
+		// Remove leading whitespace and control characters
+		size_t start = trimmed.find_first_not_of(" \t\r\n");
+		if (start != std::string::npos) {
+			trimmed = trimmed.substr(start);
+		}
+
+		return trimmed;
+	}
+	else
+	{
+		error("Content-Type header not found", "HttpRequest::getMimeTypeString");
+	}
+	return "text/plain";
+}
+
 void HttpRequest::displayRequest() const
 {
 	std::cout << "\n-------HTTP REQUEST-------" << std::endl;

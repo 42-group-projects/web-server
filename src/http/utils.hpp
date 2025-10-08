@@ -9,6 +9,8 @@
 
 std::string getMethodString(e_method method);
 std::string getMimeTypeString(e_mimeType mimeType);
+e_mimeType getMimeTypeEnum(const std::string mimeTypeStr);
+std::string getMimeTypeExtention(e_mimeType mimeType);
 std::string getStatusString(e_status_code status);
 std::string getCurrentTime();
 void displayFileSystemInfo(FileSystem const &fs);
