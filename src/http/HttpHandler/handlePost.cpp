@@ -3,19 +3,24 @@
 #include <fstream>
 #include <unistd.h>
 
+std::string formatFileName(const HttpRequest &req);
+
 HttpResponse HttpHandler::handlePost(const HttpRequest& req)
 {
 	HttpResponse res;
 	res.setVersion(req.getVersion());
 	FileSystem fs(SafePath(req.getUri()));
 	LocationConfig location_config = config[fs];
-	displayLocationConfigDetails(location_config);
-	displayFileSystemInfo(fs);
+	// DEBUGIING
+	// displayLocationConfigDetails(location_config);
+	// displayFileSystemInfo(fs);
 
+	// Need to make sure the error handling here is correct
 	if(location_config.postAllowed == false)
 		return handleErrorPages(req, FORBIDDEN);
 	if(req.getBody().size() > config.getClientMaxBodySize())
 		return handleErrorPages(req, CONTENT_TOO_LARGE);
+
 
 	if(location_config.upload_enabled)
 	{
@@ -26,26 +31,7 @@ HttpResponse HttpHandler::handlePost(const HttpRequest& req)
 		}
 
 		std::string upload_path = fs.getPath();
-		std::string filename;
-
-		try
-		{
-			//check to see if there is a filename in the URI or content-disposition header
-		}
-		catch(const std::exception& e)
-		{
-			std::cerr << e.what() << '\n';
-		}
-
-		if(filename.empty())
-		{
-			// generate a unique filename using timestamp and adds file extension based on mime type
-			std::stringstream ss;
-			e_mimeType mime_enum = getMimeTypeEnum(req.getMimeTypeString());
-			std::string ext = getMimeTypeExtention(mime_enum);
-			ss << "upload_file_" << time(NULL) << ext;
-			filename = ss.str();
-		}
+		std::string filename = formatFileName(req);
 
 		try
 		{
@@ -67,9 +53,9 @@ HttpResponse HttpHandler::handlePost(const HttpRequest& req)
 				// set all the response details here
 				res.setStatus(CREATED);
 				res.setMimeType("text/plain");
+				res.setHeader("Location", location_config.upload_store + "/" + filename);
 				res.setBody("File uploaded successfully as " + filename + "\n");
 				return res;
-
 			}
 		}
 		catch(const std::exception& e)
@@ -79,4 +65,31 @@ HttpResponse HttpHandler::handlePost(const HttpRequest& req)
 		}
 	}
 	return res;
+}
+
+
+std::string formatFileName(const HttpRequest &req)
+{
+	std::string filename;
+
+	try
+	{
+		//check to see if there is a filename in the URI or content-disposition header
+	}
+	catch(const std::exception& e)
+	{
+		std::cerr << e.what() << '\n';
+	}
+
+	if(filename.empty())
+	{
+		// generate a unique filename using timestamp and adds file extension based on mime type
+		std::stringstream ss;
+		e_mimeType mime_enum = getMimeTypeEnum(req.getMimeTypeString());
+		std::string ext = getMimeTypeExtention(mime_enum);
+		ss << "upload_file_" << time(NULL) << ext;
+		filename = ss.str();
+	}
+
+	return filename;
 }

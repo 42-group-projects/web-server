@@ -14,7 +14,7 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req)
 		{
 			return handleErrorPages(req, BAD_REQUEST);
 		}
-		
+
 		switch (req.getMethod())
 		{
 			case GET:
@@ -24,15 +24,13 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req)
 			 	return handlePost(req);
 
 			case DELETE:
-				return handleErrorPages(req, NOT_IMPLEMENTED);
-			//  return handleDelete(req);
-
+				return handleDelete(req);
 			default:
 				return handleErrorPages(req, METHOD_NOT_ALLOWED);
 		}
 	}
 	catch(const std::exception& e)
-	{	
+	{
 		std::cerr << e.what() << '\n';
 		//TODO: fiuger out what kind of response we want to send back here...
 		return HttpResponse();

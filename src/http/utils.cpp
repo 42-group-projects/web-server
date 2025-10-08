@@ -180,49 +180,35 @@ std::string getMimeTypeString(e_mimeType mimeType)
 
 e_mimeType getMimeTypeEnum(const std::string mimeTypeStr)
 {
-	// Trim whitespace and control characters (like \r, \n) from the string
-	std::string trimmed = mimeTypeStr;
-	
-	// Remove trailing whitespace and control characters
-	size_t end = trimmed.find_last_not_of(" \t\r\n");
-	if (end != std::string::npos) {
-		trimmed = trimmed.substr(0, end + 1);
-	}
-	
-	// Remove leading whitespace and control characters
-	size_t start = trimmed.find_first_not_of(" \t\r\n");
-	if (start != std::string::npos) {
-		trimmed = trimmed.substr(start);
-	}
-	
-	std::cout << "DEBUG: Original: '" << mimeTypeStr << "' (length: " << mimeTypeStr.length() << ")" << std::endl;
-	std::cout << "DEBUG: Trimmed: '" << trimmed << "' (length: " << trimmed.length() << ")" << std::endl;
+	// Debug output to see what we're actually receiving
+	std::cout << "DEBUG: getMimeTypeEnum received: '" << mimeTypeStr << "'" << std::endl;
+	std::cout << "DEBUG: String length: " << mimeTypeStr.length() << std::endl;
 
-	if (trimmed == "text/html")
+	if (mimeTypeStr == "text/html")
 		return TEXT_HTML;
-	else if (trimmed == "text/css")
+	else if (mimeTypeStr == "text/css")
 		return TEXT_CSS;
-	else if (trimmed == "application/javascript")
+	else if (mimeTypeStr == "application/javascript")
 		return APPLICATION_JAVASCRIPT;
-	else if (trimmed == "application/json")
+	else if (mimeTypeStr == "application/json")
 		return APPLICATION_JSON;
-	else if (trimmed == "text/plain")
+	else if (mimeTypeStr == "text/plain")
 		return TEXT_PLAIN;
-	else if (trimmed == "image/png")
+	else if (mimeTypeStr == "image/png")
 		return IMAGE_PNG;
-	else if (trimmed == "image/jpeg")
+	else if (mimeTypeStr == "image/jpeg")
 		return IMAGE_JPEG;
-	else if (trimmed == "image/gif")
+	else if (mimeTypeStr == "image/gif")
 		return IMAGE_GIF;
-	else if (trimmed == "application/pdf")
+	else if (mimeTypeStr == "application/pdf")
 		return APPLICATION_PDF;
-	else if (trimmed == "image/svg+xml")
+	else if (mimeTypeStr == "image/svg+xml")
 		return IMAGE_SVG;
-	else if (trimmed == "application/octet-stream")
+	else if (mimeTypeStr == "application/octet-stream")
 		return APPLICATION_OCTET_STREAM;
 	else
 	{
-		std::cout << "DEBUG: No match found for trimmed string '" << trimmed << "'" << std::endl;
+		std::cout << "DEBUG: No match found, returning NO_FILE" << std::endl;
 		return NO_FILE;
 	}
 }
