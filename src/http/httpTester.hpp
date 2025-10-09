@@ -30,7 +30,7 @@ int http_tester(ServerConfig g_config)
 	"User-Agent: Mozilla/5.0\r\n"
 	"Content-Type: application/json\r\n"
 	"Content-Length: 32\r\n"
-	// "Content-Disposition: form-data; name=\"uploadedfile\"; filename=\"hello.json\" \r\n"
+	"Content-Disposition: form-data; name=\"uploadedfile\"; filename=\"hello.json\" \r\n"
 	"\r\n"
 	"{\"key1\":\"value1\",\"key2\":2}";
 

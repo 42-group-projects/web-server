@@ -13,6 +13,7 @@ HttpResponse HttpHandler::handlePost(const HttpRequest& req)
 	FileSystem fs(SafePath(req.getUri()));
 	LocationConfig location_config = config[fs];
 
+	//error checking and validations
 	if(location_config.postAllowed == false)
 		return handleErrorPages(req, FORBIDDEN);
 	if(req.getBody().size() > config.getClientMaxBodySize())
@@ -81,7 +82,8 @@ std::string formatFileName(const HttpRequest &req)
 
 	if(file_name.empty())
 	{
-		// TODO: generate a unique filename using timestamp and adds file extension based on mime type
+		// TODO: generate a unique filename not using a timestamp
+		// to avoid potential collisions in high-frequency uploads
 		std::stringstream ss;
 		e_mimeType mime_enum = getMimeTypeEnum(req.getMimeTypeString());
 		std::string ext = getMimeTypeExtention(mime_enum);
