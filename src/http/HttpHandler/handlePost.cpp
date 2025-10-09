@@ -4,6 +4,7 @@
 #include <unistd.h>
 
 std::string formatFileName(const HttpRequest &req);
+std::string getFileNamFromHeader(const HttpRequest &req);
 
 HttpResponse HttpHandler::handlePost(const HttpRequest& req)
 {
@@ -11,11 +12,7 @@ HttpResponse HttpHandler::handlePost(const HttpRequest& req)
 	res.setVersion(req.getVersion());
 	FileSystem fs(SafePath(req.getUri()));
 	LocationConfig location_config = config[fs];
-	// DEBUGIING
-	// displayLocationConfigDetails(location_config);
-	// displayFileSystemInfo(fs);
 
-	// Need to make sure the error handling here is correct
 	if(location_config.postAllowed == false)
 		return handleErrorPages(req, FORBIDDEN);
 	if(req.getBody().size() > config.getClientMaxBodySize())
@@ -31,30 +28,32 @@ HttpResponse HttpHandler::handlePost(const HttpRequest& req)
 		}
 
 		std::string upload_path = fs.getPath();
-		std::string filename = formatFileName(req);
+		std::string file_name = formatFileName(req);
 
 		try
 		{
-			// Create the full file path
-			std::stringstream filepath_ss;
-			filepath_ss << location_config.root << "/" << filename;
-			std::ofstream outfile(filepath_ss.str().c_str(), std::ios::binary);
+			std::stringstream file_path_ss;
+			file_path_ss << location_config.root << "/" << file_name;
 
+			// Ensure the there are no duplicate file names
+			FileSystem check_file(SafePath(req.getUri() + "/" + file_name));
+			if (check_file.exists())
+				error("File already exists: " + file_name, "HttpHandler::handlePost");
+
+			std::ofstream outfile(file_path_ss.str().c_str(), std::ios::binary);
 			if (!outfile.is_open())
 			{
-					error("Failed to open file for writing", "HttpHandler::handlePost");
+				error("Failed to open file for writing", "HttpHandler::handlePost");
 			}
 			else
 			{
-				// Write the body to the file
 				outfile << req.getBody();
 				outfile.close();
 
-				// set all the response details here
 				res.setStatus(CREATED);
 				res.setMimeType("text/plain");
-				res.setHeader("Location", location_config.upload_store + "/" + filename);
-				res.setBody("File uploaded successfully as " + filename + "\n");
+				res.setHeader("Location", location_config.upload_store + "/" + file_name);
+				res.setBody("File uploaded successfully as " + file_name + "\n");
 				return res;
 			}
 		}
@@ -69,26 +68,57 @@ HttpResponse HttpHandler::handlePost(const HttpRequest& req)
 
 std::string formatFileName(const HttpRequest &req)
 {
-	std::string filename;
+	std::string file_name;
 
 	try
 	{
-		//check to see if there is a filename in the URI or content-disposition header
+		file_name  = getFileNamFromHeader(req);
 	}
 	catch(const std::exception& e)
 	{
 		std::cerr << e.what() << '\n';
 	}
 
-	if(filename.empty())
+	if(file_name.empty())
 	{
-		// generate a unique filename using timestamp and adds file extension based on mime type
+		// TODO: generate a unique filename using timestamp and adds file extension based on mime type
 		std::stringstream ss;
 		e_mimeType mime_enum = getMimeTypeEnum(req.getMimeTypeString());
 		std::string ext = getMimeTypeExtention(mime_enum);
 		ss << "upload_file_" << time(NULL) << ext;
-		filename = ss.str();
+		file_name = ss.str();
 	}
 
-	return filename;
+	return file_name;
+}
+
+std::string getFileNamFromHeader(const HttpRequest &req)
+{
+	std::string file_name;
+	std::map<std::string, std::string> headers = req.getHeaders();
+	std::map<std::string, std::string>::const_iterator it = headers.find("Content-Disposition");
+
+	if(it != headers.end())
+	{
+		std::string value = it->second;
+		value.erase(0, value.find_first_not_of(" \"\t\r\n"));
+		value.erase(value.find_last_not_of(" \"\t\r\n") + 1);
+
+		size_t filename_pos = value.find("filename=");
+		if (filename_pos != std::string::npos)
+		{
+			// 9 is the length of "filename="
+			// 1 is for the opening quote
+			size_t start = filename_pos + 9 + 1;
+			size_t end = value.find_first_of(";\r\n", start);
+			if (end == std::string::npos)
+				end = value.length();
+			file_name = value.substr(start, end - start);
+		}
+		else
+		{
+			error("Filename not found in Content-Disposition header", "HttpHandler::getFileNamFromHeader");
+		}
+	}
+	return file_name;
 }

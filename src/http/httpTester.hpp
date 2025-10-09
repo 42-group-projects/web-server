@@ -30,7 +30,7 @@ int http_tester(ServerConfig g_config)
 	"User-Agent: Mozilla/5.0\r\n"
 	"Content-Type: application/json\r\n"
 	"Content-Length: 32\r\n"
-	"Content-Disposition: form-data; name=\"uploadedfile\"; filename=\"hello.o\" \r\n"
+	// "Content-Disposition: form-data; name=\"uploadedfile\"; filename=\"hello.json\" \r\n"
 	"\r\n"
 	"{\"key1\":\"value1\",\"key2\":2}";
 
@@ -42,10 +42,10 @@ int http_tester(ServerConfig g_config)
 	"\r\n";
 
 	HttpHandler handler(g_config);
-	HttpRequest req(delete_request);
+	HttpRequest req(post_request_with_json);
 	req.displayRequest();
 
-	HttpResponse res = handler.handleRequest(HttpRequest(delete_request));
+	HttpResponse res = handler.handleRequest(HttpRequest(post_request_with_json));
 	std::string response = res.generateResponse(res.getStatus());
 	std::cout << "\n-------HTTP RESPONSE-------" << std::endl;
 	std::cout << "Generated HTTP Response:\n";

@@ -19,8 +19,6 @@ HttpResponse HttpHandler::handleDelete(const HttpRequest& req)
 
 	try
 	{
-		// Attempt to delete the file
-		// can i use remove() here?
 		if (std::remove(fs.getPath().getFullPath().c_str()) != 0)
 			error("Error deleting file: " + fs.getPath().getFullPath(), "FileSystem");
 		else
@@ -35,7 +33,6 @@ HttpResponse HttpHandler::handleDelete(const HttpRequest& req)
 		std::cerr << e.what() << '\n';
 		return handleErrorPages(req, INTERNAL_SERVER_ERROR);
 	}
-
 
 	return res;
 }
