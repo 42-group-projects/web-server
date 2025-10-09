@@ -67,7 +67,6 @@ HttpResponse HttpHandler::handlePost(const HttpRequest& req)
 	return res;
 }
 
-
 std::string formatFileName(const HttpRequest &req)
 {
 	std::string filename;

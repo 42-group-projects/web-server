@@ -25,6 +25,7 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req)
 
 			case DELETE:
 				return handleDelete(req);
+
 			default:
 				return handleErrorPages(req, METHOD_NOT_ALLOWED);
 		}
@@ -46,7 +47,6 @@ HttpResponse HttpHandler::handleErrorPages(const HttpRequest& req, e_status_code
 	res.setStatus(response_code);
 	res.setVersion(req.getVersion());
 	res.setMimeType(getMimeTypeString(fs.getMimeType()));
-	// add more headers if needed
 	res.setBody(fs.getFileContents());
 	return res;
 }

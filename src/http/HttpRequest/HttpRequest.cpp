@@ -145,14 +145,11 @@ std::string HttpRequest::getMimeTypeString() const
 	{
 
 		std::string trimmed = it->second;
-
-		// Remove trailing whitespace and control characters
 		size_t end = trimmed.find_last_not_of(" \t\r\n");
 		if (end != std::string::npos) {
 			trimmed = trimmed.substr(0, end + 1);
 		}
 
-		// Remove leading whitespace and control characters
 		size_t start = trimmed.find_first_not_of(" \t\r\n");
 		if (start != std::string::npos) {
 			trimmed = trimmed.substr(start);
