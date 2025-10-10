@@ -151,47 +151,98 @@ std::string getMimeTypeString(e_mimeType mimeType)
 {
 	switch (mimeType)
 	{
-		case NO_FILE:
-			return "no_file";
-
 		case TEXT_HTML:
 			return "text/html";
-
 		case TEXT_CSS:
 			return "text/css";
-
 		case APPLICATION_JAVASCRIPT:
 			return "application/javascript";
-
 		case APPLICATION_JSON:
 			return "application/json";
-
 		case TEXT_PLAIN:
 			return "text/plain";
-
 		case IMAGE_PNG:
 			return "image/png";
-
 		case IMAGE_JPEG:
 			return "image/jpeg";
-
 		case IMAGE_GIF:
 			return "image/gif";
-
 		case APPLICATION_PDF:
 			return "application/pdf";
-
 		case IMAGE_SVG:
 			return "image/svg+xml";
-
 		case APPLICATION_OCTET_STREAM:
 			return "application/octet-stream";
-
 		default:
 			return "unknown";
 	}
 }
 
+e_mimeType getMimeTypeEnum(const std::string mimeTypeStr)
+{
+	// Debug output to see what we're actually receiving
+	std::cout << "DEBUG: getMimeTypeEnum received: '" << mimeTypeStr << "'" << std::endl;
+	std::cout << "DEBUG: String length: " << mimeTypeStr.length() << std::endl;
+
+	if (mimeTypeStr == "text/html")
+		return TEXT_HTML;
+	else if (mimeTypeStr == "text/css")
+		return TEXT_CSS;
+	else if (mimeTypeStr == "application/javascript")
+		return APPLICATION_JAVASCRIPT;
+	else if (mimeTypeStr == "application/json")
+		return APPLICATION_JSON;
+	else if (mimeTypeStr == "text/plain")
+		return TEXT_PLAIN;
+	else if (mimeTypeStr == "image/png")
+		return IMAGE_PNG;
+	else if (mimeTypeStr == "image/jpeg")
+		return IMAGE_JPEG;
+	else if (mimeTypeStr == "image/gif")
+		return IMAGE_GIF;
+	else if (mimeTypeStr == "application/pdf")
+		return APPLICATION_PDF;
+	else if (mimeTypeStr == "image/svg+xml")
+		return IMAGE_SVG;
+	else if (mimeTypeStr == "application/octet-stream")
+		return APPLICATION_OCTET_STREAM;
+	else
+	{
+		std::cout << "DEBUG: No match found, returning NO_FILE" << std::endl;
+		return NO_FILE;
+	}
+}
+
+std::string getMimeTypeExtention(e_mimeType mimeType)
+{
+	switch (mimeType)
+	{
+		case TEXT_HTML:
+			return ".html";
+		case TEXT_CSS:
+			return ".css";
+		case APPLICATION_JAVASCRIPT:
+			return ".js";
+		case APPLICATION_JSON:
+			return ".json";
+		case TEXT_PLAIN:
+			return ".txt";
+		case IMAGE_PNG:
+			return ".png";
+		case IMAGE_JPEG:
+			return ".jpg";
+		case IMAGE_GIF:
+			return ".gif";
+		case APPLICATION_PDF:
+			return ".pdf";
+		case IMAGE_SVG:
+			return ".svg";
+		case APPLICATION_OCTET_STREAM:
+			return ".bin";
+		default:
+			return ".unknown";
+	}
+}
 std:: string getCurrentTime()
 {
 	time_t now = time(NULL);

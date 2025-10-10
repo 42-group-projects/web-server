@@ -14,7 +14,7 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req)
 		{
 			return handleErrorPages(req, BAD_REQUEST);
 		}
-		
+
 		switch (req.getMethod())
 		{
 			case GET:
@@ -24,51 +24,18 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req)
 			 	return handlePost(req);
 
 			case DELETE:
-				return handleErrorPages(req, METHOD_NOT_ALLOWED);
-			//  return handleDelete(req);
+				return handleDelete(req);
 
 			default:
 				return handleErrorPages(req, METHOD_NOT_ALLOWED);
 		}
 	}
 	catch(const std::exception& e)
-	{	
+	{
 		std::cerr << e.what() << '\n';
 		//TODO: fiuger out what kind of response we want to send back here...
 		return HttpResponse();
 	}
-}
-
-HttpResponse HttpHandler::handleGet(const HttpRequest& req)
-{
-	HttpResponse res;
-	res.setVersion(req.getVersion());
-
-	FileSystem fs(SafePath(req.getUri()));
-	if(!fs.exists())
-		return handleErrorPages(req, NOT_FOUND);
-	if(!fs.readable())
-		return handleErrorPages(req, FORBIDDEN);
-	if(fs.directory())
-		return handleErrorPages(req, FORBIDDEN);
-	
-	res.setStatus(OK);
-	res.setMimeType(getMimeTypeString(fs.getMimeType()));
-	res.setBody(fs.getFileContents());
-	return res;
-}
-
-HttpResponse HttpHandler::handlePost(const HttpRequest& req)
-{
-	HttpResponse res;
-	res.setVersion(req.getVersion());
-
-	FileSystem fs(SafePath(req.getUri()));
-	LocationConfig location_config = config[fs];
-	// displayLocationConfigDetails(location_config);
-	// displayServerConfigDetails(config);
-	// displayFileSystemInfo(fs);
-	return res;
 }
 
 HttpResponse HttpHandler::handleErrorPages(const HttpRequest& req, e_status_code response_code)
@@ -80,7 +47,6 @@ HttpResponse HttpHandler::handleErrorPages(const HttpRequest& req, e_status_code
 	res.setStatus(response_code);
 	res.setVersion(req.getVersion());
 	res.setMimeType(getMimeTypeString(fs.getMimeType()));
-	// add more headers if needed
 	res.setBody(fs.getFileContents());
 	return res;
 }

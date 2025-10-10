@@ -14,8 +14,8 @@ class HttpHandler
 		const ServerConfig &config;
 		HttpResponse handleGet(const HttpRequest& req);
 		HttpResponse handlePost(const HttpRequest& req);
-		// TODO: implement POST AND DELETE AND CGI
-		// HttpResponse handleDelete(const HttpRequest& req);
+		HttpResponse handleDelete(const HttpRequest& req);
+		// TODO: handleCgi
 		// HttpResponse handleCgi(const HttpRequest& req);
 
 		HttpResponse handleErrorPages(const HttpRequest& req, e_status_code code);
