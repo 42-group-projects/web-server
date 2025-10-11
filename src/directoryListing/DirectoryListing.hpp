@@ -8,25 +8,26 @@
 
 struct FileEntry
 {
-    std::string name;
-    bool isDir;
+	std::string name;
+	bool isDir;
 };
 
-class DirectoryListing {
+class DirectoryListing
+{
 private:
-    SafePath path;
-    std::string html;
-    static const std::string liStart;
-    static const std::string hrefEnd;
-    static const std::string liEnd;
-    static const std::string htmlTemplate;
+	SafePath path;
+	std::string html;
+	static const std::string liStart;
+	static const std::string hrefEnd;
+	static const std::string liEnd;
+	static const std::string htmlTemplate;
 
-    std::vector<FileEntry> listDir(const std::string& path);
-    std::string createLinkList(std::vector<FileEntry> entries);
+	std::vector<FileEntry> listDir(const std::string& path);
+	std::string createLinkList(std::vector<FileEntry> entries);
 
 public:
-    DirectoryListing(SafePath path);
-    const std::string& getHtml() const;
+	DirectoryListing(SafePath path);
+	const std::string& getHtml() const;
 };
 
 
