@@ -16,11 +16,11 @@ int main(int argc, char *argv[])
 	try {g_config.initServerConfig(argc, argv);}
 		catch (const std::runtime_error& e) {std::cerr << e.what(); return 1;}
 
-	//directory listing test
+	//directory listing and index test
 	//{
-		SafePath sp("/mimeType");
-		DirectoryListing list(sp);
-		std::cout << std::endl << list.getHtml() << std::endl;
+		SafePath sp("/");
+		FileSystem file(sp);
+		std::cout << file << std::endl;
 	//}
 	
 	//uncommnet to run tests

@@ -19,7 +19,7 @@
 #define GET_ALLOWED      true
 #define POST_ALLOWED     false
 #define DELETE_ALLOWED   false
-#define INDEX            "index.html"
+#define INDEX            ""
 #define AUTOINDEX        false
 #define REDIRECT_ENABLED false
 #define REDIRECT_URL     ""
