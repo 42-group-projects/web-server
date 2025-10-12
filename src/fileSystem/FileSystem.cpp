@@ -1,21 +1,60 @@
 #include "../src/fileSystem/FileSystem.hpp"
+#include "../src/directoryListing/DirectoryListing.hpp"
 #include "../include/globals.hpp"
 #include "../src/errorHandling/ErrorWarning.hpp"
 
-FileSystem::FileSystem(SafePath path) : fullPath(path)
+FileSystem::FileSystem(SafePath path) : sp(path)
+{
+	directoryListingStr = "";
+	fillMetadata();
+
+	if (isDirectory)
+	{
+		if (!g_config[sp].index.empty())
+		{
+			SafePath indexSp(sp.getRequestedPath() + "/" + g_config[sp].index);
+			SafePath backup = sp;
+			sp = indexSp;
+			fillMetadata();
+
+			if (!isExists && g_config[sp].autoindex)
+			{
+				sp = backup;
+				fillDirectoryListingMetadata();
+			}
+		}
+		else if (g_config[sp].autoindex)
+			fillDirectoryListingMetadata();
+	}
+}
+
+void FileSystem::fillDirectoryListingMetadata()
+{
+	DirectoryListing listing(sp);
+	directoryListingStr = listing.getHtml();
+	size = directoryListingStr.size();
+	mimeType = TEXT_HTML;
+	isReadable = true;
+	isWritable = false;
+	isExecutable = false;
+	isDirectoryListing = true;
+}
+
+void FileSystem::fillMetadata()
 {
 	struct stat sb;
 
-	if (stat(fullPath.getFullPath().c_str(), &sb) == 0)
+	if (stat(sp.getFullPath().c_str(), &sb) == 0)
 	{
+		isDirectory = S_ISDIR(sb.st_mode);
 		isExists = true;
 		size = sb.st_size;
 		lastModified = sb.st_mtime;
-		mimeType = detectMimeType(path);
-		isDirectory = S_ISDIR(sb.st_mode);
-		isReadable = (access(fullPath.getFullPath().c_str(), R_OK) == 0);
-		isWritable = (access(fullPath.getFullPath().c_str(), W_OK) == 0);
-		isExecutable = (access(fullPath.getFullPath().c_str(), X_OK) == 0);
+		mimeType = detectMimeType(sp);
+		isReadable = (access(sp.getFullPath().c_str(), R_OK) == 0);
+		isWritable = (access(sp.getFullPath().c_str(), W_OK) == 0);
+		isExecutable = (access(sp.getFullPath().c_str(), X_OK) == 0);
+		isDirectoryListing = false;
 	}
 	else
 	{
@@ -27,6 +66,7 @@ FileSystem::FileSystem(SafePath path) : fullPath(path)
 		isReadable = false;
 		isWritable = false;
 		isExecutable = false;
+		isDirectoryListing = false;
 	}
 }
 
@@ -73,24 +113,28 @@ e_mimeType FileSystem::detectMimeType(const SafePath& safePath)
 	return APPLICATION_OCTET_STREAM;
 }
 
-const std::string FileSystem::getFileContents()
+const std::string FileSystem::getFileContents() const
 {
-	std::ifstream file(fullPath.getFullPath().c_str(), std::ios::binary);
+	if (isDirectoryListing)
+		return directoryListingStr;
+
+	std::ifstream file(sp.getFullPath().c_str(), std::ios::binary);
 
 	if (!file)
-		error("Couldn't open file '" + fullPath.getFullPath() + "'", "File system");
+		error("Couldn't open file '" + sp.getFullPath() + "'", "File system");
 
 	std::ostringstream oss;
 	oss << file.rdbuf();
 	return oss.str();
 }
 
-const SafePath& FileSystem::getPath() const { return fullPath; }
+const SafePath& FileSystem::getPath() const { return sp; }
 size_t FileSystem::getSize() const { return size; }
 time_t FileSystem::getLastModified() const { return lastModified; }
 e_mimeType FileSystem::getMimeType() const { return mimeType; }
 bool FileSystem::exists() const { return isExists; }
 bool FileSystem::directory() const { return isDirectory; }
+bool FileSystem::directoryListing() const { return isDirectoryListing; }
 bool FileSystem::readable() const { return isReadable; }
 bool FileSystem::writable() const { return isWritable; }
 bool FileSystem::executable() const { return isExecutable; }
@@ -104,9 +148,11 @@ std::ostream& operator<<(std::ostream& os, const FileSystem& file)
 	os << "MIME type: " << file.getMimeType() << std::endl;
 	os << "Exists: " << file.exists() << std::endl;
 	os << "Directory: " << file.directory() << std::endl;
+	os << "Directory listing: " << file.directoryListing() << std::endl;
 	os << "Readable: " << file.readable() << std::endl;
 	os << "Writable: " << file.writable() << std::endl;
 	os << "Executable: " << file.executable() << std::endl << std::endl;
-	os << g_config[file.getPath()] << std::endl;
+	os << g_config[file.getPath()] << std::endl << std::endl;
+	os << "file contents:" << std::endl << file.getFileContents() << std::endl;
 	return os;
 }

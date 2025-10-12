@@ -22,7 +22,11 @@ FILESSYSTEM USAGE:
   Return type: const std::string  
   Usage: fileSystem.getFileContents()
 
-- getPath()  
+- getPath()
+
+  ⚠️ WARNING ⚠️, if the requested path leads to a directory that has an index, this path wil be changed to the index file's path,
+  which shouldn't be displayed in the browser's search bar. Use the path given to FileSystem instead.
+  
   Returns the SafePath object used to create the FileSystem  
   Return type: const SafePath&  
   Usage: fileSystem.getPath()
