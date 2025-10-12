@@ -26,12 +26,13 @@ private:
 
 	std::string directoryListingStr;
 
+	void fillMetadata();
+	void fillDirectoryListingMetadata();
 	e_mimeType detectMimeType(const SafePath& safePath);
 
 public:
 	FileSystem(SafePath path);
 
-	void fillMetadata();
 	const std::string getFileContents() const;
 	const SafePath& getPath() const;
 	size_t getSize() const;

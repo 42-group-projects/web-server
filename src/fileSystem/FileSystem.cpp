@@ -12,22 +12,32 @@ FileSystem::FileSystem(SafePath path) : sp(path)
 	{
 		if (!g_config[sp].index.empty())
 		{
-			SafePath indexSp(sp.getRequestedPath() + g_config[sp].index);
+			SafePath indexSp(sp.getRequestedPath() + "/" + g_config[sp].index);
+			SafePath backup = sp;
 			sp = indexSp;
 			fillMetadata();
+
+			if (!isExists && g_config[sp].autoindex)
+			{
+				sp = backup;
+				fillDirectoryListingMetadata();
+			}
 		}
 		else if (g_config[sp].autoindex)
-		{
-			DirectoryListing listing(sp);
-			directoryListingStr = listing.getHtml();
-			size = directoryListingStr.size();
-			mimeType = TEXT_HTML;
-			isReadable = true;
-			isWritable = false;
-			isExecutable = false;
-			isDirectoryListing = true;
-		}
+			fillDirectoryListingMetadata();
 	}
+}
+
+void FileSystem::fillDirectoryListingMetadata()
+{
+	DirectoryListing listing(sp);
+	directoryListingStr = listing.getHtml();
+	size = directoryListingStr.size();
+	mimeType = TEXT_HTML;
+	isReadable = true;
+	isWritable = false;
+	isExecutable = false;
+	isDirectoryListing = true;
 }
 
 void FileSystem::fillMetadata()
