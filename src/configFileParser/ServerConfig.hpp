@@ -1,9 +1,19 @@
 #pragma once
 
-#include "../src/fileSystem/FileSystem.hpp"
 #include <iostream>
+#include <cctype>
+#include <algorithm>
+#include <stdexcept>
+#include <sstream>
+#include <fstream>
 #include <vector>
 #include <map>
+
+#include "defaultConfigs.hpp"
+#include "../src/errorHandling/ErrorWarning.hpp"
+
+class FileSystem;
+class SafePath;
 
 struct LocationConfig
 {

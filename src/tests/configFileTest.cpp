@@ -1,7 +1,7 @@
 #include <vector>
 #include <iostream>
 #include <map>
-#include "../src/fileSystem/SafePath.hpp"
+#include "../src/fileSystem/safePath/SafePath.hpp"
 #include "../include/globals.hpp"
 
 void printConfig()

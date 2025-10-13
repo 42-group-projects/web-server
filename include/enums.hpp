@@ -24,8 +24,21 @@ enum e_method
 	DELETE
 };
 
+enum e_error_page_type
+{
+	NOT_ERROR_PAGE,
+	GENERATED_ERROR_PAGE,
+	CONFIG_ERROR_PAGE
+};
+
+
 enum e_status_code
 {
+
+	/*	⚠️ 	If you add or remove anything from this enum, please update the switch in
+			src/fileSystem/errorPageGenerator/ErrorPageGenerator.cpp as well.
+	*/
+
 	// for initialization
 	UNSET = 0,
 

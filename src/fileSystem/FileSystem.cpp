@@ -1,18 +1,24 @@
 #include "../src/fileSystem/FileSystem.hpp"
-#include "../src/directoryListing/DirectoryListing.hpp"
-#include "../include/globals.hpp"
-#include "../src/errorHandling/ErrorWarning.hpp"
 
 FileSystem::FileSystem(SafePath path) : sp(path)
 {
 	directoryListingStr = "";
+	errorPageStr = "";
+	isErrorPage = NOT_ERROR_PAGE;
 	fillMetadata();
 
 	if (isDirectory)
 	{
 		if (!g_config[sp].index.empty())
 		{
-			SafePath indexSp(sp.getRequestedPath() + "/" + g_config[sp].index);
+			std::string newPath;
+
+			if (sp.getRequestedPath()[sp.getRequestedPath().size() - 1] != '/')
+				newPath = sp.getRequestedPath() + "/" + g_config[sp].index;
+			else
+				newPath = sp.getRequestedPath() + g_config[sp].index;
+
+			SafePath indexSp(newPath);
 			SafePath backup = sp;
 			sp = indexSp;
 			fillMetadata();
@@ -38,6 +44,19 @@ void FileSystem::fillDirectoryListingMetadata()
 	isWritable = false;
 	isExecutable = false;
 	isDirectoryListing = true;
+}
+
+void FileSystem::fillGeneratedErrorPageMetadata(e_status_code code)
+{
+	ErrorPageGenerator errorPage(code);
+	errorPageStr = errorPage.getHtml();
+	lastModified = std::time(NULL);
+	size = errorPageStr.size();
+	mimeType = TEXT_HTML;
+	isReadable = true;
+	isWritable = false;
+	isExecutable = false;
+	isDirectoryListing = false;
 }
 
 void FileSystem::fillMetadata()
@@ -118,6 +137,9 @@ const std::string FileSystem::getFileContents() const
 	if (isDirectoryListing)
 		return directoryListingStr;
 
+	if (isErrorPage == GENERATED_ERROR_PAGE)
+		return errorPageStr;
+
 	std::ifstream file(sp.getFullPath().c_str(), std::ios::binary);
 
 	if (!file)
@@ -126,6 +148,41 @@ const std::string FileSystem::getFileContents() const
 	std::ostringstream oss;
 	oss << file.rdbuf();
 	return oss.str();
+}
+
+void FileSystem::errorPage(e_status_code code)
+{
+	std::string errorPagePath;
+	const std::map<int, std::string>& errorPages = g_config.getErrorPages();
+	std::map<int, std::string>::const_iterator it = errorPages.find(static_cast<int>(code));
+
+	if (it != errorPages.end())
+	{
+		errorPagePath = it->second;
+		isErrorPage = CONFIG_ERROR_PAGE;
+		SafePath backup = sp;
+
+		try
+		{
+			SafePath newPath(errorPagePath);
+			sp = newPath;
+			fillMetadata();
+
+			if (!isExists)
+				throw std::runtime_error("Error page does not exist");
+		}
+		catch (const std::runtime_error& e)
+		{
+			sp = backup;
+			isErrorPage = GENERATED_ERROR_PAGE;
+			fillGeneratedErrorPageMetadata(code);
+		}
+	}
+	else
+	{
+		isErrorPage = GENERATED_ERROR_PAGE;
+		fillGeneratedErrorPageMetadata(code);
+	}
 }
 
 const SafePath& FileSystem::getPath() const { return sp; }

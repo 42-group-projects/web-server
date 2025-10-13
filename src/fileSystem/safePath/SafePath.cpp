@@ -1,4 +1,4 @@
-#include "../src/fileSystem/SafePath.hpp"
+#include "../src/fileSystem/safePath/SafePath.hpp"
 #include "../include/globals.hpp"
 #include "../src/errorHandling/ErrorWarning.hpp"
 
