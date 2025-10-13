@@ -7,7 +7,13 @@
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
-#include "../src/fileSystem/SafePath.hpp"
+#include <ctime>
+
+#include "../src/fileSystem/safePath/SafePath.hpp"
+#include "../src/fileSystem/directoryListing/DirectoryListing.hpp"
+#include "../src/fileSystem/errorPageGenerator/ErrorPageGenerator.hpp"
+#include "../include/globals.hpp"
+#include "../src/errorHandling/ErrorWarning.hpp"
 #include "enums.hpp"
 
 class FileSystem
@@ -23,17 +29,22 @@ private:
 	bool isReadable;
 	bool isWritable;
 	bool isExecutable;
+	e_error_page_type isErrorPage;
 
 	std::string directoryListingStr;
+	std::string errorPageStr;
 
 	void fillMetadata();
 	void fillDirectoryListingMetadata();
+	void fillGeneratedErrorPageMetadata(e_status_code code);
 	e_mimeType detectMimeType(const SafePath& safePath);
 
 public:
 	FileSystem(SafePath path);
 
 	const std::string getFileContents() const;
+	void errorPage(e_status_code code);
+
 	const SafePath& getPath() const;
 	size_t getSize() const;
 	time_t getLastModified() const;

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../src/fileSystem/SafePath.hpp"
+#include "../src/fileSystem/safePath/SafePath.hpp"
 #include <dirent.h>
 #include <sys/stat.h>
 #include <vector>
