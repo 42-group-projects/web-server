@@ -16,7 +16,7 @@ void errorPagesTests()
 
 	file.errorPage(NOT_FOUND); 	// Uses enum e_status_code.
 								// This will update the metadata of file to match those of
-								// the error page specified in the config, or a generated 
+								// the error page specified in the config, or a generated
 								// error page if it is not specified or doesn't exist.
 
 	// From here all the usual FileSystem methods can be used to get the metadata and contents
@@ -38,10 +38,10 @@ int main(int argc, char *argv[])
 	try {g_config.initServerConfig(argc, argv);}
 		catch (const std::runtime_error& e) {std::cerr << e.what(); return 1;}
 
-	errorPagesTests();
-	
+	// errorPagesTests();
+
 	//uncommnet to run tests
-	// http_tester(g_config);
+	http_tester();
 	std::cout << "Web Server Ending..." << std::endl;
 	return 0;
 }
