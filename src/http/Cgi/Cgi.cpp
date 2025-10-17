@@ -9,7 +9,12 @@ CgiHandler::~CgiHandler() {}
 bool CgiHandler::isCgiRequest(const HttpRequest& req)
 {
 	FileSystem fs(SafePath(req.getUri()));
+	SafePath safe_path(req.getUri());
 	std::string uri = req.getUri();
+	std::cout << uri << std::endl;
+	std::cout << "Safe Path: " << safe_path << std::endl;
+	std::cout << fs << std::endl;
+
 	if (location_config.cgi_pass.empty() || !fs.exists() || fs.directory() || !fs.readable() || !fs.executable())
 	{
 		return false;
@@ -42,7 +47,7 @@ HttpRequest CgiHandler::runCgi(const HttpRequest& req)
 		std::cout << "CGI Path: " << cgi_path << std::endl;
 		char cwd[PATH_MAX];
    		std::cout << "PWD: " << getcwd(cwd, sizeof(cwd)) << std::endl;
-		setEnvs(req, location_config);
+		// setEnvs(req, location_config);
 	}
 	return request;
 }

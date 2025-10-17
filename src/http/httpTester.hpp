@@ -43,7 +43,7 @@ int http_tester()
 	"\r\n";
 
 	std::string cgi_get_request =
-	"GET /cgi-bin/test.py?param1=value1&param2=value2 HTTP/1.1\r\n"
+	"GET /cgi/test.py?param1=value1&param2=value2 HTTP/1.1\r\n"
 	"Host: www.example.com\r\n"
 	"User-Agent: Mozilla/5.0\r\n"
 	"Accept: text/html\r\n"
