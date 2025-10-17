@@ -71,6 +71,8 @@ void HttpRequest::parseRequest(const std::string &request)
 		size_t pos = uri.find('?');
 		std::string query_string = uri.substr(pos + 1);
 		uri = uri.substr(0, pos);
+		std::cout << "Query String: " << query_string << std::endl;
+		setQuaryString(query_string);
 		parseQueryParams(query_string);
 	}
 

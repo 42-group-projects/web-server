@@ -10,7 +10,7 @@ class CgiHandler
 private:
     const LocationConfig& location_config;
     // Helper methods
-	void setEnvs(const HttpRequest& req, const LocationConfig& config);
+	char **makeEnv(const HttpRequest& req);
 	std::string getQuaryString(const std::string& uri);
 	std::string getCgiPath(std::string uri, const LocationConfig& config);
 	std::string getExtention(const std::string& uri);
