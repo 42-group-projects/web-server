@@ -40,11 +40,6 @@ bool CgiHandler::isCgiRequest(const HttpRequest& req)
 	return false;
 }
 
-void printStringArray(char *arr[], int size) {
-    for (int i = 0; i < size; i++) {
-        printf("%s\n", arr[i]);
-    }
-}
 HttpRequest CgiHandler::runCgi(const HttpRequest& req)
 {
 	HttpRequest request = req;
@@ -52,44 +47,32 @@ HttpRequest CgiHandler::runCgi(const HttpRequest& req)
 	pid_t pid = fork();
 
 	if(pid == 0)
-	{ 
+	{
+		//WIP need to figer out which dir it needs to run in
 		std::cout << "_____________________inside cgi handler__________________________" << std::endl;
 		std::string cgi_path = getCgiPath(req.getUri(), location_config);
-		std::cout << "Locaiton config: " << location_config.root << "/test.sh" << std::endl;
 		char cwd[PATH_MAX];
 		std::cout << "PWD: " << getcwd(cwd, sizeof(cwd)) << std::endl;
-		std::cout << "CGI Path: " << cgi_path.c_str() << std::endl;
-		
-		std::string string;
-		string = location_config.root + "/test.sh";
-		std::cout << "Script path: " << string << std::endl;
-		
-		char *path = strdup(string.c_str());
-		
 
-		// Set up environment variables for CGI
-		char *args[3] = {strdup(cgi_path.c_str()), path, NULL };
-		char **envp = makeEnv(req);
-		// printStringArray(args, 1); // Print first 5 env variables for debugging
-		printStringArray(envp, 5); // Print first 5 env variables for debugging
-		
+		char **args = makeArgs(req);
+		char **envp = makeEnvs(req);
+
 		if(execve(cgi_path.c_str(), args, envp) == -1)
 		{
 			error("Failed to execute CGI script", "CgiHandler::runCgi");
 		}
+		exit(EXIT_FAILURE);
 	}
 	waitpid(pid, NULL, 0);
 	std::cout << "_____________________inside cgi handler__________________________" << std::endl;
 	return request;
 }
 
-char **CgiHandler::makeEnv(const HttpRequest& req)
+char **CgiHandler::makeEnvs(const HttpRequest& req)
 {
 	std::map<std::string, std::string> headers = req.getHeaders();
-	std::string uri = req.getUri();
-	std::string script_name = uri;
+	std::string script_name = req.getUri();
 	std::string query_string = req.getQueryString();
-	std::cout << "Query string in makeEnv: " << query_string << std::endl;
 	std::map<std::string, std::string> env_vars;
 
 	// there are requered
@@ -123,12 +106,31 @@ char **CgiHandler::makeEnv(const HttpRequest& req)
 		envp[i] = strdup(env_entry.c_str());
 		i++;
 	}
-	envp[i] = NULL; // Null-terminate the array
+	envp[i] = NULL;
 	return envp;
 }
 
+char **CgiHandler::makeArgs(const HttpRequest& req)
+{
+	char **args = new char*[3];
+	std::string cgi_path = getCgiPath(req.getUri(), location_config);
+
+	std::string script_filename = req.getUri();
+	size_t last_slash = script_filename.find_last_of('/');
+
+	if (last_slash != std::string::npos)
+	{
+		script_filename = script_filename.substr(last_slash + 1);
+	}
+	std::string scrip_path = location_config.root + "/" +script_filename;
+
+	args[0] = strdup(cgi_path.c_str());
+	args[1] = strdup(scrip_path.c_str());
+	args[2] = NULL;
+	return args;
+}
 std::string CgiHandler::getQuaryString(const std::string& uri)
-{	
+{
 	std::string query_string;
 	size_t query_pos = uri.find('?');
 	if (query_pos != std::string::npos)

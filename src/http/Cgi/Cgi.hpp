@@ -7,18 +7,19 @@
 
 class CgiHandler
 {
-private:
-    const LocationConfig& location_config;
-    // Helper methods
-	char **makeEnv(const HttpRequest& req);
-	std::string getQuaryString(const std::string& uri);
-	std::string getCgiPath(std::string uri, const LocationConfig& config);
-	std::string getExtention(const std::string& uri);
-public:
+	private:
+	    const LocationConfig& location_config;
+	    // Helper methods
+		char **makeEnvs(const HttpRequest& req);
+		char **makeArgs(const HttpRequest& req);
+		std::string getQuaryString(const std::string& uri);
+		std::string getCgiPath(std::string uri, const LocationConfig& config);
+		std::string getExtention(const std::string& uri);
+	public:
 
-    CgiHandler(const LocationConfig& config);
-    ~CgiHandler();
+	    CgiHandler(const LocationConfig& config);
+	    ~CgiHandler();
 
-	bool isCgiRequest(const HttpRequest& req);
-	HttpRequest runCgi(const HttpRequest& req);
+		bool isCgiRequest(const HttpRequest& req);
+		HttpRequest runCgi(const HttpRequest& req);
 };
