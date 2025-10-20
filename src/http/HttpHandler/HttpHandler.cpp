@@ -1,6 +1,6 @@
 #include "HttpHandler.hpp"
 #include "../utils.hpp"
-#include "../Cgi/Cgi.hpp"
+#include "../CgiHandler/CgiHandler.hpp"
 
 HttpHandler::HttpHandler(const ServerConfig &config) : config(config) {}
 

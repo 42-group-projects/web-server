@@ -1,4 +1,4 @@
-#include"Cgi.hpp"
+#include"CgiHandler.hpp"
 #include "../utils.hpp"
 #include <sys/stat.h>
 #include <unistd.h>
