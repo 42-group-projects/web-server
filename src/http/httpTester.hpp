@@ -52,6 +52,8 @@ int http_tester()
 	HttpHandler handler(g_config);
 	HttpResponse res = handler.handleRequest(HttpRequest(cgi_get_request));
 	std::string response = res.generateResponse(res.getStatus());
+
+
 	std::cout << "\n-------HTTP RESPONSE-------" << std::endl;
 	std::cout << "Generated HTTP Response:\n";
 	std::cout << response << std::endl;

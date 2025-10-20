@@ -1,9 +1,17 @@
-#!/usr/bin/env python3
-from datetime import datetime
+#!/usr/bin/python
 
-print("Content-Type: text/html")
-print()
-print(f"<html><body>")
-print(f"<h1>Current Time</h1>")
-print(f"<p>{datetime.now()}</p>")
-print(f"</body></html>")
+import cgi
+
+print("Content-type: text/html\n")
+print("<html>")
+print("<head>")
+print("<title>CGI Example</title>")
+print("</head>")
+print("<body>")
+
+form = cgi.FieldStorage()
+name = form.getvalue("name", "Guest")
+
+print("".format(name))
+print("</body>")
+print("</html>")

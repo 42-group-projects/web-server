@@ -5,8 +5,6 @@
 #include <sys/wait.h>
 #include <cstring>
 
-
-
 CgiHandler::CgiHandler(const LocationConfig& config): location_config(config) {}
 CgiHandler::~CgiHandler() {}
 
@@ -15,7 +13,7 @@ bool CgiHandler::isCgiRequest(const HttpRequest& req)
 	FileSystem fs(SafePath(req.getUri()));
 	SafePath safe_path(req.getUri());
 	std::string uri = req.getUri();
-	std::cout << fs << std::endl;
+	// std::cout << fs << std::endl;
 
 	if (location_config.cgi_pass.empty() || !fs.exists() || fs.directory() || !fs.readable() || !fs.executable())
 	{
@@ -40,19 +38,35 @@ bool CgiHandler::isCgiRequest(const HttpRequest& req)
 	return false;
 }
 
-HttpRequest CgiHandler::runCgi(const HttpRequest& req)
+
+HttpResponse CgiHandler::runCgi(const HttpRequest& req)
 {
 	HttpRequest request = req;
+	std::string output;
+	int pipefd[2];
 
+	if (pipe(pipefd) == -1)
+	{
+		error("pipe() failed", "CgiHandler::runCgi");
+	}
 	pid_t pid = fork();
+	if (pid == -1)
+	{
+		error("fork() failed", "CgiHandler::runCgi");
+	}
 
 	if(pid == 0)
 	{
-		//WIP need to figer out which dir it needs to run in
-		std::cout << "_____________________inside cgi handler__________________________" << std::endl;
+		if (dup2(pipefd[WRITE_FD], STDOUT_FILENO) == -1 || dup2(pipefd[WRITE_FD], STDERR_FILENO) == -1)
+		{
+			error("dup2() failed", "CgiHandler::runCgi");
+		}
+		close(pipefd[READ_FD]);
+		close(pipefd[WRITE_FD]);
+
 		std::string cgi_path = getCgiPath(req.getUri(), location_config);
-		char cwd[PATH_MAX];
-		std::cout << "PWD: " << getcwd(cwd, sizeof(cwd)) << std::endl;
+		// char cwd[PATH_MAX];
+		// std::cout << "PWD: " << getcwd(cwd, sizeof(cwd)) << std::endl;
 
 		char **args = makeArgs(req);
 		char **envp = makeEnvs(req);
@@ -63,9 +77,22 @@ HttpRequest CgiHandler::runCgi(const HttpRequest& req)
 		}
 		exit(EXIT_FAILURE);
 	}
-	waitpid(pid, NULL, 0);
-	std::cout << "_____________________inside cgi handler__________________________" << std::endl;
-	return request;
+	else
+	{
+		// Parent: read child's output
+		close(pipefd[WRITE_FD]);
+		char buf[4096];
+		ssize_t n;
+		while ((n = read(pipefd[READ_FD], buf, sizeof(buf))) > 0)
+		{
+			output.append(buf, n);
+		}
+		close(pipefd[READ_FD]);
+		waitpid(pid, NULL, 0);
+	}
+	//maybe i need to parse the output here and set the response
+
+	return makeResponse(output);
 }
 
 char **CgiHandler::makeEnvs(const HttpRequest& req)
@@ -81,7 +108,6 @@ char **CgiHandler::makeEnvs(const HttpRequest& req)
 	env_vars["SERVER_NAME"] = headers["Host"].c_str();
 	env_vars["SERVER_PROTOCOL"] = req.getVersion().c_str();
 	// env_vars["GATEWAY_INTERFACE", req.getVersion().c_str();
-
 
 	// these are only  if there are in the request
 	if (!query_string.empty())
@@ -161,3 +187,57 @@ std::string CgiHandler::getExtention(const std::string& uri)
 	return uri.substr(dot_pos);
 }
 
+HttpResponse CgiHandler::makeResponse(const std::string& cgi_output)
+{
+	HttpResponse res;
+	size_t header_end = cgi_output.find("\r\n\r\n");
+	if (header_end == std::string::npos)
+	{
+		res.setStatus(INTERNAL_SERVER_ERROR);
+		res.setBody("Malformed CGI response: Missing header-body separator.");
+		return res;
+	}
+
+	std::string header_section = cgi_output.substr(0, header_end);
+	std::string body_section = cgi_output.substr(header_end + 4);
+
+	std::istringstream header_stream(header_section);
+	std::string line;
+	bool status_set = false;
+
+	while (std::getline(header_stream, line))
+	{
+		// if (line.back() == '\r')
+		// 	line.pop_back();
+
+		size_t colon_pos = line.find(':');
+		if (colon_pos != std::string::npos)
+		{
+			std::string key = line.substr(0, colon_pos);
+			std::string value = line.substr(colon_pos + 1);
+			value.erase(0, value.find_first_not_of(" "));
+
+			if (key == "Status")
+			{
+				int status_code = atoi(value.c_str());
+				res.setStatus(static_cast<e_status_code>(status_code));
+				status_set = true;
+			}
+			else if(key == "Content-Type")
+			{
+				res.setMimeType(value);
+			}
+			else
+			{
+				res.setHeader(key, value);
+			}
+		}
+	}
+
+	if (!status_set)
+	{
+		res.setStatus(OK);
+	}
+	res.setBody(body_section);
+	return res;
+}

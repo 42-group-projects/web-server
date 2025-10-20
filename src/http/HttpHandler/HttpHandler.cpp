@@ -11,11 +11,10 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req)
 	try
 	{
 		const LocationConfig location_config = g_config[SafePath(req.getUri())];
-		HttpRequest proccesed_req = req;
 		CgiHandler cgi_handler(location_config);
 		if (cgi_handler.isCgiRequest(req))
 		{
-			proccesed_req = cgi_handler.runCgi(req);
+			return cgi_handler.runCgi(req);
 		}
 	}
 	catch (const std::exception& e)
@@ -24,8 +23,6 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req)
 		std::cerr << "Falling back to standard request handling." << std::endl;
 	}
 
-
-	// NEED TO USE PROCCESD REQ FOR EVERYTHIN AFTER THIS
 	try
 	{
 		if(!req.getParsingError().empty())

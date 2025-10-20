@@ -4,7 +4,11 @@
 #include "../HttpRequest/HttpRequest.hpp"
 #include "../../configFileParser/ServerConfig.hpp"
 #include "../../fileSystem/FileSystem.hpp"
+#include "../HttpResponse/HttpResponse.hpp"
 
+
+#define READ_FD  0
+#define WRITE_FD 1
 class CgiHandler
 {
 	private:
@@ -15,11 +19,13 @@ class CgiHandler
 		std::string getQuaryString(const std::string& uri);
 		std::string getCgiPath(std::string uri, const LocationConfig& config);
 		std::string getExtention(const std::string& uri);
-	public:
+		HttpResponse makeResponse(const std::string& cgi_output);
 
+	public:
 	    CgiHandler(const LocationConfig& config);
 	    ~CgiHandler();
 
 		bool isCgiRequest(const HttpRequest& req);
-		HttpRequest runCgi(const HttpRequest& req);
+		HttpResponse runCgi(const HttpRequest& req);
 };
+
