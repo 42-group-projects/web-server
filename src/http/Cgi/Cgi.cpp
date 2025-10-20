@@ -13,7 +13,6 @@ bool CgiHandler::isCgiRequest(const HttpRequest& req)
 	FileSystem fs(SafePath(req.getUri()));
 	SafePath safe_path(req.getUri());
 	std::string uri = req.getUri();
-	// std::cout << fs << std::endl;
 
 	if (location_config.cgi_pass.empty() || !fs.exists() || fs.directory() || !fs.readable() || !fs.executable())
 	{
@@ -37,7 +36,6 @@ bool CgiHandler::isCgiRequest(const HttpRequest& req)
 	std::cout << "No matching CGI extension found" << std::endl;
 	return false;
 }
-
 
 HttpResponse CgiHandler::runCgi(const HttpRequest& req)
 {
@@ -79,7 +77,7 @@ HttpResponse CgiHandler::runCgi(const HttpRequest& req)
 	}
 	else
 	{
-		// Parent: read child's output
+		// read child's output
 		close(pipefd[WRITE_FD]);
 		char buf[4096];
 		ssize_t n;
@@ -109,7 +107,7 @@ char **CgiHandler::makeEnvs(const HttpRequest& req)
 	env_vars["SERVER_PROTOCOL"] = req.getVersion().c_str();
 	// env_vars["GATEWAY_INTERFACE", req.getVersion().c_str();
 
-	// these are only  if there are in the request
+	// these are only if there are in the request
 	if (!query_string.empty())
 		env_vars["QUERY_STRING"] = query_string.c_str();
 	else
@@ -120,8 +118,6 @@ char **CgiHandler::makeEnvs(const HttpRequest& req)
 		env_vars["CONTENT_TYPE"] = req.getMimeTypeString().c_str();
 		env_vars["CONTENT_LENGTH"] = headers["Content-Length"].c_str();
 	}
-	// set other ENV variables from headers.....
-
 	char **envp = NULL;
 	envp = new char*[env_vars.size() + 1];
 	int i = 0;
@@ -207,9 +203,6 @@ HttpResponse CgiHandler::makeResponse(const std::string& cgi_output)
 
 	while (std::getline(header_stream, line))
 	{
-		// if (line.back() == '\r')
-		// 	line.pop_back();
-
 		size_t colon_pos = line.find(':');
 		if (colon_pos != std::string::npos)
 		{
@@ -233,7 +226,6 @@ HttpResponse CgiHandler::makeResponse(const std::string& cgi_output)
 			}
 		}
 	}
-
 	if (!status_set)
 	{
 		res.setStatus(OK);
