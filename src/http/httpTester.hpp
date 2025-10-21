@@ -50,7 +50,7 @@ int http_tester()
 	"\r\n";
 
 	HttpHandler handler(g_config);
-	HttpResponse res = handler.handleRequest(HttpRequest(cgi_get_request));
+	HttpResponse res = handler.handleRequest(HttpRequest(test_request));
 	std::string response = res.generateResponse(res.getStatus());
 
 
