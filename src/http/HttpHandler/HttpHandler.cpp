@@ -1,5 +1,6 @@
 #include "HttpHandler.hpp"
 #include "../utils.hpp"
+#include "../CgiHandler/CgiHandler.hpp"
 
 HttpHandler::HttpHandler(const ServerConfig &config) : config(config) {}
 
@@ -7,14 +8,27 @@ HttpHandler::~HttpHandler() {}
 
 HttpResponse HttpHandler::handleRequest(const HttpRequest& req)
 {
-	// TODO: will need to implemnt CGI handling here as well
+	try
+	{
+		const LocationConfig location_config = g_config[SafePath(req.getUri())];
+		CgiHandler cgi_handler(location_config);
+		if (cgi_handler.isCgiRequest(req))
+		{
+			return cgi_handler.runCgi(req);
+		}
+	}
+	catch (const std::exception& e)
+	{
+		std::cerr << e.what() << std::endl;
+		std::cerr << "Falling back to standard request handling." << std::endl;
+	}
+
 	try
 	{
 		if(!req.getParsingError().empty())
 		{
 			return handleErrorPages(req, BAD_REQUEST);
 		}
-
 		switch (req.getMethod())
 		{
 			case GET:

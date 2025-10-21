@@ -15,9 +15,8 @@ class HttpHandler
 		HttpResponse handleGet(const HttpRequest& req);
 		HttpResponse handlePost(const HttpRequest& req);
 		HttpResponse handleDelete(const HttpRequest& req);
-		// TODO: handleCgi
-		// HttpResponse handleCgi(const HttpRequest& req);
 
+		//CGI related methods
 		HttpResponse handleErrorPages(const HttpRequest& req, e_status_code code);
 
 	public:
