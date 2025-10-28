@@ -12,7 +12,7 @@ int http_tester()
 	std::cout << "Starting HTTP Tester..." <<std::endl;
 
 	std::string test_request =
-    "GET /redirect/old.html http1.1\r\n"
+    "GET / http1.1\r\n"
     "Host: www.example.com\r\n"
     "User-Agent: Mozilla/5.0\r\n"
     "Accept: text/html\r\n"
@@ -64,7 +64,7 @@ int http_tester()
 
 	std::cout << "\n-------HTTP REQUEST-------" << std::endl;
 	
-	HttpRequest req = HttpRequest(redirect_get_request);
+	HttpRequest req = HttpRequest(test_request);
 	HttpResponse res = handler.handleRequest(req);
 	std::string response = res.generateResponse(res.getStatus());
 
