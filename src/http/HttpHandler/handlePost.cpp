@@ -12,11 +12,11 @@ HttpResponse HttpHandler::handlePost(const HttpRequest& req)
 	res.setVersion(req.getVersion());
 	FileSystem fs(SafePath(req.getUri()));
 	LocationConfig location_config = config[fs];
-	int code = OK;
+	// int code = OK; ( not used )
 
 	if (g_config[fs.getPath()].redirect_enabled)
 	{
-		code = g_config[fs.getPath()].redirect_code;
+		// code = g_config[fs.getPath()].redirect_code;
 		fs = FileSystem(SafePath(g_config[fs.getPath()].redirect_url));
 	}
 

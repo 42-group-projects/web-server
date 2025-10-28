@@ -4,6 +4,7 @@
 #include "http/HttpRequest/HttpRequest.hpp"
 #include "http/HttpResponse/HttpResponse.hpp"
 #include "http/httpTester.hpp"
+#include "network/NetworkManager.hpp"
 
 ServerConfig g_config;
 
@@ -39,8 +40,14 @@ int main(int argc, char *argv[])
 		catch (const std::runtime_error& e) {std::cerr << e.what(); return 1;}
 
 	// errorPagesTests();
-	//uncommnet to run tests
-	http_tester();
+
+	// ネットワークマネージャを起動（最小動作: ヘッダ受信後に固定レスポンスを返す）
+	NetworkManager net;
+	if (!net.init()) {
+		std::cerr << "Failed to initialize network listeners. Exiting." << std::endl;
+		return 1;
+	}
+	net.run();
 	std::cout << "Web Server Ending..." << std::endl;
 	return 0;
 }

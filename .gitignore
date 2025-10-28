@@ -1,4 +1,6 @@
 .vscode
 .DS_Store
 astyle_orig
-
+webserv
+/obj
+/tmp
