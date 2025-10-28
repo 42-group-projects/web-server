@@ -13,11 +13,20 @@ SafePath::SafePath(const std::string& path)
 		error("Unsafe path '" + requestedPath + "'", "SafePath");
 
 	std::vector<std::string> splited = splitPath(path);
+	location = "/";
+	size_t longest = 0;
 
-	if (splited.empty())
-		location = "/";
-	else
-		location = g_config["/" + splited[0]].location;
+	for (std::map<std::string, LocationConfig>::const_iterator it = g_config.getLocations().begin();
+	        it != g_config.getLocations().end(); ++it)
+	{
+		const std::string& loc = it->first;
+
+		if (requestedPath.compare(0, loc.size(), loc) == 0 && loc.size() > longest)
+		{
+			location = loc;
+			longest = loc.size();
+		}
+	}
 
 	std::string root = g_config[location].root;
 

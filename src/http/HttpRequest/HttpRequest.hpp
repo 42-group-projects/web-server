@@ -52,7 +52,6 @@ class   HttpRequest
 		void setQuaryString(const std::string &qs) { quary_string = qs; }
 		void setBody(const std::string &b) { body = b; }
 		void setParsingError(std::string message ) { parsing_error = message; }
-
 };
 
 #endif

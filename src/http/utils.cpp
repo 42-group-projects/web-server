@@ -94,7 +94,7 @@ std::string getStatusString(e_status_code status)
 			return "URI Too Long";
 		case UNSUPPORTED_MEDIA_TYPE:
 			return "Unsupported Media Type";
-		case RANGE_NOT_SATISFIABLEwebserver:
+		case RANGE_NOT_SATISFIABLE:
 			return "Range Not Satisfiable";
 		case EXPECTATION_FAILED:
 			return "Expectation Failed";
@@ -250,6 +250,129 @@ std:: string getCurrentTime()
 	char buffer[100];
 	strftime(buffer, sizeof(buffer), "%a, %d %b %Y %H:%M:%S GMT", tm_info);
 	return std::string(buffer);
+}
+
+e_status_code getStatusCodeFromInt(int code)
+{
+	switch (code)
+	{
+	case 200:
+		return OK;
+	case 201:
+		return CREATED;
+	case 202:
+		return ACCEPTED;
+	case 204:
+		return NO_CONTENT;
+	case 205:
+		return RESET_CONTENT;
+	case 206:
+		return PARTIAL_CONTENT;
+	case 207:
+		return MULTI_STATUS;
+	case 208:
+		return ALREADY_REPORTED;
+	case 226:
+		return IM_USED;
+	case 300:
+		return MULTIPLE_CHOICES;
+	case 301:
+		return MOVED_PERMANENTLY;
+	case 302:
+		return FOUND;
+	case 303:
+		return SEE_OTHER;
+	case 304:
+		return NOT_MODIFIED;
+	case 305:
+		return USE_PROXY;
+	case 307:
+		return TEMPORARY_REDIRECT;
+	case 308:
+		return PERMANENT_REDIRECT;
+	case 400:
+		return BAD_REQUEST;
+	case 401:
+		return UNAUTHORIZED;
+	case 402:
+		return PAYMENT_REQUIRED;
+	case 403:
+		return FORBIDDEN;
+	case 404:
+		return NOT_FOUND;
+	case 405:
+		return METHOD_NOT_ALLOWED;
+	case 406:
+		return NOT_ACCEPTABLE;
+	case 407:
+		return PROXY_AUTHENTICATION_REQUIRED;
+	case 408:
+		return REQUEST_TIMEOUT;
+	case 409:
+		return CONFLICT;
+	case 410:
+		return GONE;
+	case 411:
+		return LENGTH_REQUIRED;
+	case 412:
+		return PRECONDITION_FAILED;
+	case 413:
+		return CONTENT_TOO_LARGE;
+	case 414:
+		return URI_TOO_LONG;
+	case 415:
+		return UNSUPPORTED_MEDIA_TYPE;
+	case 416:
+		return RANGE_NOT_SATISFIABLE;
+	case 417:
+		return EXPECTATION_FAILED;
+	case 418:
+		return IM_A_TEAPOT;
+	case 421:
+		return MISDIRECTED_REQUEST;
+	case 422:
+		return UNPROCESSABLE_ENTITY;
+	case 423:
+		return LOCKED;
+	case 424:
+		return FAILED_DEPENDENCY;
+	case 425:
+		return TOO_EARLY;
+	case 426:
+		return UPGRADE_REQUIRED;
+	case 428:
+		return PRECONDITION_REQUIRED;
+	case 429:
+		return TOO_MANY_REQUESTS;
+	case 431:
+		return REQUEST_HEADER_FIELDS_TOO_LARGE;
+	case 451:
+		return UNAVAILABLE_FOR_LEGAL_REASONS;
+	case 500:
+		return INTERNAL_SERVER_ERROR;
+	case 501:
+		return NOT_IMPLEMENTED;
+	case 502:
+		return BAD_GATEWAY;
+	case 503:
+		return SERVICE_UNAVAILABLE;
+	case 504:
+		return GATEWAY_TIMEOUT;
+	case 505:
+		return VERSION_NOT_SUPPORTED;
+	case 506:
+		return VARIANT_ALSO_NEGOTIATES;
+	case 507:
+		return INSUFFICIENT_STORAGE;
+	case 508:
+		return LOOP_DETECTED;
+	case 510:
+		return NOT_EXTENDED;
+	case 511:
+		return NETWORK_AUTHENTICATION_REQUIRED;
+	default:
+		return UNSET;
+	}
 }
 
 void displayFileSystemInfo(FileSystem const &fs)

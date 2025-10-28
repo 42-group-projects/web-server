@@ -20,7 +20,9 @@ HttpResponse HttpHandler::handleDelete(const HttpRequest& req)
 	try
 	{
 		if (std::remove(fs.getPath().getFullPath().c_str()) != 0)
+		{
 			error("Error deleting file: " + fs.getPath().getFullPath(), "FileSystem");
+		}
 		else
 		{
 			res.setStatus(NO_CONTENT);

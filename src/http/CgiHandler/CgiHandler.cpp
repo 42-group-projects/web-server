@@ -16,7 +16,6 @@ bool CgiHandler::isCgiRequest(const HttpRequest& req)
 
 	if (location_config.cgi_pass.empty() || !fs.exists() || fs.directory() || !fs.readable() || !fs.executable())
 	{
-		std::cout << "CGI pass is empty or file does not exist or is directory or not readable/executable" << std::endl;
 		return false;
 	}
 
