@@ -12,6 +12,13 @@ HttpResponse HttpHandler::handlePost(const HttpRequest& req)
 	res.setVersion(req.getVersion());
 	FileSystem fs(SafePath(req.getUri()));
 	LocationConfig location_config = config[fs];
+	int code = OK;
+
+	if (g_config[fs.getPath()].redirect_enabled)
+	{
+		code = g_config[fs.getPath()].redirect_code;
+		fs = FileSystem(SafePath(g_config[fs.getPath()].redirect_url));
+	}
 
 	//error checking and validations
 	if(location_config.postAllowed == false)
@@ -51,6 +58,7 @@ HttpResponse HttpHandler::handlePost(const HttpRequest& req)
 				outfile << req.getBody();
 				outfile.close();
 
+				// do i need to over ride this status code if there is a redirection?
 				res.setStatus(CREATED);
 				res.setMimeType("text/plain");
 				res.setHeader("Location", location_config.upload_store + "/" + file_name);

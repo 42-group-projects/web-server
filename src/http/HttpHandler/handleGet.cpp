@@ -6,7 +6,17 @@ HttpResponse HttpHandler::handleGet(const HttpRequest& req)
 	HttpResponse res;
 	res.setVersion(req.getVersion());
 
-	FileSystem fs(SafePath(req.getUri()));
+	FileSystem fs = SafePath(req.getUri());
+	LocationConfig location_config = config[fs];
+	int code = OK;
+
+	if (g_config[fs.getPath()].redirect_enabled)
+	{
+		code = g_config[fs.getPath()].redirect_code;
+		fs = FileSystem(SafePath(g_config[fs.getPath()].redirect_url));
+	}
+
+
 	if(!fs.exists())
 		return handleErrorPages(req, NOT_FOUND);
 	if(!fs.readable())
@@ -14,7 +24,7 @@ HttpResponse HttpHandler::handleGet(const HttpRequest& req)
 	if(fs.directory())
 		return handleErrorPages(req, FORBIDDEN);
 	
-	res.setStatus(OK);
+	res.setStatus(getStatusCodeFromInt(code));
 	res.setMimeType(getMimeTypeString(fs.getMimeType()));
 	res.setBody(fs.getFileContents());
 	return res;
