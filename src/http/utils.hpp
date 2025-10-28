@@ -13,6 +13,7 @@ e_mimeType getMimeTypeEnum(const std::string mimeTypeStr);
 std::string getMimeTypeExtention(e_mimeType mimeType);
 std::string getStatusString(e_status_code status);
 std::string getCurrentTime();
+e_status_code getStatusCodeFromInt(int code);
 void displayFileSystemInfo(FileSystem const &fs);
 void displayConfig(ServerConfig const &config);
 void displayServerConfigDetails(ServerConfig const &config);

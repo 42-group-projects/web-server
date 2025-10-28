@@ -6,7 +6,6 @@
 #include "../../fileSystem/FileSystem.hpp"
 #include "../HttpResponse/HttpResponse.hpp"
 
-
 #define READ_FD  0
 #define WRITE_FD 1
 class CgiHandler
@@ -28,4 +27,3 @@ class CgiHandler
 		bool isCgiRequest(const HttpRequest& req);
 		HttpResponse runCgi(const HttpRequest& req);
 };
-

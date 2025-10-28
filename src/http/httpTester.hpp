@@ -12,7 +12,7 @@ int http_tester()
 	std::cout << "Starting HTTP Tester..." <<std::endl;
 
 	std::string test_request =
-    "GET /index.html http1.1\r\n"
+    "GET /redirect/old.html http1.1\r\n"
     "Host: www.example.com\r\n"
     "User-Agent: Mozilla/5.0\r\n"
     "Accept: text/html\r\n"
@@ -49,10 +49,24 @@ int http_tester()
 	"Accept: text/html\r\n"
 	"\r\n";
 
-	HttpHandler handler(g_config);
-	HttpResponse res = handler.handleRequest(HttpRequest(cgi_get_request));
-	std::string response = res.generateResponse(res.getStatus());
+	std::string redirect_get_request =
+	"GET /redirect/old.html HTTP/1.1\r\n"
+	"Host: www.example.com\r\n"
+	"User-Agent: Mozilla/5.0\r\n"
+	"Accept: text/html\r\n"
+	"\r\n";
 
+	
+
+	// std::cout << "Gconfig: " << g_config << std::endl;
+
+	HttpHandler handler(g_config);
+
+	std::cout << "\n-------HTTP REQUEST-------" << std::endl;
+	
+	HttpRequest req = HttpRequest(redirect_get_request);
+	HttpResponse res = handler.handleRequest(req);
+	std::string response = res.generateResponse(res.getStatus());
 
 	std::cout << "\n-------HTTP RESPONSE-------" << std::endl;
 	std::cout << "Generated HTTP Response:\n";

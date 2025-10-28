@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
 		catch (const std::runtime_error& e) {std::cerr << e.what(); return 1;}
 
 	// errorPagesTests();
-
+	// std::cout << g_config << std::endl;s
 	//uncommnet to run tests
 	http_tester();
 	std::cout << "Web Server Ending..." << std::endl;
