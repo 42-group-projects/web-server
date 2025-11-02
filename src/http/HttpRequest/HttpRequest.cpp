@@ -11,7 +11,7 @@ HttpRequest::HttpRequest(const std::string &raw_request) : method(UNDEFINED), ur
 {
 	try
 	{
-		this->parseRequest(raw_request);
+		parseRequest(raw_request);
 	}
 	catch (const std::runtime_error& e)
 	{
@@ -40,49 +40,75 @@ void HttpRequest::parseRequest(const std::string &request)
 	std::istringstream request_stream(request);
 	std::string line;
 
-	// Parse request line
-	if (std::getline(request_stream, line))
+	try
 	{
+		// Parse request line
+		std::getline(request_stream, line);
+
+
 		if (line.empty() || line == "\r" || line == "\n")
 			error("Empty request line encountered", "Request Parser");
 
 		std::istringstream line_stream(line);
 		parseRequestLine(line_stream);
-		if (uri.empty() || version.empty())
-			error("Malformed request line", "Request Parser");
-	}
 
-	// Parse headers
-	while (std::getline(request_stream, line))
-	{
-		if (line.empty() || line == "\r" || line == "\n")
+		if (uri.empty() || version.empty() || getMethodString(method).empty())
 		{
-			// Empty line indicates the end of headers and start of body
-			break;
+			error("Malformed request line", "Request Parser");
 		}
 
-		std::istringstream line_stream(line);
-		parseHeaders(line_stream);
+		// std::cout << "LINE ::::" << line << std::endl;
+
+		// Parse headers
+		while (std::getline(request_stream, line))
+		{
+			line.erase(line.find_last_not_of(" \t\r\n") + 1);
+			std::cout << "LINE ::" << line << std::endl;
+			std::cout << "LINE SIZE::"<< line.size() <<std::endl;
+			if (line.empty())
+			{
+				// Empty line indicates the end of headers and start of body
+				break;
+			}
+
+			if(line.find(":") == std::string::npos)
+			{
+				std::cout << "============= does it get here\n ==========" << std::endl;
+				throw std::runtime_error("this is a runtime error");
+				// error("Malformed request line", "Request Parser");
+			}
+
+			std::istringstream line_stream(line);
+			parseHeaders(line_stream);
+		}
+
+		// query parameters
+		if (uri.find('?') != std::string::npos)
+		{
+			size_t pos = uri.find('?');
+			std::string query_string = uri.substr(pos + 1);
+			uri = uri.substr(0, pos);
+			setQuaryString(query_string);
+			parseQueryParams(query_string);
+		}
+
+		// Parse body
+		std::string body_line;
+		while (std::getline(request_stream, body_line))
+		{
+			if (!body.empty())
+				body += "\n";
+			body += body_line;
+		}
+
+
+	}
+	catch (const std::runtime_error& e)
+	{
+		std::cout << e.what() << std::endl;
+		parsing_error = e.what();
 	}
 
-	// query parameters
-	if (uri.find('?') != std::string::npos)
-	{
-		size_t pos = uri.find('?');
-		std::string query_string = uri.substr(pos + 1);
-		uri = uri.substr(0, pos);
-		setQuaryString(query_string);
-		parseQueryParams(query_string);
-	}
-
-	// Parse body
-	std::string body_line;
-	while (std::getline(request_stream, body_line))
-	{
-		if (!body.empty())
-			body += "\n";
-		body += body_line;
-	}
 }
 
 void HttpRequest::parseRequestLine(std::istringstream& line_stream)
@@ -111,8 +137,12 @@ void HttpRequest::parseHeaders(std::istringstream& line_stream)
 		key.erase(key.find_last_not_of(" \t\r\n") + 1);
 		value.erase(0, value.find_first_not_of(" \t\r\n"));
 
+		std::cout <<"__________________________:" << key << " : " << value << std::endl;
+
 		if (key.empty() || value.empty())
+		{
 			error("Malformed header line: key or value is empty", "Request Parser");
+		}
 
 		headers[key] = value;
 	}

@@ -10,7 +10,12 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req)
 {
 	try
 	{
-		const LocationConfig location_config = g_config[SafePath(req.getUri())];
+		FileSystem fs = SafePath(req.getUri());
+		LocationConfig location_config = config[fs];
+
+		// std::cout << location_config << std::endl;
+		// std::cout << fs << std::endl;
+
 		CgiHandler cgi_handler(location_config);
 		if (cgi_handler.isCgiRequest(req))
 		{
@@ -25,10 +30,12 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req)
 
 	try
 	{
-		if(!req.getParsingError().empty())
+		if(hasHttpRequestErrors(req))
 		{
+			std::cerr << "Bad Request: Empty URI or null byte detected." << std::endl;
 			return handleErrorPages(req, BAD_REQUEST);
 		}
+
 		switch (req.getMethod())
 		{
 			case GET:
@@ -41,7 +48,7 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req)
 				return handleDelete(req);
 
 			default:
-				return handleErrorPages(req, METHOD_NOT_ALLOWED);
+				return handleErrorPages(req, BAD_REQUEST);
 		}
 	}
 	catch(const std::exception& e)
@@ -50,6 +57,26 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req)
 		//TODO: fiuger out what kind of response we want to send back here...
 		return HttpResponse();
 	}
+}
+
+bool HttpHandler::hasHttpRequestErrors(const HttpRequest& req)
+{
+	// req.displayRequest();
+	// std::cout << g_config << std::endl;
+
+	if((req.getVersion() != "HTTP/1.1") && (req.getVersion() != "HTTP/1.0"))
+	{
+		return true;
+	}
+
+	std::cout << "parsing error is: " << req.getParsingError() << std::endl;
+
+	if(req.getParsingError() != "")
+	{
+		return true;
+	}
+
+	return false;
 }
 
 HttpResponse HttpHandler::handleErrorPages(const HttpRequest& req, e_status_code response_code)

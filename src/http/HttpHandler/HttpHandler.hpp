@@ -17,6 +17,7 @@ class HttpHandler
 		HttpResponse handleDelete(const HttpRequest& req);
 
 		//CGI related methods
+		bool hasHttpRequestErrors(const HttpRequest& req);
 		HttpResponse handleErrorPages(const HttpRequest& req, e_status_code code);
 
 	public:
