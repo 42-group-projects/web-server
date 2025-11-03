@@ -44,8 +44,6 @@ void HttpRequest::parseRequest(const std::string &request)
 	{
 		// Parse request line
 		std::getline(request_stream, line);
-
-
 		if (line.empty() || line == "\r" || line == "\n")
 			error("Empty request line encountered", "Request Parser");
 
@@ -57,29 +55,24 @@ void HttpRequest::parseRequest(const std::string &request)
 			error("Malformed request line", "Request Parser");
 		}
 
-		// std::cout << "LINE ::::" << line << std::endl;
-
 		// Parse headers
+		int header_count = 0;
 		while (std::getline(request_stream, line))
 		{
 			line.erase(line.find_last_not_of(" \t\r\n") + 1);
-			std::cout << "LINE ::" << line << std::endl;
-			std::cout << "LINE SIZE::"<< line.size() <<std::endl;
 			if (line.empty())
-			{
-				// Empty line indicates the end of headers and start of body
-				break;
-			}
+				break; // End of headers
 
 			if(line.find(":") == std::string::npos)
-			{
-				std::cout << "============= does it get here\n ==========" << std::endl;
-				throw std::runtime_error("this is a runtime error");
-				// error("Malformed request line", "Request Parser");
-			}
+				error("Malformed request line", "Request Parser");
 
 			std::istringstream line_stream(line);
 			parseHeaders(line_stream);
+			header_count++;
+			if (header_count > MAX_HEADERS_COUNT)
+			{
+				error("Exceeded maximum number of headers", "Request Parser");
+			}
 		}
 
 		// query parameters
@@ -100,8 +93,6 @@ void HttpRequest::parseRequest(const std::string &request)
 				body += "\n";
 			body += body_line;
 		}
-
-
 	}
 	catch (const std::runtime_error& e)
 	{
@@ -136,10 +127,7 @@ void HttpRequest::parseHeaders(std::istringstream& line_stream)
 	{
 		key.erase(key.find_last_not_of(" \t\r\n") + 1);
 		value.erase(0, value.find_first_not_of(" \t\r\n"));
-
-		std::cout <<"__________________________:" << key << " : " << value << std::endl;
-
-		if (key.empty() || value.empty())
+		if (key.empty() || value.empty() || key.size() > MAX_HEADERS_SIZE || value.size() > MAX_HEADERS_SIZE)
 		{
 			error("Malformed header line: key or value is empty", "Request Parser");
 		}

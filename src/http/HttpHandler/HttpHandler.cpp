@@ -8,13 +8,14 @@ HttpHandler::~HttpHandler() {}
 
 HttpResponse HttpHandler::handleRequest(const HttpRequest& req)
 {
+	if(req.getBody().size() > MAX_PAYLOAD_SIZE)
+		return handleErrorPages(req, CONTENT_TOO_LARGE);
+
+	// CGI request
 	try
 	{
 		FileSystem fs = SafePath(req.getUri());
 		LocationConfig location_config = config[fs];
-
-		// std::cout << location_config << std::endl;
-		// std::cout << fs << std::endl;
 
 		CgiHandler cgi_handler(location_config);
 		if (cgi_handler.isCgiRequest(req))
@@ -28,11 +29,11 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req)
 		std::cerr << "Falling back to standard request handling." << std::endl;
 	}
 
+	// Standard request
 	try
 	{
 		if(hasHttpRequestErrors(req))
 		{
-			std::cerr << "Bad Request: Empty URI or null byte detected." << std::endl;
 			return handleErrorPages(req, BAD_REQUEST);
 		}
 
@@ -61,8 +62,6 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req)
 
 bool HttpHandler::hasHttpRequestErrors(const HttpRequest& req)
 {
-	// req.displayRequest();
-	// std::cout << g_config << std::endl;
 
 	if((req.getVersion() != "HTTP/1.1") && (req.getVersion() != "HTTP/1.0"))
 	{

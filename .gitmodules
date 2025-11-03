@@ -1,6 +1,0 @@
-[submodule "tests"]
-	path = tests
-	url = https://github.com/ulsgks/webserv-tester.git
-[submodule "webserv-tester"]
-	path = webserv-tester
-	url = https://github.com/ulsgks/webserv-tester.git
