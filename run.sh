@@ -1,8 +1,8 @@
 #!/bin/bash
 
 if [ -z "$1" ]; then
-    echo "run.sh: No path provided, using default: ./configFile/conf.conf"
-    file_path="./configFiles/conf.conf"
+    echo "run.sh: No path provided, using default: ./configFiles/webserv.conf"
+    file_path="./configFiles/webserv.conf"
 else
     file_path="$1"
 fi

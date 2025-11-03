@@ -9,7 +9,7 @@
 #pragma once
 
 //Default configuration file location
-#define DEFAULT_CONF_FILE "../configFiles/minoka.conf"
+#define DEFAULT_CONF_FILE "configFiles/webserv.conf"
 
 //Server
 #define SERVER_NAME "mySite.local"
