@@ -8,9 +8,15 @@ HttpHandler::~HttpHandler() {}
 
 HttpResponse HttpHandler::handleRequest(const HttpRequest& req)
 {
+	if(req.getBody().size() > MAX_PAYLOAD_SIZE)
+		return handleErrorPages(req, CONTENT_TOO_LARGE);
+
+	// CGI request
 	try
 	{
-		const LocationConfig location_config = g_config[SafePath(req.getUri())];
+		FileSystem fs = SafePath(req.getUri());
+		LocationConfig location_config = config[fs];
+
 		CgiHandler cgi_handler(location_config);
 		if (cgi_handler.isCgiRequest(req))
 		{
@@ -23,12 +29,14 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req)
 		std::cerr << "Falling back to standard request handling." << std::endl;
 	}
 
+	// Standard request
 	try
 	{
-		if(!req.getParsingError().empty())
+		if(hasHttpRequestErrors(req))
 		{
 			return handleErrorPages(req, BAD_REQUEST);
 		}
+
 		switch (req.getMethod())
 		{
 			case GET:
@@ -41,7 +49,7 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req)
 				return handleDelete(req);
 
 			default:
-				return handleErrorPages(req, METHOD_NOT_ALLOWED);
+				return handleErrorPages(req, BAD_REQUEST);
 		}
 	}
 	catch(const std::exception& e)
@@ -50,6 +58,24 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req)
 		//TODO: fiuger out what kind of response we want to send back here...
 		return HttpResponse();
 	}
+}
+
+bool HttpHandler::hasHttpRequestErrors(const HttpRequest& req)
+{
+
+	if((req.getVersion() != "HTTP/1.1") && (req.getVersion() != "HTTP/1.0"))
+	{
+		return true;
+	}
+
+	std::cout << "parsing error is: " << req.getParsingError() << std::endl;
+
+	if(req.getParsingError() != "")
+	{
+		return true;
+	}
+
+	return false;
 }
 
 HttpResponse HttpHandler::handleErrorPages(const HttpRequest& req, e_status_code response_code)

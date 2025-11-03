@@ -15,6 +15,11 @@
 #define SERVER_NAME "mySite.local"
 #define CLIENT_MAX_BODY_SIZE 1024 * 1024 // 1 MB
 
+//Http limits
+#define MAX_HEADERS_SIZE 1024 * 8 // 8 KB
+#define MAX_HEADERS_COUNT 100 //this can be flexable based on your needs
+#define MAX_PAYLOAD_SIZE 1024 * 50 // this is also flexable, set to 50KB for now
+
 //Location specific
 #define GET_ALLOWED      true
 #define POST_ALLOWED     false
