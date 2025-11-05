@@ -2,6 +2,7 @@
 
 #include "../errorHandling/ErrorWarning.hpp"
 #include "../../include/defaultConfigs.hpp"
+#include "parser_utils.hpp"
 
 #include <fstream>
 
@@ -11,7 +12,7 @@ TokenizeFile::TokenizeFile(int argc, char **argv)
 
     if (argc == 1)
     {
-        warning("No file provided. Using default file", "Configuration file");
+        warning("No file provided. Using default file.", "Configuration file");
         rawConfig = loadConfigFile(DEFAULT_CONF_FILE);
     }
     else
@@ -23,7 +24,7 @@ TokenizeFile::TokenizeFile(int argc, char **argv)
             rawConfig = loadConfigFile(arg);
         else
         {
-            warning("Invalid file. Using default file", "Configuration file");
+            warning("Invalid file. Using default file.", "Configuration file");
             rawConfig = loadConfigFile(DEFAULT_CONF_FILE);
         }
     }
@@ -31,6 +32,7 @@ TokenizeFile::TokenizeFile(int argc, char **argv)
     tokenize(rawConfig);
 }
 
+const std::string& TokenizeFile::getFilePath() const { return filePath; }
 const std::vector<t_token>& TokenizeFile::getTokens() const { return tokens; }
 
 
@@ -44,11 +46,11 @@ std::vector<std::string> TokenizeFile::loadConfigFile(const std::string& path)
 			error("file '" + std::string(DEFAULT_CONF_FILE) + "' not found. Server will not start.", "Configuration file");
 		else
 		{
-			warning("Couldn't open file. Using default file", "Configuration file");
+			warning("Couldn't open file. Using default file.", "Configuration file");
 			return loadConfigFile(DEFAULT_CONF_FILE);
 		}
 	}
-
+    filePath = path;
 	std::vector<std::string> lines;
 	std::string line;
 
@@ -89,14 +91,21 @@ void TokenizeFile::tokenize(std::vector<std::string>& rawConfig)
             }
             if (start != -1 && end == -1)
             {
+                if (rawConfig[i][j] == '\'' || rawConfig[i][j] == '\"')
+                {
+                    handleQuotedToken(tokens, rawConfig, i, j, filePath);
+                    start = -1;
+                    end = -1;
+                    continue;
+                }
                 if (j + 1 >= rawConfig[i].size() || delimiters.find(rawConfig[i][j + 1]) != std::string::npos)
                     end = j;
                     
                 if (end != -1)
                 {
                     t_token token;
-                    token.line = i;
-                    token.col = start;
+                    token.line = i + 1;
+                    token.col = start + 1;
                     token.str = rawConfig[i].substr(start, end - start + 1);
                     tokens.push_back(token);
                     start = -1;
@@ -106,3 +115,48 @@ void TokenizeFile::tokenize(std::vector<std::string>& rawConfig)
         }
     }
 }
+
+void TokenizeFile::handleQuotedToken
+    (
+        std::vector<t_token>& tokens,
+        std::vector<std::string>& rawConfig,
+        size_t& i,
+        size_t& j,
+        const std::string& filePath
+    )
+{
+	char quote = rawConfig[i][j];
+	std::string value;
+	size_t lineStart = i;
+	size_t colStart = j + 1;
+	j++;
+
+	bool closed = false;
+	while (i < rawConfig.size())
+	{
+		while (j < rawConfig[i].size())
+		{
+			if (rawConfig[i][j] == quote)
+			{
+				closed = true;
+				break;
+			}
+			value += rawConfig[i][j];
+			j++;
+		}
+		if (closed) break;
+		value += '\n';
+		i++;
+		j = 0;
+	}
+
+	if (!closed)
+		parser_utils::unclosed(quote, lineStart + 1, colStart, filePath);
+
+	t_token token;
+	token.line = lineStart + 1;
+	token.col = colStart;
+	token.str = value;
+	tokens.push_back(token);
+}
+

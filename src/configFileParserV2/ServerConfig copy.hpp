@@ -1,16 +1,17 @@
 #pragma once
 
-#include <iostream>
-#include <cctype>
-#include <algorithm>
-#include <stdexcept>
-#include <sstream>
-#include <fstream>
+// #include <iostream>
+// #include <cctype>
+// #include <algorithm>
+// #include <stdexcept>
+// #include <sstream>
+// #include <fstream>
 #include <vector>
-#include <map>
+// #include <map>
 
-#include "defaultConfigs.hpp"
-#include "../src/errorHandling/ErrorWarning.hpp"
+// #include "defaultConfigs.hpp"
+// #include "../src/errorHandling/ErrorWarning.hpp"
+#include "./ServerBlocks.hpp"
 
 class FileSystem;
 class SafePath;
@@ -32,7 +33,6 @@ struct LocationConfig
 
 	bool upload_enabled;
 	std::string upload_store;
-
 
 	std::map<std::string, std::string> cgi_pass;
 };
@@ -61,7 +61,7 @@ private:
 	std::map<int, std::string> error_pages;
 	size_t client_max_body_size;
 	std::map<std::string, LocationConfig> locations;
-	std::string server_name;
+	std::vector<std::string >server_name;
 
 	void setupDefaultConfig();
 
