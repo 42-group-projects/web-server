@@ -12,7 +12,7 @@
 #define DEFAULT_CONF_FILE "configFiles/webserv.conf"
 
 //Server
-#define SERVER_NAME "mySite.local"
+#define SERVER_NAME "_"
 #define CLIENT_MAX_BODY_SIZE 1024 * 1024 // 1 MB
 
 //Http limits

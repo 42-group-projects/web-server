@@ -1,17 +1,16 @@
 #pragma once
 
-// #include <iostream>
-// #include <cctype>
-// #include <algorithm>
-// #include <stdexcept>
-// #include <sstream>
-// #include <fstream>
+#include <iostream>
+#include <cctype>
+#include <algorithm>
+#include <stdexcept>
+#include <sstream>
+#include <fstream>
 #include <vector>
-// #include <map>
+#include <map>
 
-// #include "defaultConfigs.hpp"
-// #include "../src/errorHandling/ErrorWarning.hpp"
-#include "./ServerBlocks.hpp"
+#include "defaultConfigs.hpp"
+#include "../src/errorHandling/ErrorWarning.hpp"
 
 class FileSystem;
 class SafePath;
@@ -61,7 +60,7 @@ private:
 	std::map<int, std::string> error_pages;
 	size_t client_max_body_size;
 	std::map<std::string, LocationConfig> locations;
-	std::vector<std::string >server_name;
+	std::string server_name;
 
 	void setupDefaultConfig();
 
