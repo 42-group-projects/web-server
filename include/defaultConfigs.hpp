@@ -9,7 +9,8 @@
 #pragma once
 
 //Default configuration file location
-#define DEFAULT_CONF_FILE "configFiles/webserv.conf"
+// will need to chag this path when we add a new config file for testing
+#define DEFAULT_CONF_FILE "../configFiles/test.conf"
 
 //Server
 #define SERVER_NAME "_"

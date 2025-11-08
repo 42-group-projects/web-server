@@ -5,27 +5,30 @@
 #include <sys/wait.h>
 #include <cstring>
 
-CgiHandler::CgiHandler(const LocationConfig& config): location_config(config) {}
+
+CgiHandler::CgiHandler(const t_request_config& req_config): req_config(req_config) {}
 CgiHandler::~CgiHandler() {}
 
 bool CgiHandler::isCgiRequest(const HttpRequest& req)
 {
-	FileSystem fs(SafePath(req.getUri()));
-	SafePath safe_path(req.getUri());
+	// FileSystem fs(req_config.safePath, req_config);
+
+	FileSystem fs(req_config.safePath, req_config);
+
 	std::string uri = req.getUri();
 
-	if (location_config.cgi_pass.empty() || !fs.exists() || fs.directory() || !fs.readable() || !fs.executable())
+	if (req_config.cgi_pass.empty() || !fs.exists() || fs.directory() || !fs.readable() || !fs.executable())
 	{
 		return false;
 	}
 
-	if(uri.find(location_config.location) != 0)
+	if(uri.find(req_config.location) != 0)
 	{
 		std::cout << "Location prefix not found in URI" << std::endl;
 		return false;
 	}
 	std::string extension = getExtention(uri);
-	for (std::map<std::string, std::string>::const_iterator it = location_config.cgi_pass.begin(); it != location_config.cgi_pass.end(); ++it)
+	for (std::map<std::string, std::string>::const_iterator it = req_config.cgi_pass.begin(); it != req_config.cgi_pass.end(); ++it)
 	{
 		if(it->first == extension)
 		{
@@ -61,7 +64,7 @@ HttpResponse CgiHandler::runCgi(const HttpRequest& req)
 		close(pipefd[READ_FD]);
 		close(pipefd[WRITE_FD]);
 
-		std::string cgi_path = getCgiPath(req.getUri(), location_config);
+		std::string cgi_path = getCgiPath(req.getUri(), req_config);
 		// char cwd[PATH_MAX];
 		// std::cout << "PWD: " << getcwd(cwd, sizeof(cwd)) << std::endl;
 
@@ -134,7 +137,7 @@ char **CgiHandler::makeEnvs(const HttpRequest& req)
 char **CgiHandler::makeArgs(const HttpRequest& req)
 {
 	char **args = new char*[3];
-	std::string cgi_path = getCgiPath(req.getUri(), location_config);
+	std::string cgi_path = getCgiPath(req.getUri(), req_config);
 
 	std::string script_filename = req.getUri();
 	size_t last_slash = script_filename.find_last_of('/');
@@ -143,7 +146,7 @@ char **CgiHandler::makeArgs(const HttpRequest& req)
 	{
 		script_filename = script_filename.substr(last_slash + 1);
 	}
-	std::string scrip_path = location_config.root + "/" +script_filename;
+	std::string scrip_path = req_config.root + "/" +script_filename;
 
 	args[0] = strdup(cgi_path.c_str());
 	args[1] = strdup(scrip_path.c_str());
@@ -161,12 +164,12 @@ std::string CgiHandler::getQuaryString(const std::string& uri)
 	return query_string;
 }
 
-std::string CgiHandler::getCgiPath(std::string uri, const LocationConfig& config)
+std::string CgiHandler::getCgiPath(std::string uri, const t_request_config& req_config)
 {
 	std::string cgi_path;
 	std::string extension = getExtention(uri);
-	std::map<std::string, std::string>::const_iterator it = config.cgi_pass.find(extension);
-	if (it != config.cgi_pass.end())
+	std::map<std::string, std::string>::const_iterator it = req_config.cgi_pass.find(extension);
+	if (it != req_config.cgi_pass.end())
 	{
 		cgi_path = it->second;
 	}

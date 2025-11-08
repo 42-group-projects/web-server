@@ -1,5 +1,5 @@
 #include "arg_validity_checks.hpp"
-#include "../../../src/errorHandling/ErrorWarning.hpp"
+#include "../errorHandling/ErrorWarning.hpp"
 
 #include <sstream>
 

@@ -1,6 +1,6 @@
 #include "error_messages.hpp"
 #include "TokenizeFile.hpp"
-#include "../../../src/errorHandling/ErrorWarning.hpp"
+#include "../../src/errorHandling/ErrorWarning.hpp"
 #include <sstream>
 
 namespace error_messages

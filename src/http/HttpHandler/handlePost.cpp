@@ -10,67 +10,58 @@ HttpResponse HttpHandler::handlePost(const HttpRequest& req)
 {
 	HttpResponse res;
 	res.setVersion(req.getVersion());
-	FileSystem fs(SafePath(req.getUri()));
-	LocationConfig location_config = config[fs];
+	FileSystem fs(req_config.safePath, req_config);
 	// int code = OK; ( not used )
 
-	if (g_config[fs.getPath()].redirect_enabled)
+	if (req_config.redirect_enabled)
 	{
 		// code = g_config[fs.getPath()].redirect_code;
-		fs = FileSystem(SafePath(g_config[fs.getPath()].redirect_url));
+		fs = FileSystem(req_config.safePath, req_config);
 	}
 
 	//error checking and validations
-	if(location_config.postAllowed == false)
+	if(req_config.postAllowed == false)
 		return handleErrorPages(req, FORBIDDEN);
-	if(req.getBody().size() > config.getClientMaxBodySize())
+	if(req.getBody().size() > req_config.client_max_body_size)
 		return handleErrorPages(req, CONTENT_TOO_LARGE);
-
-
-	if(location_config.upload_enabled)
+	
+	if(req_config.upload_store.empty())
 	{
-		if(location_config.upload_store.empty())
+		// TODO: or makde uplaod store mandatory if upload is enabled
+		error("Upload store not specified in location block", "HttpHandler::handlePost");
+	}
+
+	std::string upload_path = fs.getPath();
+	std::string file_name = formatFileName(req);
+	try
+	{
+		std::stringstream file_path_ss;
+		file_path_ss << req_config.root << "/" << file_name;
+		// Ensure the there are no duplicate file names
+		FileSystem check_file(SafePath(req.getUri() + "/" + file_name, req_config), req_config);
+		if (check_file.exists())
+			error("File already exists: " + file_name, "HttpHandler::handlePost");
+		std::ofstream outfile(file_path_ss.str().c_str(), std::ios::binary);
+		if (!outfile.is_open())
 		{
-			// TODO: or makde uplaod store mandatory if upload is enabled
-			error("Upload store not specified in location block", "HttpHandler::handlePost");
+			error("Failed to open file for writing", "HttpHandler::handlePost");
 		}
-
-		std::string upload_path = fs.getPath();
-		std::string file_name = formatFileName(req);
-
-		try
+		else
 		{
-			std::stringstream file_path_ss;
-			file_path_ss << location_config.root << "/" << file_name;
-
-			// Ensure the there are no duplicate file names
-			FileSystem check_file(SafePath(req.getUri() + "/" + file_name));
-			if (check_file.exists())
-				error("File already exists: " + file_name, "HttpHandler::handlePost");
-
-			std::ofstream outfile(file_path_ss.str().c_str(), std::ios::binary);
-			if (!outfile.is_open())
-			{
-				error("Failed to open file for writing", "HttpHandler::handlePost");
-			}
-			else
-			{
-				outfile << req.getBody();
-				outfile.close();
-
-				// do i need to over ride this status code if there is a redirection?
-				res.setStatus(CREATED);
-				res.setMimeType("text/plain");
-				res.setHeader("Location", location_config.upload_store + "/" + file_name);
-				res.setBody("File uploaded successfully as " + file_name + "\n");
-				return res;
-			}
+			outfile << req.getBody();
+			outfile.close();
+			// do i need to over ride this status code if there is a redirection?
+			res.setStatus(CREATED);
+			res.setMimeType("text/plain");
+			res.setHeader("Location", req_config.upload_store + "/" + file_name);
+			res.setBody("File uploaded successfully as " + file_name + "\n");
+			return res;
 		}
-		catch(const std::exception& e)
-		{
-			std::cerr << e.what() << '\n';
-			return handleErrorPages(req, INTERNAL_SERVER_ERROR);
-		}
+	}
+	catch(const std::exception& e)
+	{
+		std::cerr << e.what() << '\n';
+		return handleErrorPages(req, INTERNAL_SERVER_ERROR);
 	}
 	return res;
 }

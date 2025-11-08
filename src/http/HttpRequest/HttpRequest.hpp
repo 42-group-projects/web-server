@@ -11,6 +11,7 @@ class   HttpRequest
 		e_method method;
 		std::string uri;
 		std::string version;
+		std::string host;
 		std::map<std::string, std::string> headers;
 		std::map<std::string, std::string> query_params;
 		std::string quary_string;

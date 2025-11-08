@@ -11,17 +11,17 @@
 class HttpHandler
 {
 	private:
-		const ServerConfig &config;
+		t_request_config req_config;
 		HttpResponse handleGet(const HttpRequest& req);
 		HttpResponse handlePost(const HttpRequest& req);
 		HttpResponse handleDelete(const HttpRequest& req);
 
 		//CGI related methods
 		bool hasHttpRequestErrors(const HttpRequest& req);
-		HttpResponse handleErrorPages(const HttpRequest& req, e_status_code code);
+		HttpResponse handleErrorPages(const HttpRequest& req, e_status_code response_code);
 
 	public:
-		HttpHandler(const ServerConfig &config);
+		HttpHandler();
 		~HttpHandler();
 		HttpResponse handleRequest(const HttpRequest& req);
 };

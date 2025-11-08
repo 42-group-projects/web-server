@@ -1,7 +1,7 @@
 #include "TokenizeFile.hpp"
 
-#include "../../../src/errorHandling/ErrorWarning.hpp"
-#include "../../../include/defaultConfigs.hpp"
+#include "../../src/errorHandling/ErrorWarning.hpp"
+#include "../../include/defaultConfigs.hpp"
 #include "error_messages.hpp"
 
 #include <fstream>

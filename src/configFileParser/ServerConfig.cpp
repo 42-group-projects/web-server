@@ -1,250 +1,222 @@
 #include "ServerConfig.hpp"
-#include "../src/fileSystem/safePath/SafePath.hpp"
-#include "../src/fileSystem/FileSystem.hpp"
+#include "error_messages.hpp"
+#include "arg_validity_checks.hpp"
 
-const std::string& ServerConfig::getRoot() const { return root; }
-const std::vector<std::pair<std::string, int> >& ServerConfig::getListen() const { return listen; }
-const std::map<int, std::string>& ServerConfig::getErrorPages() const { return error_pages; }
-size_t ServerConfig::getClientMaxBodySize() const { return client_max_body_size; }
-const std::string& ServerConfig::getServerName() const { return server_name; }
-const std::map<std::string, LocationConfig>& ServerConfig::getLocations() const { return locations; }
-
-LocationConfig ServerConfig::operator[](const SafePath& safePath) const
-{
-	std::map<std::string, LocationConfig>::const_iterator it = locations.find(safePath.getLocation());
-	return getLocationConfigOrDefault(it);
-}
-
-LocationConfig ServerConfig::operator[](const std::string& location) const
-{
-	std::map<std::string, LocationConfig>::const_iterator it = locations.find(location);
-	return getLocationConfigOrDefault(it);
-}
-
-LocationConfig ServerConfig::operator[](const FileSystem& file) const
-{
-	std::map<std::string, LocationConfig>::const_iterator it = locations.find(file.getPath().getLocation());
-	return getLocationConfigOrDefault(it);
-}
-
-LocationConfig ServerConfig::getLocationConfigOrDefault(std::map<std::string, LocationConfig>::const_iterator it) const
-{
-	if (it != locations.end())
-		return it->second;
-
-	static LocationConfig defaultConfig;
-	defaultConfig.location = "/";
-	defaultConfig.getAllowed = GET_ALLOWED;
-	defaultConfig.postAllowed = POST_ALLOWED;
-	defaultConfig.deleteAllowed = DELETE_ALLOWED;
-	defaultConfig.root = root;
-	defaultConfig.index = INDEX;
-	defaultConfig.autoindex = AUTOINDEX;
-	defaultConfig.redirect_enabled = REDIRECT_ENABLED;
-	defaultConfig.redirect_url = REDIRECT_URL;
-	defaultConfig.redirect_code = 0;
-	defaultConfig.upload_enabled = UPLOAD_ENABLED;
-	defaultConfig.upload_store = UPLOAD_STORE;
-	return defaultConfig;
-}
+#include <sstream>
+#include <cstdlib>
 
 ServerConfig::ServerConfig() {}
 
 void ServerConfig::initServerConfig(int argc, char **argv)
 {
-	std::vector<std::string> rawConfig;
-	setupDefaultConfig();
+	TokenizeFile tokenizer(argc, argv);
+	filePath = tokenizer.getFilePath();
+	ServerBlocks serverBlocks(tokenizer);
+	const std::vector<t_server_block> &servers = serverBlocks.getServerBlocks();
 
-	if (argc == 1)
-	{
-		warning("No file provided. Using default file", "Configuration file");
-		rawConfig = loadConfigFile(DEFAULT_CONF_FILE);
-	}
-	else
-	{
-		std::string arg(argv[1]);
-		size_t ext = arg.rfind(".conf");
+	for (size_t i = 0; i < servers.size(); i++)
+		configuration.push_back(setServerConfig(servers[i]));
+}
 
-		if (ext != std::string::npos && ext + 5 == arg.size())
-			rawConfig = loadConfigFile(arg);
-		else
+
+
+std::vector<std::pair<std::string, int> >& ServerConfig::getAllListen() {return allListen;}
+std::vector<t_server_config>& ServerConfig::getConfig() {return configuration;}
+
+t_request_config ServerConfig::getRequestConfig(const std::string &serverName, const std::string& ip, int port, const std::string &requestedPath)
+{
+	std::pair<std::string, int> ipPort(ip, port);
+	t_server_config *sconf = NULL;
+	std::vector<t_server_config*> exactMatches;
+	std::vector<t_server_config*> catchAll;
+
+	for (size_t i = 0; i < configuration.size(); ++i)
+	{
+		for (size_t j = 0; j < configuration[i].listen.size(); ++j)
 		{
-			warning("Invalid file. Using default file", "Configuration file");
-			rawConfig = loadConfigFile(DEFAULT_CONF_FILE);
+			const std::pair<std::string, int> &listen = configuration[i].listen[j];
+
+			if (listen == ipPort)
+				exactMatches.push_back(&configuration[i]);
+			else if (listen.first == "0.0.0.0" && listen.second == ipPort.second)
+				catchAll.push_back(&configuration[i]);
 		}
 	}
 
-	parseConfig(rawConfig);
-}
+	const std::vector<t_server_config*> &servers = !exactMatches.empty() ? exactMatches : catchAll;
 
-void ServerConfig::setupDefaultConfig()
-{
-	root = "";
-	listen.clear();
-	server_name = SERVER_NAME;
-	error_pages.clear();
-	client_max_body_size = CLIENT_MAX_BODY_SIZE;
-}
-
-std::vector<std::string> ServerConfig::loadConfigFile(const std::string& path)
-{
-	std::ifstream file(path.c_str());
-
-	if (!file)
+	for (size_t i = 0; i < servers.size() && !sconf; ++i)
 	{
-		if (path == DEFAULT_CONF_FILE)
-			error("file '" + std::string(DEFAULT_CONF_FILE) + "' not found. Server will not start.", "Configuration file");
-		else
+		const std::vector<std::string> &names = servers[i]->server_name;
+
+		for (size_t j = 0; j < names.size(); ++j)
 		{
-			warning("Couldn't open file. Using default file", "Configuration file");
-			return loadConfigFile(DEFAULT_CONF_FILE);
+			if (serverName == names[j])
+			{
+				sconf = servers[i];
+				break;
+			}
 		}
 	}
 
-	std::vector<std::string> lines;
-	std::string line;
+	if (!sconf)
+		sconf = servers[0];
 
-	while (std::getline(file, line))
-		lines.push_back(line);
-
-	return lines;
+	SafePath sp(requestedPath, sconf);
+	t_location_config &lConf = sconf->locations[sp.getLocation()];
+	t_request_config rConf =
+	{
+		sp,
+		lConf.root.empty() ? sconf->root : lConf.root,
+		lConf.error_pages.empty() ? sconf->error_pages : lConf.error_pages,
+		lConf.client_max_body_size ? lConf.client_max_body_size : sconf->client_max_body_size,
+		sconf->server_name,
+		sp.getLocation(),
+		lConf.getAllowed,
+		lConf.postAllowed,
+		lConf.deleteAllowed,
+		lConf.index,
+		lConf.autoindex,
+		lConf.redirect_enabled,
+		lConf.redirect_url,
+		lConf.redirect_code,
+		lConf.upload_store,
+		lConf.cgi_pass
+	};
+	return rConf;
 }
 
-void ServerConfig::parseConfig(std::vector<std::string>& rawConfig)
+
+
+
+t_server_config ServerConfig::setServerConfig(const t_server_block &serverBlock)
 {
-	std::vector<std::string> configVect = normalizeConfig(rawConfig);
+	t_server_config config;
+	config.root = "";
+	config.listen.clear();
+	config.server_name.push_back(SERVER_NAME);
+	config.error_pages.clear();
+	config.client_max_body_size = CLIENT_MAX_BODY_SIZE;
+	bool root = false;
+	bool listen = false;
 
-	for (size_t i = 0; i < configVect.size(); i++)
+	for (size_t i = 0; i < serverBlock.directives.size(); i++)
 	{
-		std::vector<std::string> tokens = splitWords(configVect[i]);
+		t_directive directive = serverBlock.directives[i];
 
-		if (tokens[0] == "root")
-			setRoot(tokens);
-		else if (tokens[0] == "listen")
-			setListen(tokens);
-		else if (tokens[0] == "server_name")
-			setServerName(tokens);
-		else if (tokens[0] == "error_page")
-			setErrorPage(tokens);
-		else if (tokens[0] == "client_max_body_size")
-			setClientMaxBodySize(tokens);
-		else if (tokens[0] == "location")
-			setLocation(tokens, configVect, &i);
+		if (directive.directive.str == "root")
+		{
+			config.root = setRoot(directive);
+			root = true;
+		}
+		else if (directive.directive.str == "listen")
+		{
+			std::pair<std::string, int> list =  setListen(directive);
+			config.listen.push_back(list);
+			allListen.push_back(list);
+			listen = true;
+		}
+		else if (directive.directive.str == "server_name")
+			config.server_name = setServerName(directive);
+		else if (directive.directive.str == "error_page")
+			setErrorPage(directive, config.error_pages);
+		else if (directive.directive.str == "client_max_body_size")
+			config.client_max_body_size = setClientMaxBodySize(directive);
 		else
-			directiveError(tokens[0]);
+			error_messages::unknownDirective(directive.directive, filePath);
 	}
 
-	checkConfig();
-}
+	if (!listen)
+		error_messages::missingDirective(serverBlock.directives[0].directive, "listen", filePath);
 
-void ServerConfig::checkConfig()
-{
-	if (root.empty())
-		error("Missing root directive.", "Configuration file");
+	if (!root)
+		error_messages::missingDirective(serverBlock.directives[0].directive, "root", filePath);
 
-	if (listen.empty())
-		error("Missing listen directive.", "Configuration file");
+	bool mainLocation = false;
 
-	for (std::map<std::string, LocationConfig>::iterator it = locations.begin(); it != locations.end(); ++it)
+	for (size_t i = 0; i < serverBlock.locations.size(); i++)
 	{
-		const std::string& location = it->first;
-		LocationConfig& config = it->second;
+		if (serverBlock.locations[i].name.str == "/")
+			mainLocation = true;
 
-		if (config.root.empty())
-			config.root = root;
-
-		if (config.upload_enabled)
-			if (config.upload_store.empty())
-				error("Missing upload path directive for location " + location, "Configuration file");
+		setLocation(serverBlock.locations[i], config.locations, config.root);
 	}
+
+	if (!mainLocation)
+		error_messages::missingLocation(serverBlock.directives[0].directive, filePath);
+
+	return config;
 }
 
-void ServerConfig::setRoot(std::vector<std::string>& tokens)
+std::string ServerConfig::setRoot(const t_directive& directive)
 {
-	if (tokens.size() == 1)
-		missingArgument(tokens[0]);
+	arg_validity_checks::optionsCount(directive, 1, 1, filePath);
+	arg_validity_checks::checkPathEndsWithSlash(directive.options[0], filePath);
 
-	if (tokens.size() > 2)
-		argumentError(tokens[2], tokens[0]);
+	// if (directive.options[0].str[0] != '/')
+	// {
+	// 	std::string root = "./" + directive.options[0].str;
+	// 	return root;
+	// }
 
-	if (tokens[1][0] != '/')
-		error(tokens[1] + " is not an absolute path.", "Configuration file");
-
-	if (tokens[1][tokens[1].size() - 1] == '/')
-		error("Invalid root argument: '" + tokens[1] + "' should not end with '/'", "Configuration file.");
-
-	root = tokens[1];
+	return directive.options[0].str;
 }
 
-void ServerConfig::setListen(std::vector<std::string>& tokens)
+std::pair<std::string, int> ServerConfig::setListen(const t_directive& directive)
 {
-	if (tokens.size() == 1)
-		missingArgument(tokens[0]);
+	arg_validity_checks::optionsCount(directive, 1, 1, filePath);
+	std::string ipPort = directive.options[0].str;
+	size_t colon = ipPort.find(':');
 
-	if (!isValidListenString(tokens[1]))
-		argumentError(tokens[1], tokens[0]);
+	if (colon == std::string::npos)
+		ipPort = "0.0.0.0:" + ipPort;
 
-	if (tokens.size() > 2)
-		argumentError(tokens[2], tokens[0]);
-
-	size_t colon = tokens[1].find(':');
-	std::string ip = tokens[1].substr(0, colon);
-	std::string portStr = tokens[1].substr(colon + 1);
+	colon = ipPort.find(':');
+	std::string ip = ipPort.substr(0, colon);
+	std::string portStr = ipPort.substr(colon + 1);
 	int port;
 	std::stringstream ss(portStr);
 
 	if (!(ss >> port) || !ss.eof())
-		argumentError(portStr, tokens[0]);
+		error_messages::invalidPort(directive.options[0], portStr, filePath);
 
-	listen.push_back(std::make_pair(ip, port));
+	arg_validity_checks::checkIP(directive.options[0], ip, filePath);
+	arg_validity_checks::checkPort(directive.options[0], port, filePath);
+	return std::make_pair(ip, port);
 }
 
-void ServerConfig::setServerName(std::vector<std::string>& tokens)
+std::vector<std::string> ServerConfig::setServerName(const t_directive& directive)
 {
-	if (tokens.size() == 1)
-		missingArgument(tokens[0]);
+	arg_validity_checks::optionsCount(directive, 1, filePath);
+	std::vector<std::string> res;
 
-	if (tokens.size() > 2)
-		argumentError(tokens[2], tokens[0]);
+	for (size_t i = 0; i < directive.options.size(); i++)
+		res.push_back(directive.options[i].str);
 
-	server_name = tokens[1];
+	return res;
 }
 
-void ServerConfig::setErrorPage(std::vector<std::string>& tokens)
+void ServerConfig::setErrorPage(const t_directive& directive, std::map<int, std::string>& errorPages)
 {
-	if (tokens.size() == 1)
-		missingArgument(tokens[0]);
+	arg_validity_checks::optionsCount(directive, 2, filePath);
+	arg_validity_checks::isValidStatusCode(directive, filePath);
+	arg_validity_checks::endsWithHtml(directive.options[directive.options.size() - 1], filePath);
+	arg_validity_checks::checkAbsolutePath(directive.options[directive.options.size() - 1], filePath);
 
-	if (!isValidStatusCode(tokens[1]))
-		argumentError(tokens[1], tokens[0]);
-
-	if (!endsWithHtml(tokens[2]))
-		argumentError(tokens[2], tokens[0]);
-
-	if (tokens[2][0] != '/')
-		error(tokens[2] + " is not an absolute path.", "Configuration file");
-
-	if (tokens.size() > 3)
-		argumentError(tokens[3], tokens[0]);
-
-	int code;
-	std::stringstream ss(tokens[1]);
-
-	if (!(ss >> code) || !ss.eof())
-		argumentError(tokens[1], tokens[0]);
-
-	error_pages[code] = tokens[2];
+	for (size_t i = 0; i + 1 < directive.options.size(); ++i)
+	{
+		int code = std::atoi(directive.options[i].str.c_str());
+		std::string path = directive.options.back().str;
+		std::pair<int, std::string> p = std::make_pair(code, path);
+		errorPages.insert(p);
+	}
 }
 
-void ServerConfig::setClientMaxBodySize(std::vector<std::string>& tokens)
+size_t ServerConfig::setClientMaxBodySize(const t_directive& directive)
 {
-	if (tokens.size() == 1)
-		missingArgument(tokens[0]);
-
-	if (tokens.size() > 2)
-		argumentError(tokens[2], tokens[0]);
-
-	char last = std::tolower(tokens[1][tokens[1].size() - 1]);
+	arg_validity_checks::optionsCount(directive, 1, 1, filePath);
+	std::string option = directive.options[0].str;
+	char last = std::tolower(option[option.size() - 1]);
 	size_t multiplier = 1;
 
 	if (last == 'k')
@@ -255,485 +227,207 @@ void ServerConfig::setClientMaxBodySize(std::vector<std::string>& tokens)
 		multiplier = 1024 * 1024 * 1024;
 
 	if (multiplier != 1)
-		tokens[1] = tokens[1].substr(0, tokens[1].size() - 1);
+		option = option.substr(0, option.size() - 1);
 
-	for (size_t i = 0; i < tokens[1].size(); ++i)
-	{
-		if (!std::isdigit(tokens[1][i]))
-			argumentError(tokens[1], tokens[0]);
-	}
+	if (!arg_validity_checks::isNumber(option))
+		error_messages::invalidClientMaxBodySize(directive.options[0], option, filePath);
 
 	unsigned long long value;
-	std::stringstream ss(tokens[1]);
+	std::stringstream ss(option);
 
 	if (!(ss >> value) || !ss.eof())
-		argumentError(tokens[1], tokens[0]);
+		error_messages::invalidClientMaxBodySize(directive.options[0], option, filePath);
 
-	client_max_body_size = static_cast<size_t>(value * multiplier);
+	return static_cast<size_t>(value * multiplier);
 }
 
-void ServerConfig::setLocation(std::vector<std::string>& tokens, std::vector<std::string>& configVect, size_t *i)
+void ServerConfig::setLocation(const t_location_block& locBlock, std::map<std::string, t_location_config>& locations, const std::string& root)
 {
-	if (tokens.size() == 1)
-		missingArgument(tokens[0]);
+	arg_validity_checks::checkAbsolutePath(locBlock.name, filePath);
+	t_location_config conf;
+	conf = setupDefaultLocationConfig(locBlock.name.str, root);
+	conf.exact = locBlock.exact;
 
-	if (tokens.size() > 2)
-		argumentError(tokens[2], tokens[0]);
-
-	if (configVect[(*i) + 1][0] != '{')
-		error("missing '{' in directive " + tokens[0] + " " + tokens[1] + ".", "Configuration file");
-
-	size_t j;
-
-	for (j = *i; j < configVect.size(); ++j)
+	for (size_t i = 0; i < locBlock.directives.size(); i++)
 	{
-		if (configVect[j][0] == '}')
-			break;
-	}
-
-	if (j >= configVect.size())
-		error("missing '}' in directive " + tokens[0] + " " + tokens[1] + ".", "Configuration file");
-
-	std::vector<std::string> locationVect(configVect.begin() + *i + 2, configVect.begin() + j);
-	*i = j;
-	LocationConfig c = fillLocationConfig(locationVect, tokens[1]);
-	locations[c.location] = c;
-}
-
-LocationConfig ServerConfig::fillLocationConfig(std::vector<std::string>& locationVect, std::string location)
-{
-	if (location[0] != '/')
-		error("location '" + location + "' must start with '/'", "Configuration file");
-
-	LocationConfig c = setupDefaultLocationConfig(location);
-	c.location = location;
-
-	for (size_t i = 0; i < locationVect.size(); i++)
-	{
-		std::vector<std::string> tokens = splitWords(locationVect[i]);
-
-		if (tokens.empty())
-			continue;
-
-		if (tokens[0] == "methods")
-			setLocationMethods(tokens, c);
-		else if (tokens[0] == "root")
-			setLocationRoot(tokens, c);
-		else if (tokens[0] == "index")
-			setLocationIndex(tokens, c);
-		else if (tokens[0] == "autoindex")
-			setOnOffDirective(tokens, c.autoindex);
-		else if (tokens[0] == "upload_enabled")
-			setOnOffDirective(tokens, c.upload_enabled);
-		else if (tokens[0] == "upload_path")
-			setLocationUploadPath(tokens, c);
-		else if (tokens[0] == "return")
-			setLocationRedirect(tokens, c);
-		else if (tokens[0] == "cgi")
-			setLocationCgi(tokens, c);
+		if (locBlock.directives[i].directive.str == "methods")
+			setMethods(locBlock.directives[i], conf);
+		else if (locBlock.directives[i].directive.str == "root")
+			conf.root = setRoot(locBlock.directives[i]);
+		else if (locBlock.directives[i].directive.str == "index")
+			setIndex(locBlock.directives[i], conf);
+		else if (locBlock.directives[i].directive.str == "autoindex")
+			setOnOffDirective(locBlock.directives[i], conf.autoindex);
+		else if (locBlock.directives[i].directive.str == "upload_store")
+			setUploadPath(locBlock.directives[i], conf);
+		else if (locBlock.directives[i].directive.str == "return")
+			setRedirect(locBlock.directives[i], conf);
+		else if (locBlock.directives[i].directive.str == "cgi_handler")
+			setCgi(locBlock.directives[i], conf);
+		else if (locBlock.directives[i].directive.str == "error_page")
+			setErrorPage(locBlock.directives[i], conf.error_pages);
+		else if (locBlock.directives[i].directive.str == "client_max_body_size")
+			conf.client_max_body_size = setClientMaxBodySize(locBlock.directives[i]);
 		else
-			directiveError(tokens[0]);
+			error_messages::unknownDirective(locBlock.directives[i].directive, filePath);
 	}
 
-	return c;
+	locations.insert(std::make_pair(locBlock.name.str, conf));
 }
 
-LocationConfig ServerConfig::setupDefaultLocationConfig(const std::string& location)
+t_location_config ServerConfig::setupDefaultLocationConfig(const std::string& location, const std::string& root)
 {
-	LocationConfig c;
-	c.root = "";
-	c.location = location;
-	c.getAllowed = GET_ALLOWED;
-	c.postAllowed = POST_ALLOWED;
-	c.deleteAllowed = DELETE_ALLOWED;
-	c.index = INDEX;
-	c.autoindex = AUTOINDEX;
-	c.redirect_enabled = REDIRECT_ENABLED;
-	c.redirect_url = REDIRECT_URL;
-	c.redirect_code = 0;
-	c.upload_enabled = UPLOAD_ENABLED;
-	c.upload_store = "";
-	c.cgi_pass.clear();
-	return c;
+	t_location_config conf;
+	conf.root = root;
+	conf.client_max_body_size = 0;
+	conf.location = location;
+	conf.getAllowed = GET_ALLOWED;
+	conf.postAllowed = POST_ALLOWED;
+	conf.deleteAllowed = DELETE_ALLOWED;
+	conf.index = INDEX;
+	conf.autoindex = AUTOINDEX;
+	conf.redirect_enabled = REDIRECT_ENABLED;
+	conf.redirect_url = REDIRECT_URL;
+	conf.redirect_code = 0;
+	conf.upload_store = "";
+	conf.cgi_pass.clear();
+	conf.error_pages.clear();
+	return conf;
 }
 
-void ServerConfig::setLocationMethods(std::vector<std::string>& tokens, LocationConfig& c)
+void ServerConfig::setMethods(const t_directive& directive, t_location_config& conf)
 {
-	if (tokens.size() == 1)
-		missingArgument(tokens[0]);
+	arg_validity_checks::optionsCount(directive, 1, 3, filePath);
+	conf.getAllowed = false;
+	conf.postAllowed = false;
+	conf.deleteAllowed = false;
 
-	if (tokens.size() > 4)
-		argumentError(tokens[4], tokens[0]);
-
-	c.getAllowed = false;
-	c.postAllowed = false;
-	c.deleteAllowed = false;
-
-	for (size_t i = 1; i < tokens.size(); i++)
+	for (size_t i = 1; i < directive.options.size(); i++)
 	{
-		if (tokens[i] == "GET")
-			c.getAllowed = true;
-		else if (tokens[i] == "POST")
-			c.postAllowed = true;
-		else if (tokens[i] == "DELETE")
-			c.deleteAllowed = true;
+		if (directive.options[i].str == "GET")
+			conf.getAllowed = true;
+		else if (directive.options[i].str == "POST")
+			conf.postAllowed = true;
+		else if (directive.options[i].str == "DELETE")
+			conf.deleteAllowed = true;
 		else
-			argumentError(tokens[i], tokens[0]);
+			error_messages::unknownArgument(directive.options[i], filePath);
 	}
 }
 
-void ServerConfig::setLocationRoot(std::vector<std::string>& tokens, LocationConfig& c)
+void ServerConfig::setIndex(const t_directive& directive, t_location_config& conf)
 {
-	if (tokens.size() == 1)
-		missingArgument(tokens[0]);
-
-	if (tokens.size() > 2)
-		argumentError(tokens[2], tokens[0]);
-
-	if (tokens[1][0] != '/')
-		error(tokens[1] + " is not an absolute path.", "Configuration file");
-
-	if (tokens[1][tokens[1].size() - 1] == '/')
-		error("Invalid root argument: '" + tokens[1] + "' should not end with '/'", "Configuration file.");
-
-	c.root = tokens[1];
+	arg_validity_checks::optionsCount(directive, 1, 1, filePath);
+	conf.index = directive.options[0].str;
 }
 
-void ServerConfig::setLocationIndex(std::vector<std::string>& tokens, LocationConfig& c)
+void ServerConfig::setOnOffDirective(const t_directive& directive, bool& field)
 {
-	if (tokens.size() == 1)
-		missingArgument(tokens[0]);
+	arg_validity_checks::optionsCount(directive, 1, 1, filePath);
 
-	if (tokens.size() > 2)
-		argumentError(tokens[2], tokens[0]);
-
-	c.index = tokens[1];
-}
-
-void ServerConfig::setOnOffDirective(std::vector<std::string>& tokens, bool& field)
-{
-	if (tokens.size() == 1)
-		missingArgument(tokens[0]);
-
-	if (tokens.size() > 2)
-		argumentError(tokens[2], tokens[0]);
-
-	if (tokens[1] == "on")
+	if (directive.options[0].str == "on")
 		field = true;
-	else if (tokens[1] == "off")
+	else if (directive.options[0].str == "off")
 		field = false;
 	else
-		argumentError(tokens[1], tokens[0]);
+		error_messages::unknownArgument(directive.options[0], filePath);
 }
 
-void ServerConfig::setLocationUploadPath(std::vector<std::string>& tokens, LocationConfig& c)
+void ServerConfig::setUploadPath(const t_directive& directive, t_location_config& conf)
 {
-	if (tokens.size() == 1)
-		missingArgument(tokens[0]);
-
-	if (tokens.size() > 2)
-		argumentError(tokens[2], tokens[0]);
-
-	if (tokens[1][0] != '/')
-		error(tokens[1] + " is not an absolute path.", "Configuration file");
-
-	c.upload_store = tokens[1];
+	arg_validity_checks::optionsCount(directive, 1, 1, filePath);
+	conf.upload_store = directive.options[0].str;
 }
 
-void ServerConfig::setLocationRedirect(std::vector<std::string>& tokens, LocationConfig& c)
+void ServerConfig::setRedirect(const t_directive& directive, t_location_config& conf)
 {
-	if (tokens.size() == 2)
-		missingArgument(tokens[0]);
-
-	if (tokens.size() > 3)
-		argumentError(tokens[3], tokens[0]);
-
-	if (!isValidStatusCode(tokens[1]))
-		argumentError(tokens[1], tokens[0]);
-
-	if (!isValidRedirectTarget(tokens[2]))
-		error(tokens[2] + " is not a valid redirect target.", "Configuration file");
-
-	c.redirect_url = tokens[2];
+	arg_validity_checks::optionsCount(directive, 2, 2, filePath);
+	arg_validity_checks::isValidStatusCode(directive, filePath);
+	conf.redirect_url = directive.options[1].str;
 	int code;
-	std::stringstream ss(tokens[1]);
+	std::stringstream ss(directive.options[0].str);
 
 	if (!(ss >> code) || !ss.eof())
-		argumentError(tokens[1], tokens[0]);
+		error_messages::invalidStatusCode(directive.options[0], filePath);
 
-	c.redirect_code = code;
-	c.redirect_enabled = true;
+	conf.redirect_code = code;
+	conf.redirect_enabled = true;
 }
 
-void ServerConfig::setLocationCgi(std::vector<std::string>& tokens, LocationConfig& c)
+void ServerConfig::setCgi(const t_directive& directive, t_location_config& conf)
 {
-	if (tokens.size() == 1)
-		missingArgument(tokens[0]);
+	arg_validity_checks::optionsCount(directive, 1, 2, filePath);
+	arg_validity_checks::checkAbsolutePath(directive.options[1], filePath);
 
-	if (tokens.size() > 3)
-		argumentError(tokens[3], tokens[0]);
+	if (!(directive.options[0].str.size() > 1 && directive.options[0].str[0] == '.'))
+		error_messages::invalidCgiExtension(directive.options[0], filePath);
 
-	if (!(tokens[1].size() > 1 && tokens[1][0] == '.'))
-		error(tokens[1] + " is not a valid cgi extension.", "Configuration file");
-
-	if (tokens[2][0] != '/')
-		error(tokens[2] + " is not an absolute path.", "Configuration file");
-
-	c.cgi_pass[tokens[1]] = tokens[2];
+	conf.cgi_pass[directive.options[0].str] = directive.options[1].str;
 }
 
-std::vector<std::string>& ServerConfig::normalizeConfig(std::vector<std::string>& rawConfig)
+
+
+
+#define COLOR_RESET		"\033[0m"
+#define COLOR_SERVER	"\033[1;36m"	// Cyan
+#define COLOR_SUBLABEL	"\033[1;33m"	// Yellow
+#define COLOR_VALUE		"\033[0;37m"	// Light gray
+#define COLOR_SECTION	"\033[1;35m"	// Magenta
+#define COLOR_LABEL		"\033[0;32m"	// Green
+
+std::ostream& operator<<(std::ostream& os, const ServerConfig& config)
 {
-	for (int i = rawConfig.size() - 1; i >= 0; i--)
+	for (size_t i = 0; i < config.configuration.size(); ++i)
 	{
-		if (rawConfig[i].empty())
+		const t_server_config& srv = config.configuration[i];
+		os << "\n" << COLOR_SERVER << "==================== SERVER " << i + 1 << " ====================" << COLOR_RESET << "\n\n";
+		os << COLOR_LABEL << "Root: " << COLOR_VALUE << srv.root << "\n";
+		os << COLOR_LABEL << "Listen:" << COLOR_RESET << "\n";
+
+		for (size_t j = 0; j < srv.listen.size(); ++j)
+			os << COLOR_VALUE << "  " << srv.listen[j].first << ":" << srv.listen[j].second << "\n";
+
+		os << COLOR_LABEL << "Server names:" << COLOR_RESET << "\n";
+
+		for (size_t j = 0; j < srv.server_name.size(); ++j)
+			os << COLOR_VALUE << "  " << srv.server_name[j] << "\n";
+
+		os << COLOR_LABEL << "Client max body size: " << COLOR_VALUE << srv.client_max_body_size << COLOR_RESET << "\n";
+		os << COLOR_LABEL << "Error pages:" << COLOR_RESET << "\n";
+
+		for (std::map<int, std::string>::const_iterator it = srv.error_pages.begin(); it != srv.error_pages.end(); ++it)
+			os << COLOR_VALUE << "  " << it->first << " -> " << it->second << "\n";
+
+		os << COLOR_SECTION << "\nLOCATIONS:" << COLOR_RESET << "\n";
+
+		for (std::map<std::string, t_location_config>::const_iterator it = srv.locations.begin(); it != srv.locations.end(); ++it)
 		{
-			rawConfig.erase(rawConfig.begin() + i);
-			continue;
+			const t_location_config& loc = it->second;
+			os << "\n  " << COLOR_SUBLABEL << "Location: " << COLOR_VALUE << loc.location
+			   << (loc.exact ? " (exact)" : "") << COLOR_RESET << "\n";
+			os << COLOR_LABEL << "    Methods: " << COLOR_VALUE
+			   << "GET[" << loc.getAllowed << "] POST[" << loc.postAllowed << "] DELETE[" << loc.deleteAllowed << "]" << COLOR_RESET << "\n";
+			os << COLOR_LABEL << "    Root: " << COLOR_VALUE << loc.root << COLOR_RESET << "\n";
+			os << COLOR_LABEL << "    Index: " << COLOR_VALUE << loc.index << COLOR_RESET << "\n";
+			os << COLOR_LABEL << "    Autoindex: " << COLOR_VALUE << loc.autoindex << COLOR_RESET << "\n";
+			os << COLOR_LABEL << "    Redirect: " << COLOR_VALUE
+			   << (loc.redirect_enabled ? "enabled" : "disabled")
+			   << " -> " << loc.redirect_url << " (" << loc.redirect_code << ")" << COLOR_RESET << "\n";
+			os << COLOR_LABEL << "    Upload store: " << COLOR_VALUE << loc.upload_store << COLOR_RESET << "\n";
+			os << COLOR_LABEL << "    Client max body size: " << COLOR_VALUE << loc.client_max_body_size << COLOR_RESET << "\n";
+			os << COLOR_LABEL << "    CGI handlers:" << COLOR_RESET << "\n";
+
+			for (std::map<std::string, std::string>::const_iterator cit = loc.cgi_pass.begin(); cit != loc.cgi_pass.end(); ++cit)
+				os << COLOR_VALUE << "      " << cit->first << " -> " << cit->second << "\n";
+
+			os << COLOR_LABEL << "    Error pages:" << COLOR_RESET << "\n";
+
+			for (std::map<int, std::string>::const_iterator eit = loc.error_pages.begin(); eit != loc.error_pages.end(); ++eit)
+				os << COLOR_VALUE << "      " << eit->first << " -> " << eit->second << "\n";
 		}
 
-		removeComments(rawConfig, i);
-		trimCollapse(rawConfig, i);
-		splitBrackets(rawConfig, i);
+		os << "\n";
 	}
-
-	return rawConfig;
-}
-
-void ServerConfig::removeComments(std::vector<std::string>& rawConfig, int i)
-{
-	if (rawConfig[i][0] == '#')
-	{
-		rawConfig.erase(rawConfig.begin() + i);
-		return ;
-	}
-
-	size_t pos = rawConfig[i].find('#');
-
-	if (pos != std::string::npos)
-		rawConfig[i] = rawConfig[i].substr(0, pos);
-}
-
-void ServerConfig::trimCollapse(std::vector<std::string>& rawConfig, int i)
-{
-	size_t start = 0;
-	size_t end = rawConfig[i].size() - 1;
-
-	while (start <= end && (rawConfig[i][start] == ' ' || rawConfig[i][start] == '\t'))
-		start++;
-
-	while (end >= start && (rawConfig[i][end] == ' ' || rawConfig[i][end] == '\t'))
-		end--;
-
-	if (start > end)
-	{
-		rawConfig.erase(rawConfig.begin() + i);
-		return;
-	}
-
-	rawConfig[i] = rawConfig[i].substr(start, end - start + 1);
-}
-
-void ServerConfig::splitBrackets(std::vector<std::string>& rawConfig, int i)
-{
-	int lastCharIndex = rawConfig[i].size() - 1;
-
-	if (!lastCharIndex)
-		return;
-
-	char lastChar = rawConfig[i][lastCharIndex];
-
-	if ((lastChar == '{' || lastChar == '}'))
-	{
-		rawConfig[i] = rawConfig[i].substr(0, rawConfig[i].size() - 1);
-		rawConfig.insert(rawConfig.begin() + i + 1, std::string(1, lastChar));
-	}
-}
-
-std::vector<std::string> splitWords(const std::string &line)
-{
-	std::vector<std::string> words;
-	std::istringstream iss(line);
-	std::string word;
-
-	while (iss >> word)
-		words.push_back(word);
-
-	return words;
-}
-
-bool isValidIPv4(const std::string &ip)
-{
-	std::stringstream ss(ip);
-	std::string segment;
-	int count = 0;
-
-	while (std::getline(ss, segment, '.'))
-	{
-		if (segment.empty() || segment.size() > 3)
-			return false;
-
-		for (std::string::size_type i = 0; i < segment.size(); ++i)
-			if (!std::isdigit(segment[i]))
-				return false;
-
-		int num = std::atoi(segment.c_str());
-
-		if (num < 0 || num > 255)
-			return false;
-
-		count++;
-	}
-
-	return count == 4;
-}
-
-bool isValidListenString(const std::string &s)
-{
-	std::string::size_type colon = s.find(':');
-
-	if (colon == std::string::npos)
-		return false;
-
-	std::string ip = s.substr(0, colon);
-	std::string portStr = s.substr(colon + 1);
-
-	if (!isValidIPv4(ip))
-		return false;
-
-	if (portStr.empty())
-		return false;
-
-	for (std::string::size_type i = 0; i < portStr.size(); ++i)
-		if (!std::isdigit(portStr[i]))
-			return false;
-
-	int port = std::atoi(portStr.c_str());
-
-	if (port < 1 || port > 65535)
-		return false;
-
-	return true;
-}
-
-bool isNumber(const std::string &s)
-{
-	if (s.empty())
-		return false;
-
-	for (std::string::size_type i = 0; i < s.size(); ++i)
-		if (!std::isdigit(s[i]))
-			return false;
-
-	return true;
-}
-
-bool isValidStatusCode(const std::string &s)
-{
-	if (!isNumber(s))
-		return false;
-
-	int code = std::atoi(s.c_str());
-	static const int codes[] =
-	{
-		200, 201, 202, 204, 205, 206, 207, 208, 226,
-		300, 301, 302, 303, 304, 305, 306, 307, 308,
-		400, 401, 402, 403, 404, 405, 406, 407, 408, 409,
-		410, 411, 412, 413, 414, 415, 416, 417, 418, 421,
-		422, 423, 424, 425, 426, 428, 429, 431, 451,
-		500, 501, 502, 503, 504, 505, 506, 507, 508, 510, 511
-	};
-
-	for (size_t i = 0; i < sizeof(codes) / sizeof(codes[0]); ++i)
-	{
-		if (code == codes[i])
-			return true;
-	}
-
-	return false;
-}
-
-bool endsWithHtml(const std::string &s)
-{
-	if (s.size() < 5)
-		return false;
-
-	return s.substr(s.size() - 5) == ".html";
-}
-
-bool isValidRedirectTarget(const std::string& target)
-{
-	if (target.empty())
-		return false;
-
-	if (target[0] == '/')
-		return true;
-
-	if (target.find("http://") == 0 || target.find("https://") == 0)
-		return true;
-
-	return false;
-}
-
-void directiveError(std::string dir)
-{
-	error("unknown directive '" + dir + "'.", "Configuration file");
-}
-
-void argumentError(std::string arg, std::string dir)
-{
-	error("invalid argument '" + arg + "' for directive '" + dir + "'.", "Configuration file");
-}
-
-void missingArgument(std::string dir)
-{
-	error("missing argument for directive '" + dir + "'.", "Configuration file");
-}
-
-std::ostream& operator<<(std::ostream& os, const LocationConfig& loc)
-{
-	os << "Location: " << loc.location << "\n";
-	os << "  GET allowed: " << loc.getAllowed << "\n";
-	os << "  POST allowed: " << loc.postAllowed << "\n";
-	os << "  DELETE allowed: " << loc.deleteAllowed << "\n";
-	os << "  Root: " << loc.root << "\n";
-	os << "  Index: " << loc.index << "\n";
-	os << "  Autoindex: " << loc.autoindex << "\n";
-	os << "  Redirect enabled: " << loc.redirect_enabled << "\n";
-	os << "  Redirect URL: " << loc.redirect_url << "\n";
-	os << "  Redirect code: " << loc.redirect_code << "\n";
-	os << "  Upload enabled: " << loc.upload_enabled << "\n";
-	os << "  Upload store: " << loc.upload_store << "\n";
-	os << "  CGI passes:\n";
-
-	for (std::map<std::string, std::string>::const_iterator it = loc.cgi_pass.begin(); it != loc.cgi_pass.end(); ++it)
-		os << "    " << it->first << " -> " << it->second << "\n";
-
-	return os;
-}
-
-std::ostream& operator<<(std::ostream& os, const ServerConfig& server)
-{
-	os << "Server name: " << server.getServerName() << "\n";
-	os << "Root: " << server.getRoot() << "\n";
-	os << "Listen:\n";
-	const std::vector<std::pair<std::string, int> >& listenVec = server.getListen();
-
-	for (std::vector<std::pair<std::string, int> >::const_iterator it = listenVec.begin(); it != listenVec.end(); ++it)
-		os << "  " << it->first << ":" << it->second << "\n";
-
-	os << "Error pages:\n";
-	const std::map<int, std::string>& errorMap = server.getErrorPages();
-
-	for (std::map<int, std::string>::const_iterator it = errorMap.begin(); it != errorMap.end(); ++it)
-		os << "  " << it->first << " -> " << it->second << "\n";
-
-	os << "Client max body size: " << server.getClientMaxBodySize() << "\n";
-	os << "Locations:\n";
-	const std::map<std::string, LocationConfig>& locMap = server.getLocations();
-
-	for (std::map<std::string, LocationConfig>::const_iterator it = locMap.begin(); it != locMap.end(); ++it)
-		os << "  " << it->first << ":\n" << it->second;
 
 	return os;
 }

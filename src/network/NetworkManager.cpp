@@ -70,7 +70,7 @@ bool NetworkManager::addListener(const std::string &ip, int port)
 
 bool NetworkManager::init()
 {
-    const std::vector<std::pair<std::string, int> > &lst = g_config.getListen();
+    const std::vector<std::pair<std::string, int> > &lst = g_config.getAllListen();
     if (lst.empty()) {
         std::cerr << "No listen directives found in config." << std::endl;
         return false;
@@ -262,7 +262,7 @@ bool NetworkManager::tryParseRequest(int fd)
             req.setHeader("Content-Length", cl.str());
         }
         // ハンドラ呼び出し
-        HttpHandler handler(g_config);
+        HttpHandler handler;
         HttpResponse res = handler.handleRequest(req);
         // バージョンのフォールバック（不正な既定値 "Http1.1" を避ける）
         if (res.getVersion().empty() || res.getVersion().find("HTTP/") != 0) {
@@ -299,7 +299,7 @@ bool NetworkManager::tryParseRequest(int fd)
                 req.setHeader("Content-Length", cl.str());
             }
 
-            HttpHandler handler(g_config);
+            HttpHandler handler;
             HttpResponse res = handler.handleRequest(req);
             if (res.getVersion().empty() || res.getVersion().find("HTTP/") != 0) {
                 res.setVersion("HTTP/1.1");

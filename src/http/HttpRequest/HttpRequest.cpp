@@ -131,9 +131,13 @@ void HttpRequest::parseHeaders(std::istringstream& line_stream)
 		{
 			error("Malformed header line: key or value is empty", "Request Parser");
 		}
-
 		headers[key] = value;
 	}
+	// need to make sure that the HOST header is present
+	// else
+	// {
+	// 	error("Malformed header line", "Request Parser");
+	// }
 }
 
 void HttpRequest::parseQueryParams(std::string const &query_string)

@@ -6,14 +6,14 @@ HttpResponse HttpHandler::handleGet(const HttpRequest& req)
 	HttpResponse res;
 	res.setVersion(req.getVersion());
 
-	FileSystem fs = SafePath(req.getUri());
-	LocationConfig location_config = config[fs];
+	FileSystem fs(req_config.safePath, req_config);
 	int code = OK;
 
-	if (g_config[fs.getPath()].redirect_enabled)
+	if (req_config.redirect_enabled)
 	{
-		code = g_config[fs.getPath()].redirect_code;
-		fs = FileSystem(SafePath(g_config[fs.getPath()].redirect_url));
+		code = req_config.redirect_code;
+		// TODO:need to make a new req_config for the new redirect path...
+		fs = FileSystem(req_config.safePath, req_config);
 	}
 
 	if(!fs.exists())
@@ -26,5 +26,6 @@ HttpResponse HttpHandler::handleGet(const HttpRequest& req)
 	res.setStatus(getStatusCodeFromInt(code));
 	res.setMimeType(getMimeTypeString(fs.getMimeType()));
 	res.setBody(fs.getFileContents());
+
 	return res;
 }

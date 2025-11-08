@@ -1,24 +1,17 @@
 #pragma once
 
-#include <iostream>
-#include <cctype>
-#include <algorithm>
-#include <stdexcept>
-#include <sstream>
-#include <fstream>
 #include <vector>
 #include <map>
 
-#include "defaultConfigs.hpp"
-#include "../src/errorHandling/ErrorWarning.hpp"
+#include "../../include/defaultConfigs.hpp"
+#include "../fileSystem/safePath/SafePath.hpp"
+#include "./ServerBlocks.hpp"
 
-class FileSystem;
-class SafePath;
-
-struct LocationConfig
+typedef struct t_location_config
 {
 	std::string location;
 
+	bool exact;
 	bool getAllowed;
 	bool postAllowed;
 	bool deleteAllowed;
@@ -30,11 +23,49 @@ struct LocationConfig
 	std::string redirect_url;
 	int redirect_code;
 
-	bool upload_enabled;
+	std::string upload_store;
+	size_t client_max_body_size;
+
+	std::map<std::string, std::string> cgi_pass;
+	std::map<int, std::string> error_pages;
+}	s_location_config;
+
+
+typedef struct t_server_config
+{
+	std::string root;
+	std::vector<std::pair<std::string, int> > listen;
+	std::map<int, std::string> error_pages;
+	size_t client_max_body_size;
+	std::map<std::string, t_location_config> locations;
+	std::vector<std::string >server_name;
+}	s_server_config;
+
+typedef struct t_request_config
+{
+	SafePath safePath;
+	std::string root;
+	std::map<int, std::string> error_pages;
+	size_t client_max_body_size;
+	std::vector<std::string >server_name;
+
+	std::string location;
+
+	bool getAllowed;
+	bool postAllowed;
+	bool deleteAllowed;
+
+	std::string index;
+	bool autoindex;
+
+	bool redirect_enabled;
+	std::string redirect_url;
+	int redirect_code;
+
 	std::string upload_store;
 
 	std::map<std::string, std::string> cgi_pass;
-};
+}	s_request_config;
 
 class ServerConfig
 {
@@ -42,68 +73,29 @@ public:
 	ServerConfig();
 	void initServerConfig(int argc, char **argv);
 
-	const std::string& getRoot() const;
-	const std::vector<std::pair<std::string, int> >& getListen() const;
-	const std::map<int, std::string>& getErrorPages() const;
-	size_t getClientMaxBodySize() const;
-	const std::map<std::string, LocationConfig>& getLocations() const;
-	const std::string& getServerName() const;
-
-	LocationConfig operator[](const SafePath& safePath) const;
-	LocationConfig operator[](const std::string& location) const;
-	LocationConfig operator[](const FileSystem& file) const;
-	LocationConfig getLocationConfigOrDefault(std::map<std::string, LocationConfig>::const_iterator it) const;
+	std::vector<std::pair<std::string, int> >& getAllListen();
+	std::vector<t_server_config>& getConfig();
+	t_request_config getRequestConfig(const std::string &serverName, const std::string& ip, int port, const std::string &requestedPath);
 
 private:
-	std::string root;
-	std::vector<std::pair<std::string, int> > listen;
-	std::map<int, std::string> error_pages;
-	size_t client_max_body_size;
-	std::map<std::string, LocationConfig> locations;
-	std::string server_name;
+	std::string filePath;
+	std::vector<t_server_config> configuration;
+	std::vector<std::pair<std::string, int> > allListen;
 
-	void setupDefaultConfig();
+	t_server_config setServerConfig(const t_server_block& serverBlock);
+	std::string setRoot(const t_directive& directive);
+	std::pair<std::string, int> setListen(const t_directive& directive);
+	std::vector<std::string> setServerName(const t_directive& directive);
+	void setErrorPage(const t_directive& directive, std::map<int, std::string>& errorPages);
+	size_t setClientMaxBodySize(const t_directive& directive);
 
-	std::vector<std::string> loadConfigFile(const std::string& path);
-
-	void parseConfig(std::vector<std::string>& rawConfig);
-	void checkConfig();
-
-	void setRoot(std::vector<std::string>& tokens);
-	void setListen(std::vector<std::string>& tokens);
-	void setServerName(std::vector<std::string>& tokens);
-	void setErrorPage(std::vector<std::string>& tokens);
-	void setClientMaxBodySize(std::vector<std::string>& tokens);
-	void setLocation(std::vector<std::string>& tokens, std::vector<std::string>& configVect, size_t *i);
-
-	LocationConfig fillLocationConfig(std::vector<std::string>& locationVect, std::string location);
-	LocationConfig setupDefaultLocationConfig(const std::string& location);
-
-	void setLocationMethods(std::vector<std::string>& tokens, LocationConfig& c);
-	void setLocationRoot(std::vector<std::string>& tokens, LocationConfig& c);
-	void setLocationIndex(std::vector<std::string>& tokens, LocationConfig& c);
-	void setOnOffDirective(std::vector<std::string>& tokens, bool& field);
-	void setLocationUploadPath(std::vector<std::string>& tokens, LocationConfig& c);
-	void setLocationRedirect(std::vector<std::string>& tokens, LocationConfig& c);
-	void setLocationCgi(std::vector<std::string>& tokens, LocationConfig& c);
-
-	std::vector<std::string>& normalizeConfig(std::vector<std::string>& rawConfig);
-	void removeComments(std::vector<std::string>& rawConfig, int i);
-	void trimCollapse(std::vector<std::string>& rawConfig, int i);
-	void splitBrackets(std::vector<std::string>& rawConfig, int i);
+	void setLocation(const t_location_block& locBlock, std::map<std::string, t_location_config>& locations, const std::string& root);
+	t_location_config setupDefaultLocationConfig(const std::string& location, const std::string& root);
+	void setMethods(const t_directive& directive, t_location_config& conf);
+	void setIndex(const t_directive& directive, t_location_config& conf);
+	void setOnOffDirective(const t_directive& directive, bool& field);
+	void setUploadPath(const t_directive& directive, t_location_config& conf);
+	void setRedirect(const t_directive& directive, t_location_config& conf);
+	void setCgi(const t_directive& directive, t_location_config& conf);
+	friend std::ostream& operator<<(std::ostream& os, const ServerConfig& config);
 };
-
-std::vector<std::string> splitWords(const std::string &line);
-bool isValidIPv4(const std::string &ip);
-bool isValidListenString(const std::string &s);
-bool isNumber(const std::string &s);
-bool isValidStatusCode(const std::string &s);
-bool endsWithHtml(const std::string &s);
-bool isValidRedirectTarget(const std::string& target);
-
-void directiveError(std::string dir);
-void argumentError(std::string arg, std::string dir);
-void missingArgument(std::string dir);
-
-std::ostream& operator<<(std::ostream& os, const LocationConfig& loc);
-std::ostream& operator<<(std::ostream& os, const ServerConfig& server);
