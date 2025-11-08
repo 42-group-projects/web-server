@@ -7,61 +7,110 @@
                                                            __╱ │                         
                                                           │___╱                                           
 ---------------------------------------------------------------------------------------
-SERVER CONFIG ACCESS
+SERVER CONFIG SYSTEM OVERVIEW
 
-Use the ServerConfig class to retrieve server and location settings after parsing a .conf file.
-Accessible in any file that includes "../include/globals.hpp"
+The `ServerConfig` class stores all parsed server and location configurations
+from the main `.conf` file and provides utilities to:
+- Match incoming requests to the correct server block
+- Select the right location block based on the request path
+- Build a unified request configuration (`t_request_config`)
 
-Constructor
-- ServerConfig()  
-  Does nothing (happens on a global scope where argv is out of reach)
-
-Initializer
-- initServerConfig(int argc, char *argv[]) 
-  Loads the configuration file. If none is provided, uses ./configFiles/webserv.conf
+This allows request handling code to easily access the proper settings
+(root, cgi, uploads, etc.) without worrying about parsing or inheritance logic.
 
 ---------------------------------------------------------------------------------------
-GLOBAL CONFIG ACCESS:
+STRUCTURE SUMMARY
 
-- g_config.getRoot()  
-  Returns the global server root path (std::string)
+t_server_config
+- Represents one `server {}` block in the config.
+- Contains all global server-level settings and its `locations` map.
 
-- g_config.getListen()  
-  Returns vector<pair<string, int>> of IP:PORT bindings
+t_location_config
+- Represents a single `location {}` block inside a server.
+- Stores location-specific overrides (root, methods, redirect, etc.)
 
-- g_config.getErrorPages()  
-  Returns map<int, string> of HTTP error codes to custom error page paths
-
-- g_config.getClientMaxBodySize()  
-  Returns max allowed request body size in bytes (size_t)
-
-- g_config.getServerName()  
-  Returns the server name (std::string)
+t_request_config
+- Merged configuration used during a single request.
+- Combines server defaults and location-specific overrides.
+- Built using `ServerConfig::getRequestConfig()`.
 
 ---------------------------------------------------------------------------------------
-LOCATION CONFIG ACCESS:
+FUNCTIONS
 
-Use the `operator[]` of `ServerConfig` with the location path to access each field:
+ServerConfig::ServerConfig(int argc, char **argv)
+  - Parses the config file specified by argv or defaults to ./configFiles/webserv.conf
+  - Fills `configuration` vector with all server blocks.
 
-Example: g_config["/upload"].upload_enabled
-Using this with a location path that isn't mentioned in the configuration file
-will access location struct filled with default settings.
+ServerConfig::getRequestConfig(serverName, ipP, ort, requestedPath)
+  - Takes the virtual host name, the IP and port of the request, and the requested URL path.
+  - Returns a fully resolved `t_request_config` struct ready for request handling.
 
-Fields in LocationConfig:
+Example:
+	t_request_config conf = g_config.getRequestConfig("localhost", "0.0.0.0", 8080, "/index.html");
 
-"arg" can be either a FileSystem object, a SafePath object, or a string.
-I made a []operator that takes a string just in case but best not use it unless you're sure the path is ok.
+---------------------------------------------------------------------------------------
+FIELD REFERENCE
 
-- g_config[arg].path                  : location (std::string)
-- g_config[arg].getAllowed            : GET allowed (bool)
-- g_config[arg].postAllowed           : POST allowed (bool)
-- g_config[arg].deleteAllowed         : DELETE allowed (bool)
-- g_config[arg].root                  : location root path (std::string)
-- g_config[arg].index                 : default index file (std::string)
-- g_config[arg].autoindex             : directory listing enabled (bool)
-- g_config[arg].redirect_enabled      : redirection enabled (bool)
-- g_config[arg].redirect_url          : redirection target (std::string)
-- g_config[arg].redirect_code         : HTTP status code for redirection (int)
-- g_config[arg].upload_enabled        : uploads enabled (bool)
-- g_config[arg].upload_store          : upload destination folder (std::string)
-- g_config[arg].cgi_pass              : map of file extensions to CGI executables (std::map<std::string, std::string>)
+t_request_config:
+- safePath                : SafePath object handling validation and full file path resolution
+- root                    : Effective root directory for the request
+- error_pages             : Map<int, string> of custom error pages
+- client_max_body_size    : Max upload/request size (bytes)
+- server_name             : List of names for the selected virtual host
+- location                : Matched location path (e.g. "/images")
+- getAllowed/postAllowed/deleteAllowed : Allowed HTTP methods
+- index                   : Default index filename
+- autoindex               : Directory listing enabled
+- redirect_enabled         : Whether redirection is active
+- redirect_url             : Redirection target URL
+- redirect_code            : HTTP status for redirection
+- upload_store             : Upload destination folder
+- cgi_pass                 : Map<extension, executable> for CGI scripts
+
+---------------------------------------------------------------------------------------
+PATH RESOLUTION (SafePath)
+
+SafePath(path, serverConf)
+- Validates and sanitizes the requested path.
+- Rejects unsafe paths (`..`, missing leading `/`, etc.)
+- Finds the longest matching `location` in the server.
+- Builds the final filesystem path:
+    fullPath = location.root + (requestedPath - locationPrefix)
+
+Accessors:
+- getRequestedPath()  → Original path (e.g. "/test/file.html")
+- getFullPath()       → Resolved filesystem path (e.g. "./www/test/file.html")
+- getLocation()       → Location path matched (e.g. "/test")
+
+---------------------------------------------------------------------------------------
+CONFIG INHERITANCE RULES
+
+Each location inherits the server-level settings unless it overrides them:
+- root
+- error_pages
+- client_max_body_size
+
+Example:
+If `location /upload` defines its own `root`, it replaces the server’s root.
+Otherwise, the request uses the server-level root.
+
+---------------------------------------------------------------------------------------
+USAGE EXAMPLE
+
+int main(int argc, char **argv)
+{
+	ServerConfig config(argc, argv);
+
+	t_request_config conf = config.getRequestConfig("localhost", "0.0.0.0", 8082, "/test/file.txt");
+
+	std::cout << "Resolved path: " << conf.safePath.getFullPath() << "\n";
+	std::cout << "Root: " << conf.root << "\n";
+	std::cout << "Autoindex: " << (conf.autoindex ? "on" : "off") << "\n";
+	std::cout << "CGI for .php: " << conf.cgi_pass[".php"] << "\n";
+}
+
+---------------------------------------------------------------------------------------
+SUMMARY
+The `ServerConfig` and `SafePath` systems form the backbone of request routing.
+They abstract away nginx-style inheritance, location matching, and path resolution,
+so request handlers can focus entirely on response generation.

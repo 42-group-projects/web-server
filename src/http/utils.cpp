@@ -181,8 +181,6 @@ std::string getMimeTypeString(e_mimeType mimeType)
 e_mimeType getMimeTypeEnum(const std::string mimeTypeStr)
 {
 	// Debug output to see what we're actually receiving
-	std::cout << "DEBUG: getMimeTypeEnum received: '" << mimeTypeStr << "'" << std::endl;
-	std::cout << "DEBUG: String length: " << mimeTypeStr.length() << std::endl;
 
 	if (mimeTypeStr == "text/html")
 		return TEXT_HTML;
@@ -372,78 +370,5 @@ e_status_code getStatusCodeFromInt(int code)
 		return NETWORK_AUTHENTICATION_REQUIRED;
 	default:
 		return UNSET;
-	}
-}
-
-void displayFileSystemInfo(FileSystem const &fs)
-{
-	std::cout << "-------FILESYSTEM INFO-------" << std::endl;
-	std::cout << "Path: " << fs.getPath().getFullPath() << std::endl;
-	std::cout << "Size: " << fs.getSize() << " bytes" << std::endl;
-	std::cout << "MIME Type: " << fs.getMimeType() << std::endl;
-	std::cout << "Exists: " << (fs.exists() ? "Yes" : "No") << std::endl;
-	std::cout << "Directory: " << (fs.directory() ? "Yes" : "No") << std::endl;
-	std::cout << "Readable: " << (fs.readable() ? "Yes" : "No") << std::endl;
-	std::cout << "Writable: " << (fs.writable() ? "Yes" : "No") << std::endl;
-	std::cout << "Executable: " << (fs.executable() ? "Yes" : "No") << std::endl;
-}
-
-void displayConfig(ServerConfig const &config)
-{
-	std::cout << "-------SERVER CONFIG DETAILS-------" << std::endl;
-	std::cout << "Root: " << config.getRoot() << std::endl;
-	std::cout << "Server Name: " << config.getServerName() << std::endl;
-	std::cout << "Client Max Body Size: " << config.getClientMaxBodySize() << " bytes" << std::endl;
-
-	std::cout << "\nError Pages:" << std::endl;
-	std::map<int, std::string> errorPages = config.getErrorPages();
-	for (std::map<int, std::string>::const_iterator it = errorPages.begin(); it != errorPages.end(); ++it)
-	{
-		std::cout << "  " << it->first << ": " << it->second << std::endl;
-	}
-}
-
-void displayServerConfigDetails(ServerConfig const &config)
-{
-	std::cout << "-------SERVER CONFIG DETAILS-------" << std::endl;
-	std::cout << "Root: " << config.getRoot() << std::endl;
-	std::cout << "Server Name: " << config.getServerName() << std::endl;
-	std::cout << "Client Max Body Size: " << config.getClientMaxBodySize() << " bytes" << std::endl;
-
-	std::cout << "\nError Pages:" << std::endl;
-	std::map<int, std::string> errorPages = config.getErrorPages();
-	for (std::map<int, std::string>::const_iterator it = errorPages.begin(); it != errorPages.end(); ++it)
-	{
-		std::cout << "  " << it->first << ": " << it->second << std::endl;
-	}
-
-	std::cout << "\nListening on:" << std::endl;
-	std::vector<std::pair<std::string, int> > listen = config.getListen();
-	for (size_t i = 0; i < listen.size(); ++i)
-	{
-		std::cout << "  " << listen[i].first << ":" << listen[i].second << std::endl;
-	}
-}
-
-void displayLocationConfigDetails(LocationConfig const &location)
-{
-	std::cout << "-------LOCATION CONFIG DETAILS-------" << std::endl;
-	std::cout << "Location: " << location.location << std::endl;
-	std::cout << "Root: " << location.root << std::endl;
-	std::cout << "Index: " << location.index << std::endl;
-	std::cout << "Autoindex: " << (location.autoindex ? "Enabled" :	 "Disabled") << std::endl;
-	std::cout << "GET Allowed: " << (location.getAllowed ? "Yes" : "No") << std::endl;
-	std::cout << "POST Allowed: " << (location.postAllowed ? "Yes" : "No") << std::endl;
-	std::cout << "DELETE Allowed: " << (location.deleteAllowed ? "Yes" : "No") << std::endl;
-	std::cout << "Redirect Enabled: " << (location.redirect_enabled ? "Yes" : "No") << std::endl;
-	std::cout << "Redirect Enabled: " << (location.redirect_enabled ? "Yes" : "No") << std::endl;
-	std::cout << "Redirect URL: " << location.redirect_url << std::endl;
-	std::cout << "Redirect Code: " << location.redirect_code << std::endl;
-	std::cout << "Upload Enabled: " << (location.upload_enabled ? "Yes" : "No") << std::endl;
-	std::cout << "Upload Store: " << location.upload_store << std::endl;
-	std::cout << "CGI Pass:" << std::endl;
-	for (std::map<std::string, std::string>::const_iterator it = location.cgi_pass.begin(); it != location.cgi_pass.end(); ++it)
-	{
-		std::cout << "  " << it->first << ": " << it->second << std::endl;
 	}
 }

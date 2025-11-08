@@ -11,17 +11,17 @@
 class CgiHandler
 {
 	private:
-	    const LocationConfig& location_config;
+	    t_request_config req_config;
 	    // Helper methods
 		char **makeEnvs(const HttpRequest& req);
 		char **makeArgs(const HttpRequest& req);
 		std::string getQuaryString(const std::string& uri);
-		std::string getCgiPath(std::string uri, const LocationConfig& config);
+		std::string getCgiPath(std::string uri, const t_request_config& req_config);
 		std::string getExtention(const std::string& uri);
 		HttpResponse makeResponse(const std::string& cgi_output);
 
 	public:
-	    CgiHandler(const LocationConfig& config);
+	    CgiHandler(const t_request_config& req_config);
 	    ~CgiHandler();
 
 		bool isCgiRequest(const HttpRequest& req);

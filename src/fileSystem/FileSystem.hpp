@@ -40,10 +40,10 @@ private:
 	e_mimeType detectMimeType(const SafePath& safePath);
 
 public:
-	FileSystem(SafePath path);
+	FileSystem(SafePath sp, t_request_config& conf);
 
 	const std::string getFileContents() const;
-	void errorPage(e_status_code code);
+	void errorPage(e_status_code code, t_request_config& conf);
 
 	const SafePath& getPath() const;
 	size_t getSize() const;

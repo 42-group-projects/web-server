@@ -9,10 +9,11 @@
 #pragma once
 
 //Default configuration file location
-#define DEFAULT_CONF_FILE "configFiles/webserv.conf"
+// will need to chag this path when we add a new config file for testing
+#define DEFAULT_CONF_FILE "../configFiles/test.conf"
 
 //Server
-#define SERVER_NAME "mySite.local"
+#define SERVER_NAME "_"
 #define CLIENT_MAX_BODY_SIZE 1024 * 1024 // 1 MB
 
 //Http limits

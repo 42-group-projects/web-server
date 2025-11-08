@@ -1,6 +1,6 @@
 #include "../src/fileSystem/FileSystem.hpp"
 
-FileSystem::FileSystem(SafePath path) : sp(path)
+FileSystem::FileSystem(SafePath sp, t_request_config& conf) : sp(sp)
 {
 	directoryListingStr = "";
 	errorPageStr = "";
@@ -9,27 +9,26 @@ FileSystem::FileSystem(SafePath path) : sp(path)
 
 	if (isDirectory)
 	{
-		if (!g_config[sp].index.empty())
+		if (!conf.index.empty())
 		{
 			std::string newPath;
 
 			if (sp.getRequestedPath()[sp.getRequestedPath().size() - 1] != '/')
-				newPath = sp.getRequestedPath() + "/" + g_config[sp].index;
+				newPath = sp.getFullPath() + "/" + conf.index;
 			else
-				newPath = sp.getRequestedPath() + g_config[sp].index;
-
-			SafePath indexSp(newPath);
+				newPath = sp.getFullPath() + conf.index;
+			
 			SafePath backup = sp;
-			sp = indexSp;
-			fillMetadata();
 
-			if (!isExists && g_config[sp].autoindex)
+			this->sp.setFullPath(newPath);
+			fillMetadata();
+			if (!isExists && conf.autoindex)
 			{
 				sp = backup;
 				fillDirectoryListingMetadata();
 			}
 		}
-		else if (g_config[sp].autoindex)
+		else if (conf.autoindex)
 			fillDirectoryListingMetadata();
 	}
 }
@@ -142,6 +141,9 @@ const std::string FileSystem::getFileContents() const
 
 	std::ifstream file(sp.getFullPath().c_str(), std::ios::binary);
 
+
+	// std::cout << "Opening file: " << sp.getFullPath() << std::endl;
+
 	if (!file)
 		error("Couldn't open file '" + sp.getFullPath() + "'", "File system");
 
@@ -150,10 +152,10 @@ const std::string FileSystem::getFileContents() const
 	return oss.str();
 }
 
-void FileSystem::errorPage(e_status_code code)
+void FileSystem::errorPage(e_status_code code, t_request_config& conf)
 {
 	std::string errorPagePath;
-	const std::map<int, std::string>& errorPages = g_config.getErrorPages();
+	const std::map<int, std::string>& errorPages = conf.error_pages;
 	std::map<int, std::string>::const_iterator it = errorPages.find(static_cast<int>(code));
 
 	if (it != errorPages.end())
@@ -164,7 +166,7 @@ void FileSystem::errorPage(e_status_code code)
 
 		try
 		{
-			SafePath newPath(errorPagePath);
+			SafePath newPath(errorPagePath, conf);
 			sp = newPath;
 			fillMetadata();
 
@@ -209,7 +211,6 @@ std::ostream& operator<<(std::ostream& os, const FileSystem& file)
 	os << "Readable: " << file.readable() << std::endl;
 	os << "Writable: " << file.writable() << std::endl;
 	os << "Executable: " << file.executable() << std::endl << std::endl;
-	os << g_config[file.getPath()] << std::endl << std::endl;
 	os << "file contents:" << std::endl << file.getFileContents() << std::endl;
 	return os;
 }

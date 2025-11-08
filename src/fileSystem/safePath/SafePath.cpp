@@ -1,13 +1,15 @@
-#include "../src/fileSystem/safePath/SafePath.hpp"
-#include "../include/globals.hpp"
+#include "SafePath.hpp"
 #include "../src/errorHandling/ErrorWarning.hpp"
+#include "../../configFileParser/ServerConfig.hpp"
 
+struct t_location_config;
+struct t_server_config;
 
-SafePath::SafePath(const std::string& path)
+SafePath::SafePath() : requestedPath(""), fullPath(""), location("") {}
+
+SafePath::SafePath(const std::string& path, t_server_config* serverConf)
 	: requestedPath(path)
 {
-	if (path[0] != '/')
-		error("Invalid path '" + requestedPath + "' must start with /", "SafePath");
 
 	if (path.find("..") != std::string::npos)
 		error("Unsafe path '" + requestedPath + "'", "SafePath");
@@ -16,19 +18,29 @@ SafePath::SafePath(const std::string& path)
 	location = "/";
 	size_t longest = 0;
 
-	for (std::map<std::string, LocationConfig>::const_iterator it = g_config.getLocations().begin();
-	        it != g_config.getLocations().end(); ++it)
+	for (std::map<std::string, t_location_config>::const_iterator it = serverConf->locations.begin();
+	        it != serverConf->locations.end(); ++it)
 	{
 		const std::string& loc = it->first;
+		const t_location_config& conf = it->second;
 
-		if (requestedPath.compare(0, loc.size(), loc) == 0 && loc.size() > longest)
+		if (conf.exact)
+		{
+			if (requestedPath == loc)
+			{
+				location = loc;
+				longest = loc.size();
+				break;
+			}
+		}
+		else if (requestedPath.compare(0, loc.size(), loc) == 0 && loc.size() > longest)
 		{
 			location = loc;
 			longest = loc.size();
 		}
 	}
 
-	std::string root = g_config[location].root;
+	std::string root = serverConf->locations[location].root;
 
 	if (location == "/")
 		fullPath = root + requestedPath;
@@ -37,6 +49,37 @@ SafePath::SafePath(const std::string& path)
 		std::string remainder = requestedPath.substr(location.size());
 		fullPath = root + remainder;
 	}
+}
+
+SafePath::SafePath(const std::string& requestedPath, const t_request_config& req_conf)
+{
+	if (requestedPath.find("..") != std::string::npos)
+		error("Unsafe path '" + requestedPath + "'", "SafePath");
+
+	location = req_conf.location;
+
+	std::string root = req_conf.root;
+
+	if (location == "/")
+		fullPath = root + requestedPath;
+	else
+	{
+		std::string remainder = requestedPath.substr(location.size());
+		fullPath = root + remainder;
+	}
+	std::cout << "Full path resolved: " << fullPath << std::endl;
+}
+
+
+SafePath& SafePath::operator=(const SafePath& other)
+{
+	if (this != &other)
+	{
+		this->requestedPath = other.requestedPath;
+		this->fullPath = other.fullPath;
+		this->location = other.location;
+	}
+	return *this;
 }
 
 std::vector<std::string> SafePath::splitPath(const std::string &path)
@@ -63,6 +106,8 @@ std::vector<std::string> SafePath::splitPath(const std::string &path)
 
 	return parts;
 }
+
+void SafePath::setFullPath(const std::string& path)	{ fullPath = path; }
 
 std::string SafePath::getRequestedPath() const { return requestedPath; }
 std::string SafePath::getFullPath() const { return fullPath; }

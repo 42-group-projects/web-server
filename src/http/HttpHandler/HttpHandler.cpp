@@ -1,23 +1,30 @@
 #include "HttpHandler.hpp"
 #include "../utils.hpp"
 #include "../CgiHandler/CgiHandler.hpp"
+#include "../include/globals.hpp"
 
-HttpHandler::HttpHandler(const ServerConfig &config) : config(config) {}
+HttpHandler::HttpHandler() {}
 
 HttpHandler::~HttpHandler() {}
 
 HttpResponse HttpHandler::handleRequest(const HttpRequest& req)
-{
+{	
+	// need to get IP Address and and make a get HOST fucntion to check against the server name. alos need the port number 
+	// need to get this info from the network layer.
+	t_request_config request_config = g_config.getRequestConfig("localhost", "0.0.0.0", 8080, req.getUri());
+
+	req_config = request_config;
+	
 	if(req.getBody().size() > MAX_PAYLOAD_SIZE)
 		return handleErrorPages(req, CONTENT_TOO_LARGE);
 
 	// CGI request
 	try
 	{
-		FileSystem fs = SafePath(req.getUri());
-		LocationConfig location_config = config[fs];
+		FileSystem fs(req_config.safePath, req_config);
+		// LocationConfig location_config = config[fs];
 
-		CgiHandler cgi_handler(location_config);
+		CgiHandler cgi_handler(req_config);
 		if (cgi_handler.isCgiRequest(req))
 		{
 			return cgi_handler.runCgi(req);
@@ -29,7 +36,7 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req)
 		std::cerr << "Falling back to standard request handling." << std::endl;
 	}
 
-	// Standard request
+	// Standard requestHttpHandler::HttpHandler(t_request_config req_config) 
 	try
 	{
 		if(hasHttpRequestErrors(req))
@@ -43,7 +50,7 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req)
 				return handleGet(req);
 
 			case POST:
-			 	return handlePost(req);
+			 	// return handlePost(req);
 
 			case DELETE:
 				return handleDelete(req);
@@ -68,8 +75,6 @@ bool HttpHandler::hasHttpRequestErrors(const HttpRequest& req)
 		return true;
 	}
 
-	std::cout << "parsing error is: " << req.getParsingError() << std::endl;
-
 	if(req.getParsingError() != "")
 	{
 		return true;
@@ -81,8 +86,9 @@ bool HttpHandler::hasHttpRequestErrors(const HttpRequest& req)
 HttpResponse HttpHandler::handleErrorPages(const HttpRequest& req, e_status_code response_code)
 {
 	HttpResponse res;
-	std::map<int, std::string> errorPages = config.getErrorPages();
-	FileSystem fs(errorPages[response_code]);
+	std::map<int, std::string> error_pages = req_config.error_pages;
+	std::string error_page_path = error_pages[response_code];
+	FileSystem fs(req_config.safePath, req_config);
 
 	res.setStatus(response_code);
 	res.setVersion(req.getVersion());
