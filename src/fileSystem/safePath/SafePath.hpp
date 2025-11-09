@@ -17,7 +17,7 @@ private:
 
 public:
 	SafePath();
-	SafePath(const std::string& path, t_server_config* serverConf);
+	SafePath(const std::string& path, const t_server_config* serverConf);
 	SafePath(const std::string& path, const t_request_config& req_conf);
 	SafePath& operator=(const SafePath& other);
 

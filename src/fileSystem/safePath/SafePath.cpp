@@ -7,14 +7,13 @@ struct t_server_config;
 
 SafePath::SafePath() : requestedPath(""), fullPath(""), location("") {}
 
-SafePath::SafePath(const std::string& path, t_server_config* serverConf)
+SafePath::SafePath(const std::string& path, const t_server_config* serverConf)
 	: requestedPath(path)
 {
-
 	if (path.find("..") != std::string::npos)
 		error("Unsafe path '" + requestedPath + "'", "SafePath");
 
-	std::vector<std::string> splited = splitPath(path);
+	std::vector<std::string> reqSegments = splitPath(path);
 	location = "/";
 	size_t longest = 0;
 
@@ -23,33 +22,51 @@ SafePath::SafePath(const std::string& path, t_server_config* serverConf)
 	{
 		const std::string& loc = it->first;
 		const t_location_config& conf = it->second;
+		std::vector<std::string> locSegments = splitPath(loc);
+
+		bool match = false;
 
 		if (conf.exact)
 		{
-			if (requestedPath == loc)
+			match = (reqSegments == locSegments);
+		}
+		else
+		{
+			if (reqSegments.size() >= locSegments.size())
 			{
-				location = loc;
-				longest = loc.size();
-				break;
+				match = true;
+				for (size_t i = 0; i < locSegments.size(); ++i)
+				{
+					if (reqSegments[i] != locSegments[i])
+					{
+						match = false;
+						break;
+					}
+				}
 			}
 		}
-		else if (requestedPath.compare(0, loc.size(), loc) == 0 && loc.size() > longest)
+
+		if (match && loc.size() > longest)
 		{
 			location = loc;
 			longest = loc.size();
 		}
 	}
 
-	std::string root = serverConf->locations[location].root;
+	std::string root = serverConf->locations.at(location).root;
 
 	if (location == "/")
 		fullPath = root + requestedPath;
 	else
 	{
-		std::string remainder = requestedPath.substr(location.size());
+		std::vector<std::string> locSegments = splitPath(location);
+		std::string remainder;
+		for (size_t i = locSegments.size(); i < reqSegments.size(); ++i)
+			remainder += "/" + reqSegments[i];
 		fullPath = root + remainder;
 	}
 }
+
 
 SafePath::SafePath(const std::string& requestedPath, const t_request_config& req_conf)
 {

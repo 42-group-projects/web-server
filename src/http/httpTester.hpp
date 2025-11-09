@@ -5,7 +5,6 @@
 #include "../mock_data/http_request.hpp"
 #include "../mock_data/http_response.hpp"
 #include "./HttpHandler/HttpHandler.hpp"
-#include "../include/globals.hpp"
 
 int http_tester()
 {

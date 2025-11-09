@@ -20,15 +20,15 @@ void ServerConfig::initServerConfig(int argc, char **argv)
 
 
 
-std::vector<std::pair<std::string, int> >& ServerConfig::getAllListen() {return allListen;}
+const std::vector<std::pair<std::string, int> >& ServerConfig::getAllListen() const {return allListen;}
 std::vector<t_server_config>& ServerConfig::getConfig() {return configuration;}
 
-t_request_config ServerConfig::getRequestConfig(const std::string &serverName, const std::string& ip, int port, const std::string &requestedPath)
+t_request_config ServerConfig::getRequestConfig(const std::string &serverName, const std::string& ip, int port, const std::string &requestedPath) const
 {
 	std::pair<std::string, int> ipPort(ip, port);
-	t_server_config *sconf = NULL;
-	std::vector<t_server_config*> exactMatches;
-	std::vector<t_server_config*> catchAll;
+	const t_server_config *sconf = NULL;
+	std::vector<const t_server_config*> exactMatches;
+	std::vector<const t_server_config*> catchAll;
 
 	for (size_t i = 0; i < configuration.size(); ++i)
 	{
@@ -43,7 +43,7 @@ t_request_config ServerConfig::getRequestConfig(const std::string &serverName, c
 		}
 	}
 
-	const std::vector<t_server_config*> &servers = !exactMatches.empty() ? exactMatches : catchAll;
+	const std::vector<const t_server_config*> &servers = !exactMatches.empty() ? exactMatches : catchAll;
 
 	for (size_t i = 0; i < servers.size() && !sconf; ++i)
 	{
@@ -63,7 +63,7 @@ t_request_config ServerConfig::getRequestConfig(const std::string &serverName, c
 		sconf = servers[0];
 
 	SafePath sp(requestedPath, sconf);
-	t_location_config &lConf = sconf->locations[sp.getLocation()];
+	const t_location_config &lConf = sconf->locations.at(sp.getLocation());
 	t_request_config rConf =
 	{
 		sp,

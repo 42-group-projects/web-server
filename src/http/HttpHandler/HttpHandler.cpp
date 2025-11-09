@@ -1,17 +1,16 @@
 #include "HttpHandler.hpp"
 #include "../utils.hpp"
 #include "../CgiHandler/CgiHandler.hpp"
-#include "../include/globals.hpp"
 
 HttpHandler::HttpHandler() {}
 
 HttpHandler::~HttpHandler() {}
 
-HttpResponse HttpHandler::handleRequest(const HttpRequest& req)
+HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConfig& config)
 {	
 	// need to get IP Address and and make a get HOST fucntion to check against the server name. alos need the port number 
 	// need to get this info from the network layer.
-	t_request_config request_config = g_config.getRequestConfig("localhost", "0.0.0.0", 8080, req.getUri());
+	t_request_config request_config = config.getRequestConfig("localhost", "0.0.0.0", 8080, req.getUri());
 
 	req_config = request_config;
 	

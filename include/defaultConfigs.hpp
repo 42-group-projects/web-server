@@ -10,7 +10,7 @@
 
 //Default configuration file location
 // will need to chag this path when we add a new config file for testing
-#define DEFAULT_CONF_FILE "../configFiles/test.conf"
+#define DEFAULT_CONF_FILE "configFiles/default.conf"
 
 //Server
 #define SERVER_NAME "_"

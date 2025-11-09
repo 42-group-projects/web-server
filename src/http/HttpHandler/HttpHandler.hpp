@@ -23,5 +23,5 @@ class HttpHandler
 	public:
 		HttpHandler();
 		~HttpHandler();
-		HttpResponse handleRequest(const HttpRequest& req);
+		HttpResponse handleRequest(const HttpRequest& req, const ServerConfig& config);
 };
