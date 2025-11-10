@@ -3,7 +3,7 @@
 #include "../http/HttpRequest/HttpRequest.hpp"
 #include "../http/HttpResponse/HttpResponse.hpp"
 
-NetworkManager::NetworkManager() : running(false) {}
+NetworkManager::NetworkManager(const ServerConfig& config) : config(config), running(false) {}
 NetworkManager::~NetworkManager() {
     for (size_t i = 0; i < pollfds.size(); ++i) {
         close(pollfds[i].fd);
@@ -70,7 +70,7 @@ bool NetworkManager::addListener(const std::string &ip, int port)
 
 bool NetworkManager::init()
 {
-    const std::vector<std::pair<std::string, int> > &lst = g_config.getAllListen();
+    const std::vector<std::pair<std::string, int> > &lst = config.getAllListen();
     if (lst.empty()) {
         std::cerr << "No listen directives found in config." << std::endl;
         return false;
@@ -263,7 +263,7 @@ bool NetworkManager::tryParseRequest(int fd)
         }
         // ハンドラ呼び出し
         HttpHandler handler;
-        HttpResponse res = handler.handleRequest(req);
+        HttpResponse res = handler.handleRequest(req, config);
         // バージョンのフォールバック（不正な既定値 "Http1.1" を避ける）
         if (res.getVersion().empty() || res.getVersion().find("HTTP/") != 0) {
             res.setVersion("HTTP/1.1");
@@ -300,7 +300,7 @@ bool NetworkManager::tryParseRequest(int fd)
             }
 
             HttpHandler handler;
-            HttpResponse res = handler.handleRequest(req);
+            HttpResponse res = handler.handleRequest(req, config);
             if (res.getVersion().empty() || res.getVersion().find("HTTP/") != 0) {
                 res.setVersion("HTTP/1.1");
             }

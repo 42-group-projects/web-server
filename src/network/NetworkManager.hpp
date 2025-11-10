@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../../include/imports.hpp"
-#include "../../include/globals.hpp"
+#include "../configFileParser/ServerConfig.hpp"
 
 #include <poll.h>
 #include <arpa/inet.h>
@@ -12,10 +12,11 @@
 
 class NetworkManager {
 public:
-    NetworkManager();
+    NetworkManager(const ServerConfig& config);
     ~NetworkManager();
 
     // 初期化: g_config.getListen() を使って複数ポートを listen
+    // Now it's config.getAllListen() - Clément
     bool init();
 
     // イベントループ開始（ブロッキング）
@@ -25,6 +26,7 @@ public:
     void stop();
 
 private:
+    const ServerConfig& config;
     bool running;
 
     std::vector<int> listeners;                 // リスニングFD一覧

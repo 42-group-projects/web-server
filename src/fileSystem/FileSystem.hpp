@@ -11,8 +11,8 @@
 
 #include "../src/fileSystem/safePath/SafePath.hpp"
 #include "../src/fileSystem/directoryListing/DirectoryListing.hpp"
+#include "../src/configFileParser/ServerConfig.hpp"
 #include "../src/fileSystem/errorPageGenerator/ErrorPageGenerator.hpp"
-#include "../include/globals.hpp"
 #include "../src/errorHandling/ErrorWarning.hpp"
 #include "enums.hpp"
 

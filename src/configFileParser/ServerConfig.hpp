@@ -73,9 +73,9 @@ public:
 	ServerConfig();
 	void initServerConfig(int argc, char **argv);
 
-	std::vector<std::pair<std::string, int> >& getAllListen();
+	const std::vector<std::pair<std::string, int> >& getAllListen() const;
 	std::vector<t_server_config>& getConfig();
-	t_request_config getRequestConfig(const std::string &serverName, const std::string& ip, int port, const std::string &requestedPath);
+	t_request_config getRequestConfig(const std::string &serverName, const std::string& ip, int port, const std::string &requestedPath) const;
 
 private:
 	std::string filePath;
