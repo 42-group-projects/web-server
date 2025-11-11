@@ -7,13 +7,13 @@ HttpHandler::HttpHandler() {}
 HttpHandler::~HttpHandler() {}
 
 HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConfig& config)
-{	
-	// need to get IP Address and and make a get HOST fucntion to check against the server name. alos need the port number 
+{
+	// need to get IP Address and and make a get HOST fucntion to check against the server name. alos need the port number
 	// need to get this info from the network layer.
-	t_request_config request_config = config.getRequestConfig("localhost", "0.0.0.0", 8080, req.getUri());
+	t_request_config request_config = config.getRequestConfig("localhost", "127.0.0.0", 8080, req.getUri());
 
 	req_config = request_config;
-	
+
 	if(req.getBody().size() > MAX_PAYLOAD_SIZE)
 		return handleErrorPages(req, CONTENT_TOO_LARGE);
 
@@ -35,7 +35,7 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 		std::cerr << "Falling back to standard request handling." << std::endl;
 	}
 
-	// Standard requestHttpHandler::HttpHandler(t_request_config req_config) 
+	// Standard requestHttpHandler::HttpHandler(t_request_config req_config)
 	try
 	{
 		if(hasHttpRequestErrors(req))
@@ -49,7 +49,7 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 				return handleGet(req);
 
 			case POST:
-			 	// return handlePost(req);
+			 	return handlePost(req);
 
 			case DELETE:
 				return handleDelete(req);
@@ -60,9 +60,11 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 	}
 	catch(const std::exception& e)
 	{
+		std::cerr << "Exception caught in HttpHandler::handleRequest: ";
 		std::cerr << e.what() << '\n';
 		//TODO: fiuger out what kind of response we want to send back here...
-		return HttpResponse();
+		return handleErrorPages(req, INTERNAL_SERVER_ERROR);
+		// return handleErrorPages(req, IM_A_TEAPOT);
 	}
 }
 
@@ -87,11 +89,11 @@ HttpResponse HttpHandler::handleErrorPages(const HttpRequest& req, e_status_code
 	HttpResponse res;
 	std::map<int, std::string> error_pages = req_config.error_pages;
 	std::string error_page_path = error_pages[response_code];
-	FileSystem fs(req_config.safePath, req_config);
-
+	FileSystem fs(SafePath(error_page_path, req_config), req_config);
 	res.setStatus(response_code);
 	res.setVersion(req.getVersion());
 	res.setMimeType(getMimeTypeString(fs.getMimeType()));
-	res.setBody(fs.getFileContents());
+	if(fs.exists())
+		res.setBody(fs.getFileContents());
 	return res;
 }

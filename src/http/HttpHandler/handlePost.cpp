@@ -3,6 +3,8 @@
 #include <fstream>
 #include <unistd.h>
 
+
+
 std::string formatFileName(const HttpRequest &req);
 std::string getFileNamFromHeader(const HttpRequest &req);
 
@@ -13,18 +15,15 @@ HttpResponse HttpHandler::handlePost(const HttpRequest& req)
 	FileSystem fs(req_config.safePath, req_config);
 	// int code = OK; ( not used )
 
-	if (req_config.redirect_enabled)
-	{
-		// code = g_config[fs.getPath()].redirect_code;
-		fs = FileSystem(req_config.safePath, req_config);
-	}
+	if(req_config.postAllowed == false)
+		return handleErrorPages(req, METHOD_NOT_ALLOWED);
 
 	//error checking and validations
 	if(req_config.postAllowed == false)
 		return handleErrorPages(req, FORBIDDEN);
 	if(req.getBody().size() > req_config.client_max_body_size)
 		return handleErrorPages(req, CONTENT_TOO_LARGE);
-	
+
 	if(req_config.upload_store.empty())
 	{
 		// TODO: or makde uplaod store mandatory if upload is enabled
@@ -32,6 +31,7 @@ HttpResponse HttpHandler::handlePost(const HttpRequest& req)
 	}
 
 	std::string upload_path = fs.getPath();
+	std::cout << " DOES IT GET HERE? "<< std::endl;
 	std::string file_name = formatFileName(req);
 	try
 	{
@@ -99,11 +99,18 @@ std::string getFileNamFromHeader(const HttpRequest &req)
 	std::map<std::string, std::string> headers = req.getHeaders();
 	std::map<std::string, std::string>::const_iterator it = headers.find("Content-Disposition");
 
+
 	if(it != headers.end())
 	{
 		std::string value = it->second;
 		value.erase(0, value.find_first_not_of(" \"\t\r\n"));
 		value.erase(value.find_last_not_of(" \"\t\r\n") + 1);
+
+		if (value.empty())
+		{
+			error("Empty Content-Disposition header value", "HttpHandler::getFileNamFromHeader");
+			return file_name;
+		}
 
 		size_t filename_pos = value.find("filename=");
 		if (filename_pos != std::string::npos)
@@ -111,6 +118,13 @@ std::string getFileNamFromHeader(const HttpRequest &req)
 			// 9 is the length of "filename="
 			// 1 is for the opening quote
 			size_t start = filename_pos + 9 + 1;
+
+			if (start >= value.length())
+			{
+				error("Malformed Content-Disposition header: filename value too short", "HttpHandler::getFileNamFromHeader");
+				return file_name;
+			}
+
 			size_t end = value.find_first_of(";\r\n", start);
 			if (end == std::string::npos)
 				end = value.length();
@@ -122,4 +136,4 @@ std::string getFileNamFromHeader(const HttpRequest &req)
 		}
 	}
 	return file_name;
-}	
+}

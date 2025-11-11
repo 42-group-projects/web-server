@@ -8,9 +8,16 @@ HttpResponse HttpHandler::handleDelete(const HttpRequest& req)
 	res.setVersion(req.getVersion());
 	FileSystem fs(req_config.safePath, req_config);
 
+
+	std::cout << fs <<std::endl;
+
 	if(fs.exists() == false)
 		return handleErrorPages(req, NOT_FOUND);
-	if(req_config.deleteAllowed == false || fs.writable() == false || fs.directory() == true)
+	if(fs.getPath().getRequestedPath() == "/")
+	{
+		return handleErrorPages(req, METHOD_NOT_ALLOWED);
+	}
+	if(req_config.deleteAllowed == false || fs.writable() == false)
 		return handleErrorPages(req, FORBIDDEN);
 
 	try

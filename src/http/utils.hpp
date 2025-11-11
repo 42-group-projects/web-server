@@ -14,7 +14,9 @@ std::string getMimeTypeExtention(e_mimeType mimeType);
 std::string getStatusString(e_status_code status);
 std::string getCurrentTime();
 e_status_code getStatusCodeFromInt(int code);
-void displayFileSystemInfo(FileSystem const &fs);
-void displayConfig(ServerConfig const &config);
-void displayServerConfigDetails(ServerConfig const &config);
+bool hasHost(std::map<std::string, std::string> headers);
+
+// void displayFileSystemInfo(FileSystem const &fs);
+// void displayConfig(ServerConfig const &config);
+// void displayServerConfigDetails(ServerConfig const &config);
 // void displayLocationConfigDetails(LocationConfig const &location);

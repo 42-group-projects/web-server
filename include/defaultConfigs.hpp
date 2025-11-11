@@ -10,7 +10,7 @@
 
 //Default configuration file location
 // will need to chag this path when we add a new config file for testing
-#define DEFAULT_CONF_FILE "configFiles/default.conf"
+#define DEFAULT_CONF_FILE "../configFiles/test.conf"
 
 //Server
 #define SERVER_NAME "_"
@@ -20,6 +20,7 @@
 #define MAX_HEADERS_SIZE 1024 * 8 // 8 KB
 #define MAX_HEADERS_COUNT 100 //this can be flexable based on your needs
 #define MAX_PAYLOAD_SIZE 1024 * 50 // this is also flexable, set to 50KB for now
+#define MAX_REQUEST_LINE_LENGTH 1024 * 2 // this is also flexable
 
 //Location specific
 #define GET_ALLOWED      true

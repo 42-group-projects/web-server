@@ -372,3 +372,16 @@ e_status_code getStatusCodeFromInt(int code)
 		return UNSET;
 	}
 }
+
+bool hasHost(std::map<std::string, std::string> headers)
+{
+	for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); ++it)
+		{
+
+			std::cout << "headers: " << it->first << std::endl;
+
+			if (it->first == "Host" || it->first == "host")
+				return true;
+		}
+		return false;
+}
