@@ -55,7 +55,7 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 				return handleDelete(req);
 
 			default:
-				return handleErrorPages(req, BAD_REQUEST);
+				return handleErrorPages(req, METHOD_NOT_ALLOWED);
 		}
 	}
 	catch(const std::exception& e)
@@ -64,7 +64,7 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 		std::cerr << e.what() << '\n';
 		//TODO: fiuger out what kind of response we want to send back here...
 		return handleErrorPages(req, INTERNAL_SERVER_ERROR);
-		// return handleErrorPages(req, IM_A_TEAPOT);
+		// return handleErrorPages(req, );
 	}
 }
 
@@ -89,7 +89,8 @@ HttpResponse HttpHandler::handleErrorPages(const HttpRequest& req, e_status_code
 	HttpResponse res;
 	std::map<int, std::string> error_pages = req_config.error_pages;
 	std::string error_page_path = error_pages[response_code];
-	FileSystem fs(SafePath(error_page_path, req_config), req_config);
+	FileSystem fs(req_config.safePath, req_config);
+	std::cout << "Handling error page for status code: " << response_code << std::endl;
 	res.setStatus(response_code);
 	res.setVersion(req.getVersion());
 	res.setMimeType(getMimeTypeString(fs.getMimeType()));

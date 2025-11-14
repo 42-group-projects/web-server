@@ -8,8 +8,8 @@ HttpResponse HttpHandler::handleDelete(const HttpRequest& req)
 	res.setVersion(req.getVersion());
 	FileSystem fs(req_config.safePath, req_config);
 
-
-	std::cout << fs <<std::endl;
+	if(!req_config.deleteAllowed)
+		return handleErrorPages(req, METHOD_NOT_ALLOWED);
 
 	if(fs.exists() == false)
 		return handleErrorPages(req, NOT_FOUND);

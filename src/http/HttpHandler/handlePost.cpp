@@ -15,24 +15,17 @@ HttpResponse HttpHandler::handlePost(const HttpRequest& req)
 	FileSystem fs(req_config.safePath, req_config);
 	// int code = OK; ( not used )
 
-	if(req_config.postAllowed == false)
-		return handleErrorPages(req, METHOD_NOT_ALLOWED);
-
 	//error checking and validations
-	if(req_config.postAllowed == false)
-		return handleErrorPages(req, FORBIDDEN);
+	if(!req_config.postAllowed && req_config.upload_store.empty())
+	{
+		return handleErrorPages(req, METHOD_NOT_ALLOWED);
+	}
 	if(req.getBody().size() > req_config.client_max_body_size)
 		return handleErrorPages(req, CONTENT_TOO_LARGE);
 
-	if(req_config.upload_store.empty())
-	{
-		// TODO: or makde uplaod store mandatory if upload is enabled
-		error("Upload store not specified in location block", "HttpHandler::handlePost");
-	}
-
 	std::string upload_path = fs.getPath();
-	std::cout << " DOES IT GET HERE? "<< std::endl;
 	std::string file_name = formatFileName(req);
+
 	try
 	{
 		std::stringstream file_path_ss;
@@ -99,7 +92,6 @@ std::string getFileNamFromHeader(const HttpRequest &req)
 	std::map<std::string, std::string> headers = req.getHeaders();
 	std::map<std::string, std::string>::const_iterator it = headers.find("Content-Disposition");
 
-
 	if(it != headers.end())
 	{
 		std::string value = it->second;
@@ -119,6 +111,7 @@ std::string getFileNamFromHeader(const HttpRequest &req)
 			// 1 is for the opening quote
 			size_t start = filename_pos + 9 + 1;
 
+			std::cout << "Content-Disposition header value: " << value << std::endl;
 			if (start >= value.length())
 			{
 				error("Malformed Content-Disposition header: filename value too short", "HttpHandler::getFileNamFromHeader");
