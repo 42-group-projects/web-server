@@ -55,7 +55,7 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 				return handleDelete(req);
 
 			default:
-				return handleErrorPages(req, METHOD_NOT_ALLOWED);
+				return handleErrorPages(req, NOT_IMPLEMENTED);
 		}
 	}
 	catch(const std::exception& e)
@@ -84,13 +84,42 @@ bool HttpHandler::hasHttpRequestErrors(const HttpRequest& req)
 	return false;
 }
 
+std::string  HttpHandler::addAllowHeaders( )
+{
+	std::stringstream allowed_methods;
+	bool first = true;
+	allowed_methods << " ";
+	if (req_config.getAllowed || req_config.autoindex)
+	{
+		if (!first) allowed_methods << ", ";
+		allowed_methods << "GET";
+		first = false;
+	}
+	if (req_config.postAllowed || !req_config.upload_store.empty())
+	{
+		if (!first) allowed_methods << ", ";
+		allowed_methods << "POST";
+		first = false;
+	}
+	if (req_config.deleteAllowed)
+	{
+		if (!first) allowed_methods << ", ";
+		allowed_methods << "DELETE";
+		first = false;
+	}
+
+	return allowed_methods.str();
+}
+
 HttpResponse HttpHandler::handleErrorPages(const HttpRequest& req, e_status_code response_code)
 {
 	HttpResponse res;
 	std::map<int, std::string> error_pages = req_config.error_pages;
 	std::string error_page_path = error_pages[response_code];
 	FileSystem fs(req_config.safePath, req_config);
-	std::cout << "Handling error page for status code: " << response_code << std::endl;
+
+	if(response_code == METHOD_NOT_ALLOWED)
+		res.setHeader("Allow", addAllowHeaders());
 	res.setStatus(response_code);
 	res.setVersion(req.getVersion());
 	res.setMimeType(getMimeTypeString(fs.getMimeType()));
