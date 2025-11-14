@@ -35,12 +35,18 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 		std::cerr << "Falling back to standard request handling." << std::endl;
 	}
 
+
 	// Standard requestHttpHandler::HttpHandler(t_request_config req_config)
 	try
 	{
 		if(hasHttpRequestErrors(req))
 		{
 			return handleErrorPages(req, BAD_REQUEST);
+		}
+
+		if (req_config.redirect_code != 0 && !req_config.redirect_url.empty())
+		{
+			return handleRedirects(req);
 		}
 
 		switch (req.getMethod())
@@ -125,5 +131,22 @@ HttpResponse HttpHandler::handleErrorPages(const HttpRequest& req, e_status_code
 	res.setMimeType(getMimeTypeString(fs.getMimeType()));
 	if(fs.exists())
 		res.setBody(fs.getFileContents());
+	return res;
+}
+
+HttpResponse HttpHandler::handleRedirects(const HttpRequest& req)
+{
+	HttpResponse res;
+	res.setStatus(static_cast<e_status_code>(req_config.redirect_code)); // e.g. 301 or 302
+	res.setVersion(req.getVersion());
+	res.setHeader("Location", req_config.redirect_url);
+	// Minimal body for HTTP/1.0 clients
+	std::stringstream string_stream;
+	string_stream  << "<html><head><title>Redirect</title></head><body>"
+					<< "<h1>Resource moved</h1><p><a href=\"" << req_config.redirect_url
+					<< "\">" << req_config.redirect_url << "</a></p></body></html>";
+	res.setMimeType("text/html");
+	res.setBody(string_stream.str());
+
 	return res;
 }

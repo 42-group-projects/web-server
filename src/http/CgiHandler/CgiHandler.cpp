@@ -11,7 +11,6 @@ CgiHandler::~CgiHandler() {}
 
 bool CgiHandler::isCgiRequest(const HttpRequest& req)
 {
-	// FileSystem fs(req_config.safePath, req_config);
 
 	FileSystem fs(req_config.safePath, req_config);
 
@@ -27,6 +26,7 @@ bool CgiHandler::isCgiRequest(const HttpRequest& req)
 		std::cout << "Location prefix not found in URI" << std::endl;
 		return false;
 	}
+
 	std::string extension = getExtention(uri);
 	for (std::map<std::string, std::string>::const_iterator it = req_config.cgi_pass.begin(); it != req_config.cgi_pass.end(); ++it)
 	{
