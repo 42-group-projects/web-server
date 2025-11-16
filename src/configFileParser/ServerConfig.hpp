@@ -76,6 +76,7 @@ public:
 	const std::vector<std::pair<std::string, int> >& getAllListen() const;
 	std::vector<t_server_config>& getConfig();
 	t_request_config getRequestConfig(const std::string &serverName, const std::string& ip, int port, const std::string &requestedPath) const;
+	const std::vector<t_server_config>& getConfiguration() const;
 
 private:
 	std::string filePath;
@@ -97,5 +98,7 @@ private:
 	void setUploadPath(const t_directive& directive, t_location_config& conf);
 	void setRedirect(const t_directive& directive, t_location_config& conf);
 	void setCgi(const t_directive& directive, t_location_config& conf);
-	friend std::ostream& operator<<(std::ostream& os, const ServerConfig& config);
 };
+
+std::ostream& operator<<(std::ostream& os, const ServerConfig& config);
+std::ostream& operator<<(std::ostream& os, const t_request_config& reqConf);
