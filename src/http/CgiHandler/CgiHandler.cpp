@@ -9,36 +9,6 @@
 CgiHandler::CgiHandler(const t_request_config& req_config): req_config(req_config) {}
 CgiHandler::~CgiHandler() {}
 
-bool CgiHandler::isCgiRequest(const HttpRequest& req)
-{
-
-	FileSystem fs(req_config.safePath, req_config);
-
-	std::string uri = req.getUri();
-
-	if (req_config.cgi_pass.empty() || !fs.exists() || fs.directory() || !fs.readable() || !fs.executable())
-	{
-		return false;
-	}
-
-	if(uri.find(req_config.location) != 0)
-	{
-		std::cout << "Location prefix not found in URI" << std::endl;
-		return false;
-	}
-
-	std::string extension = getExtention(uri);
-	for (std::map<std::string, std::string>::const_iterator it = req_config.cgi_pass.begin(); it != req_config.cgi_pass.end(); ++it)
-	{
-		if(it->first == extension)
-		{
-			return true;
-		}
-	}
-	std::cout << "No matching CGI extension found" << std::endl;
-	return false;
-}
-
 HttpResponse CgiHandler::runCgi(const HttpRequest& req)
 {
 	HttpRequest request = req;
@@ -54,15 +24,9 @@ HttpResponse CgiHandler::runCgi(const HttpRequest& req)
 	{
 		error("fork() failed", "CgiHandler::runCgi");
 	}
-
+	std::cout << "Forked process with PID: " << pid << std::endl;
 	if(pid == 0)
 	{
-		if (dup2(pipefd[WRITE_FD], STDOUT_FILENO) == -1 || dup2(pipefd[WRITE_FD], STDERR_FILENO) == -1)
-		{
-			error("dup2() failed", "CgiHandler::runCgi");
-		}
-		close(pipefd[READ_FD]);
-		close(pipefd[WRITE_FD]);
 
 		std::string cgi_path = getCgiPath(req.getUri(), req_config);
 		// char cwd[PATH_MAX];
@@ -70,6 +34,13 @@ HttpResponse CgiHandler::runCgi(const HttpRequest& req)
 
 		char **args = makeArgs(req);
 		char **envp = makeEnvs(req);
+
+		if (dup2(pipefd[WRITE_FD], STDOUT_FILENO) == -1 || dup2(pipefd[WRITE_FD], STDERR_FILENO) == -1)
+		{
+			error("dup2() failed", "CgiHandler::runCgi");
+		}
+		close(pipefd[READ_FD]);
+		close(pipefd[WRITE_FD]);
 
 		if(execve(cgi_path.c_str(), args, envp) == -1)
 		{
@@ -90,9 +61,10 @@ HttpResponse CgiHandler::runCgi(const HttpRequest& req)
 		close(pipefd[READ_FD]);
 		waitpid(pid, NULL, 0);
 	}
-	//maybe i need to parse the output here and set the response
 
-	return makeResponse(output);
+	HttpResponse res;
+
+	return res.parseCgiResponse(output);
 }
 
 char **CgiHandler::makeEnvs(const HttpRequest& req)
@@ -105,7 +77,9 @@ char **CgiHandler::makeEnvs(const HttpRequest& req)
 	// there are requered
 	env_vars["REQUEST_METHOD"] = getMethodString(req.getMethod()).c_str();
 	env_vars["SCRIPT_NAME"] = script_name.c_str();
+	//need to plit this HOST up into SERVER_NAME and SERVER_PORT
 	env_vars["SERVER_NAME"] = headers["Host"].c_str();
+	// env_vars["SERVER_PORT"] = req_config.port.c_str();
 	env_vars["SERVER_PROTOCOL"] = req.getVersion().c_str();
 	// env_vars["GATEWAY_INTERFACE", req.getVersion().c_str();
 
@@ -120,8 +94,18 @@ char **CgiHandler::makeEnvs(const HttpRequest& req)
 		env_vars["CONTENT_TYPE"] = req.getMimeTypeString().c_str();
 		env_vars["CONTENT_LENGTH"] = headers["Content-Length"].c_str();
 	}
-	char **envp = NULL;
-	envp = new char*[env_vars.size() + 1];
+
+	for(std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); ++it)
+	{
+		std::string key = it->first;;
+		std::string value = it->second;
+		std::transform(key.begin(), key.end(), key.begin(), ::toupper);
+		std::replace(key.begin(), key.end(), '-', '_');
+		std::string env_key = "HTTP_" + key;
+		env_vars[env_key] = value.c_str();
+	}
+
+	char **envp = new char*[env_vars.size() + 1];
 	int i = 0;
 	for(std::map<std::string, std::string>::iterator it = env_vars.begin(); it != env_vars.end(); ++it)
 	{
@@ -137,6 +121,7 @@ char **CgiHandler::makeEnvs(const HttpRequest& req)
 char **CgiHandler::makeArgs(const HttpRequest& req)
 {
 	char **args = new char*[3];
+
 	std::string cgi_path = getCgiPath(req.getUri(), req_config);
 
 	std::string script_filename = req.getUri();
@@ -153,6 +138,7 @@ char **CgiHandler::makeArgs(const HttpRequest& req)
 	args[2] = NULL;
 	return args;
 }
+
 std::string CgiHandler::getQuaryString(const std::string& uri)
 {
 	std::string query_string;
@@ -168,9 +154,22 @@ std::string CgiHandler::getCgiPath(std::string uri, const t_request_config& req_
 {
 	std::string cgi_path;
 	std::string extension = getExtention(uri);
+
+	std::cout << "CGI Extension: " << extension << std::endl;
+	if(extension == ".cgi")
+	{
+		// this need to brought in from the fisrt line of all .cgi files
+		return "/bin/sh"; // default cgi interpreter for .cgi files
+	}
+	if(extension == ".sh")
+	{
+		return "/usr//binbash";
+	}
+
 	std::map<std::string, std::string>::const_iterator it = req_config.cgi_pass.find(extension);
 	if (it != req_config.cgi_pass.end())
 	{
+		std::cout << "CGI Interpreter for extension " << extension << ": " << it->second << std::endl;
 		cgi_path = it->second;
 	}
 	return cgi_path;
@@ -183,55 +182,4 @@ std::string CgiHandler::getExtention(const std::string& uri)
 		return "";
 	}
 	return uri.substr(dot_pos);
-}
-
-HttpResponse CgiHandler::makeResponse(const std::string& cgi_output)
-{
-	HttpResponse res;
-	size_t header_end = cgi_output.find("\r\n\r\n");
-	if (header_end == std::string::npos)
-	{
-		res.setStatus(INTERNAL_SERVER_ERROR);
-		res.setBody("Malformed CGI response: Missing header-body separator.");
-		return res;
-	}
-
-	std::string header_section = cgi_output.substr(0, header_end);
-	std::string body_section = cgi_output.substr(header_end + 4);
-
-	std::istringstream header_stream(header_section);
-	std::string line;
-	bool status_set = false;
-
-	while (std::getline(header_stream, line))
-	{
-		size_t colon_pos = line.find(':');
-		if (colon_pos != std::string::npos)
-		{
-			std::string key = line.substr(0, colon_pos);
-			std::string value = line.substr(colon_pos + 1);
-			value.erase(0, value.find_first_not_of(" "));
-
-			if (key == "Status")
-			{
-				int status_code = atoi(value.c_str());
-				res.setStatus(static_cast<e_status_code>(status_code));
-				status_set = true;
-			}
-			else if(key == "Content-Type")
-			{
-				res.setMimeType(value);
-			}
-			else
-			{
-				res.setHeader(key, value);
-			}
-		}
-	}
-	if (!status_set)
-	{
-		res.setStatus(OK);
-	}
-	res.setBody(body_section);
-	return res;
 }

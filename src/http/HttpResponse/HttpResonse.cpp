@@ -44,7 +44,7 @@ std::string HttpResponse::serializeHeaders(void)
 	res << "Date: " << getCurrentTime() << "\r\n";
 	// TODO: need to get the host name from the net work layer and set it here.
 	res << "Server: " << "placeholder" << "\r\n";
-	// res << "Host: "  << "\r\n";
+	res << "Host: "  << "place holder "<<"\r\n";
 
 	for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); ++it)
 	{
@@ -60,4 +60,66 @@ std::string HttpResponse::serializeHeaders(void)
 
 	res << "\r\n";
 	return res.str();
+}
+
+HttpResponse &HttpResponse::parseCgiResponse(const std::string& cgi_output)
+{
+
+	size_t header_end = cgi_output.find("\r\n\r\n");
+	if(header_end == std::string::npos)
+	{
+		header_end = cgi_output.find("\n\n");
+	}
+	if(header_end == std::string::npos)
+	{
+		header_end = cgi_output.find("\r\r");
+	}
+
+	if (header_end == std::string::npos)
+	{
+		this->setStatus(INTERNAL_SERVER_ERROR);
+		this->setBody("Malformed CGI response: Missing header-body separator.");
+		return *this;
+	}
+
+	std::string header_section = cgi_output.substr(0, header_end);
+	std::string body_section = cgi_output.substr(header_end + 4);
+
+	std::istringstream header_stream(header_section);
+	std::string line;
+	bool status_set = false;
+
+	while (std::getline(header_stream, line))
+	{
+		size_t colon_pos = line.find(':');
+		if (colon_pos != std::string::npos)
+		{
+			std::string key = line.substr(0, colon_pos);
+			std::string value = line.substr(colon_pos + 1);
+			value.erase(0, value.find_first_not_of(" "));
+
+			if (key == "Status")
+			{
+				int status_code = atoi(value.c_str());
+				this->setStatus(static_cast<e_status_code>(status_code));
+				status_set = true;
+			}
+			else if(key == "Content-Type")
+			{
+				this->setMimeType(value);
+			}
+			else
+			{
+				this->setHeader(key, value);
+			}
+		}
+	}
+
+	if (!status_set)
+	{
+		this->setStatus(OK);
+	}
+
+	this->setBody(body_section);
+	return *this;
 }

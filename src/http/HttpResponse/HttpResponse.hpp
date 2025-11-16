@@ -26,6 +26,7 @@ public:
 	// Main functions
 	std::string generateResponse(e_status_code status);
 	std::string serializeHeaders(void);
+	HttpResponse &parseCgiResponse(const std::string& cgi_output);
 
 	// Getters
 	std::string getVersion() const { return version; };

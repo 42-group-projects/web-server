@@ -20,12 +20,13 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 	// CGI request
 	try
 	{
-		FileSystem fs(req_config.safePath, req_config);
+		// FileSystem fs(req_config.safePath, req_config);
 		// LocationConfig location_config = config[fs];
 
 		CgiHandler cgi_handler(req_config);
-		if (cgi_handler.isCgiRequest(req))
+		if (isCgiRequest(req))
 		{
+			std::cout << "Handling CGI request for URI: " << req.getUri() << std::endl;
 			return cgi_handler.runCgi(req);
 		}
 	}
@@ -90,9 +91,14 @@ bool HttpHandler::hasHttpRequestErrors(const HttpRequest& req)
 	return false;
 }
 
-std::string  HttpHandler::addAllowHeaders( )
+std::string  HttpHandler::addAllowHeaders()
 {
 	std::stringstream allowed_methods;
+
+	std::cout << "getAllowed : " << req_config.getAllowed << std::endl;
+	std::cout << "postAllowed : " << req_config.postAllowed << std::endl;
+	std::cout << "deleteAllowed : " << req_config.deleteAllowed << std::endl;
+
 	bool first = true;
 	allowed_methods << " ";
 	if (req_config.getAllowed || req_config.autoindex)
@@ -150,3 +156,62 @@ HttpResponse HttpHandler::handleRedirects(const HttpRequest& req)
 
 	return res;
 }
+
+bool HttpHandler::isCgiRequest(const HttpRequest& req)
+{
+	// Determine if requested URI targets a CGI script.
+	// Criteria:
+	// - The URI starts with the configured location prefix (e.g., /cgi-bin)
+	// - The script name (before any PATH_INFO and query) ends with ".cgi" OR
+	//   has an extension present in req_config.cgi_pass keys (e.g., .py, .php, .sh)
+	std::string uri = req.getUri();
+
+	// Strip query string
+	size_t qpos = uri.find('?');
+	if (qpos != std::string::npos)
+		uri = uri.substr(0, qpos);
+
+	const std::string& loc = req_config.location;
+	if (loc.empty())
+		return false;
+	if (uri.compare(0, loc.size(), loc) != 0)
+		return false;
+
+	// Scan to find the extension of the script BEFORE PATH_INFO
+	size_t afterLoc = loc.size();
+	bool seenDot = false;
+	size_t dotPos = std::string::npos;
+	size_t i = afterLoc;
+	for (; i < uri.size(); ++i)
+	{
+		char c = uri[i];
+		if (c == '/')
+		{
+			if (seenDot)
+				break; // PATH_INFO begins after the script name
+			else
+				continue; // still traversing directories before script
+		}
+		if (c == '.' && !seenDot)
+		{
+			dotPos = i;
+			seenDot = true;
+		}
+	}
+
+	std::string ext;
+	if (seenDot && dotPos != std::string::npos)
+		ext = uri.substr(dotPos, i - dotPos);
+
+	if (ext == ".cgi")
+		return true;
+
+	if (!ext.empty())
+	{
+		if (req_config.cgi_pass.find(ext) != req_config.cgi_pass.end())
+			return true;
+	}
+
+	return false;
+}
+
