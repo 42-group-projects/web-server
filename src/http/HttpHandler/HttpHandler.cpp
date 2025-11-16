@@ -24,7 +24,8 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 		// LocationConfig location_config = config[fs];
 
 		CgiHandler cgi_handler(req_config);
-		if (isCgiRequest(req))
+		// if (isCgiRequest(req))
+		if (false) // --- IGNORE ---
 		{
 			std::cout << "Handling CGI request for URI: " << req.getUri() << std::endl;
 			return cgi_handler.runCgi(req);
