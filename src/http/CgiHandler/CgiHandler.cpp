@@ -25,15 +25,22 @@ HttpResponse CgiHandler::runCgi(const HttpRequest& req)
 		error("fork() failed", "CgiHandler::runCgi");
 	}
 	std::cout << "Forked process with PID: " << pid << std::endl;
+
+	
+
 	if(pid == 0)
 	{
 
 		std::string cgi_path = getCgiPath(req.getUri(), req_config);
 		// char cwd[PATH_MAX];
 		// std::cout << "PWD: " << getcwd(cwd, sizeof(cwd)) << std::endl;
-
+		std::cout << "debug: CGI Path: " << cgi_path << std::endl;
 		char **args = makeArgs(req);
+		std::cout << "debuggin 1: Executing CGI script: " << args[0] << " :: " << args[1] << std::endl;
 		char **envp = makeEnvs(req);
+		std::cout << "debuggin 2: Executing CGI script: " << std::endl;
+
+		
 
 		if (dup2(pipefd[WRITE_FD], STDOUT_FILENO) == -1 || dup2(pipefd[WRITE_FD], STDERR_FILENO) == -1)
 		{
@@ -63,6 +70,8 @@ HttpResponse CgiHandler::runCgi(const HttpRequest& req)
 	}
 
 	HttpResponse res;
+
+	// std::cout << "CGI Output:\n" << output << std::endl;
 
 	return res.parseCgiResponse(output);
 }
@@ -125,16 +134,34 @@ char **CgiHandler::makeArgs(const HttpRequest& req)
 	std::string cgi_path = getCgiPath(req.getUri(), req_config);
 
 	std::string script_filename = req.getUri();
+
+
+	// TODO: NEED TO FIX THIS PATH FINDING LOGIC
 	size_t last_slash = script_filename.find_last_of('/');
 
+	std::string script_path;
 	if (last_slash != std::string::npos)
 	{
-		script_filename = script_filename.substr(last_slash + 1);
+		script_path = script_filename.substr(last_slash + 1);
 	}
-	std::string scrip_path = req_config.root + "/" +script_filename;
+	std::cout <<"URI is: " << req.getUri() << std::endl;
+	std::cout <<"Script filename is: " << script_filename << std::endl;
+	std::cout <<"CGI Path is: " << cgi_path << std::endl;
+	std::cout <<"Root is: " << req_config.root << std::endl;
+
+	if(req_config.root[0] == '/')
+	{
+		script_path =  "." + req_config.root + "/" + script_path;
+	}
+	else
+	{
+		script_path =  "./" + req_config.root + "/" + script_path;
+	}
+
+	// script_path = "." + req.getUri();
 
 	args[0] = strdup(cgi_path.c_str());
-	args[1] = strdup(scrip_path.c_str());
+	args[1] = strdup(script_path.c_str());
 	args[2] = NULL;
 	return args;
 }
@@ -155,7 +182,7 @@ std::string CgiHandler::getCgiPath(std::string uri, const t_request_config& req_
 	std::string cgi_path;
 	std::string extension = getExtention(uri);
 
-	std::cout << "CGI Extension: " << extension << std::endl;
+	// std::cout << "CGI Extension: " << extension << std::endl;
 	if(extension == ".cgi")
 	{
 		// this need to brought in from the fisrt line of all .cgi files
@@ -163,7 +190,7 @@ std::string CgiHandler::getCgiPath(std::string uri, const t_request_config& req_
 	}
 	if(extension == ".sh")
 	{
-		return "/usr//binbash";
+		return "/bin/sh";
 	}
 
 	std::map<std::string, std::string>::const_iterator it = req_config.cgi_pass.find(extension);

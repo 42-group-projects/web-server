@@ -64,17 +64,20 @@ std::string HttpResponse::serializeHeaders(void)
 
 HttpResponse &HttpResponse::parseCgiResponse(const std::string& cgi_output)
 {
-
+	std::cout << "Parsing CGI response..." << cgi_output << std::endl;
+	int cut_size = 0;
 	size_t header_end = cgi_output.find("\r\n\r\n");
+	cut_size = 4;
 	if(header_end == std::string::npos)
 	{
 		header_end = cgi_output.find("\n\n");
+		cut_size = 2;
 	}
 	if(header_end == std::string::npos)
 	{
 		header_end = cgi_output.find("\r\r");
+		cut_size = 2;
 	}
-
 	if (header_end == std::string::npos)
 	{
 		this->setStatus(INTERNAL_SERVER_ERROR);
@@ -83,7 +86,7 @@ HttpResponse &HttpResponse::parseCgiResponse(const std::string& cgi_output)
 	}
 
 	std::string header_section = cgi_output.substr(0, header_end);
-	std::string body_section = cgi_output.substr(header_end + 4);
+	std::string body_section = cgi_output.substr(header_end + cut_size);
 
 	std::istringstream header_stream(header_section);
 	std::string line;
