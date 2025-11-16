@@ -12,6 +12,8 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 	// need to get this info from the network layer.
 	t_request_config request_config = config.getRequestConfig("localhost", "127.0.0.0", 8080, req.getUri());
 
+	std::cout << request_config << std::endl;
+	
 	req_config = request_config;
 
 	if(req.getBody().size() > MAX_PAYLOAD_SIZE)
