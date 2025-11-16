@@ -6,13 +6,22 @@ HttpHandler::HttpHandler() {}
 
 HttpHandler::~HttpHandler() {}
 
-HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConfig& config)
+HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConfig& config) 
 {
 	// need to get IP Address and and make a get HOST fucntion to check against the server name. alos need the port number
-	// need to get this info from the network layer.
-	t_request_config request_config = config.getRequestConfig("localhost", "127.0.0.0", 8080, req.getUri());
+	// std::cout << "server config: " << config. << std::endl;
+	// std::cout << "cofig " << config.getConfiguration()[0].server_name[0] << std::endl;
 
-	std::cout << request_config << std::endl;
+	std::string server_name = config.getConfiguration()[0].server_name[0];
+	std::string ip = config.getAllListen()[0].first;
+	int port = config.getAllListen()[0].second;
+
+	// std::cout << "Server Name: " << server_name << std::endl;
+	// std::cout << "IP: " << ip << " Port: " << port << std::endl;
+	// need to get this info from the network layer.
+	t_request_config request_config = config.getRequestConfig(server_name, ip, port, req.getUri());
+
+	// std::cout << request_config << std::endl;
 	
 	req_config = request_config;
 
