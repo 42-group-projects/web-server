@@ -8,16 +8,17 @@ HttpResponse HttpHandler::handleGet(const HttpRequest& req)
 	FileSystem fs(req_config.safePath, req_config);
 
 	int code = OK;
-	// Some how this isnt allowing me to GET on / -> need to talk to clemont about it.
-	if (!req_config.getAllowed && req_config.index.empty() && !req_config.autoindex)
-	{
-		return handleErrorPages(req, METHOD_NOT_ALLOWED);
-	}
-
 	if(!fs.exists())
 		return handleErrorPages(req, NOT_FOUND);
 	if(!fs.readable())
 		return handleErrorPages(req, FORBIDDEN);
+
+	// Some how this isnt allowing me to GET on / -> need to talk to clemont about it.
+	if (!req_config.getAllowed && !req_config.autoindex)
+	{
+		return handleErrorPages(req, METHOD_NOT_ALLOWED);
+	}
+
 
 	// if (req_config.redirect_enabled)
 	// {
