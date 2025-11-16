@@ -22,9 +22,12 @@ void ServerConfig::initServerConfig(int argc, char **argv)
 
 const std::vector<std::pair<std::string, int> >& ServerConfig::getAllListen() const {return allListen;}
 std::vector<t_server_config>& ServerConfig::getConfig() {return configuration;}
+const std::vector<t_server_config>& ServerConfig::getConfiguration() const { return configuration; }
+
 
 t_request_config ServerConfig::getRequestConfig(const std::string &serverName, const std::string& ip, int port, const std::string &requestedPath) const
 {
+	std::cout << "debug 1 server name: " << serverName << " ip: " << ip << " port: " << port << " " << std::endl;
 	std::pair<std::string, int> ipPort(ip, port);
 	const t_server_config *sconf = NULL;
 	std::vector<const t_server_config*> exactMatches;
@@ -43,6 +46,7 @@ t_request_config ServerConfig::getRequestConfig(const std::string &serverName, c
 		}
 	}
 
+	std::cout << "debug 2" << std::endl;
 	const std::vector<const t_server_config*> &servers = !exactMatches.empty() ? exactMatches : catchAll;
 
 	for (size_t i = 0; i < servers.size() && !sconf; ++i)
@@ -59,11 +63,15 @@ t_request_config ServerConfig::getRequestConfig(const std::string &serverName, c
 		}
 	}
 
+	std::cout << "debug 3" << std::endl;
+
 	if (!sconf)
 		sconf = servers[0];
 
+	std::cout << "debug 4" << std::endl;
 	SafePath sp(requestedPath, sconf);
 	const t_location_config &lConf = sconf->locations.at(sp.getLocation());
+	std::cout << "debug 5" << std::endl;
 	t_request_config rConf =
 	{
 		sp,
@@ -83,6 +91,7 @@ t_request_config ServerConfig::getRequestConfig(const std::string &serverName, c
 		lConf.upload_store,
 		lConf.cgi_pass
 	};
+	std::cout << "debug 5" << std::endl;
 	return rConf;
 }
 
@@ -152,13 +161,11 @@ std::string ServerConfig::setRoot(const t_directive& directive)
 {
 	arg_validity_checks::optionsCount(directive, 1, 1, filePath);
 	arg_validity_checks::checkPathEndsWithSlash(directive.options[0], filePath);
-
 	// if (directive.options[0].str[0] != '/')
 	// {
 	// 	std::string root = "./" + directive.options[0].str;
 	// 	return root;
 	// }
-
 	return directive.options[0].str;
 }
 
@@ -302,7 +309,7 @@ void ServerConfig::setMethods(const t_directive& directive, t_location_config& c
 	conf.postAllowed = false;
 	conf.deleteAllowed = false;
 
-	for (size_t i = 1; i < directive.options.size(); i++)
+	for (size_t i = 0; i < directive.options.size(); i++)
 	{
 		if (directive.options[i].str == "GET")
 			conf.getAllowed = true;
@@ -377,9 +384,9 @@ void ServerConfig::setCgi(const t_directive& directive, t_location_config& conf)
 
 std::ostream& operator<<(std::ostream& os, const ServerConfig& config)
 {
-	for (size_t i = 0; i < config.configuration.size(); ++i)
+	for (size_t i = 0; i < config.getConfiguration().size(); ++i)
 	{
-		const t_server_config& srv = config.configuration[i];
+		const t_server_config& srv = config.getConfiguration()[i];
 		os << "\n" << COLOR_SERVER << "==================== SERVER " << i + 1 << " ====================" << COLOR_RESET << "\n\n";
 		os << COLOR_LABEL << "Root: " << COLOR_VALUE << srv.root << "\n";
 		os << COLOR_LABEL << "Listen:" << COLOR_RESET << "\n";
@@ -428,6 +435,47 @@ std::ostream& operator<<(std::ostream& os, const ServerConfig& config)
 
 		os << "\n";
 	}
+
+	return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const t_request_config& req)
+{
+	os << "\n" << COLOR_SERVER << "=========== REQUEST CONFIG ===========" << COLOR_RESET << "\n\n";
+	os << COLOR_LABEL << "Safe path:" << COLOR_RESET << "\n";
+	os << COLOR_VALUE << "  Requested: " << req.safePath.getRequestedPath() << "\n";
+	os << COLOR_VALUE << "  Full:      " << req.safePath.getFullPath() << "\n";
+	os << COLOR_VALUE << "  Location:  " << req.safePath.getLocation() << "\n";
+	os << COLOR_LABEL << "Root: " << COLOR_VALUE << req.root << COLOR_RESET << "\n";
+	os << COLOR_LABEL << "Server names:" << COLOR_RESET << "\n";
+
+	for (size_t i = 0; i < req.server_name.size(); ++i)
+		os << COLOR_VALUE << "  " << req.server_name[i] << "\n";
+
+	os << COLOR_LABEL << "Client max body size: " << COLOR_VALUE << req.client_max_body_size << COLOR_RESET << "\n";
+	os << COLOR_LABEL << "Error pages:" << COLOR_RESET << "\n";
+
+	for (std::map<int, std::string>::const_iterator it = req.error_pages.begin(); it != req.error_pages.end(); ++it)
+		os << COLOR_VALUE << "  " << it->first << " -> " << it->second << "\n";
+
+	os << COLOR_SECTION << "\nLOCATION:" << COLOR_RESET << "\n";
+	os << COLOR_SUBLABEL << "  Location: " << COLOR_VALUE << req.location << COLOR_RESET << "\n";
+	os << COLOR_LABEL << "    Methods: " << COLOR_VALUE
+	   << "GET[" << req.getAllowed << "] "
+	   << "POST[" << req.postAllowed << "] "
+	   << "DELETE[" << req.deleteAllowed << "]"
+	   << COLOR_RESET << "\n";
+	os << COLOR_LABEL << "    Index: " << COLOR_VALUE << req.index << COLOR_RESET << "\n";
+	os << COLOR_LABEL << "    Autoindex: " << COLOR_VALUE << req.autoindex << COLOR_RESET << "\n";
+	os << COLOR_LABEL << "    Redirect: " << COLOR_VALUE
+	   << (req.redirect_enabled ? "enabled" : "disabled")
+	   << " -> " << req.redirect_url
+	   << " (" << req.redirect_code << ")" << COLOR_RESET << "\n";
+	os << COLOR_LABEL << "    Upload store: " << COLOR_VALUE << req.upload_store << COLOR_RESET << "\n";
+	os << COLOR_LABEL << "    CGI handlers:" << COLOR_RESET << "\n";
+
+	for (std::map<std::string, std::string>::const_iterator it = req.cgi_pass.begin(); it != req.cgi_pass.end(); ++it)
+		os << COLOR_VALUE << "      " << it->first << " -> " << it->second << "\n";
 
 	return os;
 }
