@@ -6,12 +6,10 @@ HttpHandler::HttpHandler() {}
 
 HttpHandler::~HttpHandler() {}
 
-HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConfig& config) 
+HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConfig& config)
 {
-	// need to get IP Address and and make a get HOST fucntion to check against the server name. alos need the port number
-	// std::cout << "server config: " << config. << std::endl;
-	// std::cout << "cofig " << config.getConfiguration()[0].server_name[0] << std::endl;
 
+	// so i think i need to get the int from the net working layer to figure out witch config its going to be using here... need to talk to tsubo about it.
 	std::string server_name = config.getConfiguration()[0].server_name[0];
 	std::string ip = config.getAllListen()[0].first;
 	int port = config.getAllListen()[0].second;
@@ -19,34 +17,43 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 	// std::cout << "Server Name: " << server_name << std::endl;
 	// std::cout << "IP: " << ip << " Port: " << port << std::endl;
 	// need to get this info from the network layer.
-	t_request_config request_config = config.getRequestConfig(server_name, ip, port, req.getUri());
+	// std::cout << req_config << std::endl;
+	// FileSystem fs(req_config.safePath, req_config);
+	// std::cout << fs  << std::endl;
 
-	// std::cout << request_config << std::endl;
-	
-	req_config = request_config;
+	try
+	{
+		req_config = config.getRequestConfig(server_name, ip, port, req.getUri());
+	}
+	catch(const std::exception& e)
+	{
+		std::cerr << "Exception caught in HttpHandler::handleRequest: 1";
+		std::cerr << e.what() << '\n';
+		return handleErrorPages(req, FORBIDDEN);
+	}
 
-	if(req.getBody().size() > MAX_PAYLOAD_SIZE)
+	if(req.getBody().size() > req_config.client_max_body_size)
 		return handleErrorPages(req, CONTENT_TOO_LARGE);
 
 	// CGI request
-	try
-	{
-		// FileSystem fs(req_config.safePath, req_config);
-		// LocationConfig location_config = config[fs];
+	// try
+	// {
+	// 	// FileSystem fs(req_config.safePath, req_config);
+	// 	// LocationConfig location_config = config[fs];
 
-		CgiHandler cgi_handler(req_config);
-		// if (false) // --- IGNORE ---
-		if (isCgiRequest(req))
-		{
-			std::cout << "Handling CGI request for URI: " << req.getUri() << std::endl;
-			return cgi_handler.runCgi(req);
-		}
-	}
-	catch (const std::exception& e)
-	{
-		std::cerr << e.what() << std::endl;
-		std::cerr << "Falling back to standard request handling." << std::endl;
-	}
+	// 	CgiHandler cgi_handler(req_config);
+	// 	// if (false) // --- IGNORE ---
+	// 	if (isCgiRequest(req))
+	// 	{
+	// 		std::cout << "Handling CGI request for URI: " << req.getUri() << std::endl;
+	// 		return cgi_handler.runCgi(req);
+	// 	}
+	// }
+	// catch (const std::exception& e)
+	// {
+	// 	std::cerr << e.what() << std::endl;
+	// 	std::cerr << "Falling back to standard request handling." << std::endl;
+	// }
 
 
 	// Standard requestHttpHandler::HttpHandler(t_request_config req_config)
@@ -79,7 +86,7 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 	}
 	catch(const std::exception& e)
 	{
-		std::cerr << "Exception caught in HttpHandler::handleRequest: ";
+		std::cerr << "Exception caught in HttpHandler::handleRequest: 2";
 		std::cerr << e.what() << '\n';
 		//TODO: fiuger out what kind of response we want to send back here...
 		return handleErrorPages(req, INTERNAL_SERVER_ERROR);
@@ -106,10 +113,6 @@ bool HttpHandler::hasHttpRequestErrors(const HttpRequest& req)
 std::string  HttpHandler::addAllowHeaders()
 {
 	std::stringstream allowed_methods;
-
-	std::cout << "getAllowed : " << req_config.getAllowed << std::endl;
-	std::cout << "postAllowed : " << req_config.postAllowed << std::endl;
-	std::cout << "deleteAllowed : " << req_config.deleteAllowed << std::endl;
 
 	bool first = true;
 	allowed_methods << " ";
@@ -226,4 +229,3 @@ bool HttpHandler::isCgiRequest(const HttpRequest& req)
 
 	return false;
 }
-

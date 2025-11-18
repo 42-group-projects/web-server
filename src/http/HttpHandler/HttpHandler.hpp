@@ -22,9 +22,10 @@ class HttpHandler
 		HttpResponse handleRedirects(const HttpRequest& req);
 		bool isCgiRequest(const HttpRequest& req);
 
+		HttpResponse writeFile(const HttpRequest& req, const std::string& file_name, const std::string& content);
+
 	public:
 		HttpHandler();
 		~HttpHandler();
 		HttpResponse handleRequest(const HttpRequest& req, const ServerConfig& config);
-		// HttpResponse handleRequest(const HttpRequest& req, const ServerConfig& config, std::string ip, int port)
 };

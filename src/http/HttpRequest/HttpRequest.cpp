@@ -177,7 +177,6 @@ std::string HttpRequest::getMimeTypeString() const
 	std::map<std::string, std::string>::const_iterator it = headers.find("Content-Type");
 	if (it != headers.end())
 	{
-
 		std::string trimmed = it->second;
 		size_t end = trimmed.find_last_not_of(" \t\r\n");
 		if (end != std::string::npos) {
@@ -193,7 +192,7 @@ std::string HttpRequest::getMimeTypeString() const
 	}
 	else
 	{
-		error("Content-Type header not found", "HttpRequest::getMimeTypeString");
+		warning("Content-Type header not found", "HttpRequest::getMimeTypeString");
 	}
 	return "text/plain";
 }
