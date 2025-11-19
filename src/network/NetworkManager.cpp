@@ -305,7 +305,7 @@ bool NetworkManager::tryParseRequest(int fd)
                 res.setVersion("HTTP/1.1");
             }
             if (res.getStatus() == UNSET) {
-                res.setStatus(INTERNAL_SERVER_ERROR);
+                res.setStatus(IM_A_TEAPOT);
                 if (res.getMimeType().empty()) res.setMimeType("text/plain");
                 if (res.getBody().empty()) res.setBody("Internal Server Error\n");
             }

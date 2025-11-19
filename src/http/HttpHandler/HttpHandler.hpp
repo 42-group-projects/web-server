@@ -16,9 +16,13 @@ class HttpHandler
 		HttpResponse handlePost(const HttpRequest& req);
 		HttpResponse handleDelete(const HttpRequest& req);
 
-		//CGI related methods
 		bool hasHttpRequestErrors(const HttpRequest& req);
+		std::string addAllowHeaders();
 		HttpResponse handleErrorPages(const HttpRequest& req, e_status_code response_code);
+		HttpResponse handleRedirects(const HttpRequest& req);
+		bool isCgiRequest(const HttpRequest& req);
+
+		HttpResponse writeFile(const HttpRequest& req, const std::string& file_name, const std::string& content);
 
 	public:
 		HttpHandler();

@@ -14,6 +14,7 @@ private:
 	std::string mime_type;
 	std::map<std::string, std::string> headers;
 	std::string body;
+	// s_request_config req_config;
 
 public:
 	// Constructors, destructor, and assignment operator
@@ -25,13 +26,14 @@ public:
 	// Main functions
 	std::string generateResponse(e_status_code status);
 	std::string serializeHeaders(void);
+	HttpResponse &parseCgiResponse(const std::string& cgi_output);
 
 	// Getters
 	std::string getVersion() const { return version; };
 	e_status_code getStatus() const { return status; };
 	std::string getMimeType() const { return mime_type; };
 	std::string getBody() const { return body; }
-	std::string getHeader(const std::string &key) const { return headers.at(key); };
+	std::string getHeader(const std::string &key) const { return headers.at(key); }
 
 	// Setters
 	void setVersion(const std::string &ver) { version = ver; };

@@ -47,6 +47,11 @@ void HttpRequest::parseRequest(const std::string &request)
 		if (line.empty() || line == "\r" || line == "\n")
 			error("Empty request line encountered", "Request Parser");
 
+
+		if(line.length() > MAX_REQUEST_LINE_LENGTH)
+		{
+			error("Max Request Line Limit breached", "Request Parser");
+		}
 		std::istringstream line_stream(line);
 		parseRequestLine(line_stream);
 
@@ -125,18 +130,24 @@ void HttpRequest::parseHeaders(std::istringstream& line_stream)
 
 	if (std::getline(line_stream, key, ':') && std::getline(line_stream, value))
 	{
+		if(value[0] != ' ')
+		{
+			error("Malformed header line: Malformed", "Request Parser");
+		}
+
 		key.erase(key.find_last_not_of(" \t\r\n") + 1);
 		value.erase(0, value.find_first_not_of(" \t\r\n"));
+
 		if (key.empty() || value.empty() || key.size() > MAX_HEADERS_SIZE || value.size() > MAX_HEADERS_SIZE)
 		{
 			error("Malformed header line: key or value is empty", "Request Parser");
 		}
+
 		headers[key] = value;
 	}
-	// need to make sure that the HOST header is present
-	// else
+	// if(!hasHost(headers))
 	// {
-	// 	error("Malformed header line", "Request Parser");
+	// 	error("Malformed header: Host name not present", "Request Parser");
 	// }
 }
 
@@ -166,7 +177,6 @@ std::string HttpRequest::getMimeTypeString() const
 	std::map<std::string, std::string>::const_iterator it = headers.find("Content-Type");
 	if (it != headers.end())
 	{
-
 		std::string trimmed = it->second;
 		size_t end = trimmed.find_last_not_of(" \t\r\n");
 		if (end != std::string::npos) {
@@ -182,7 +192,7 @@ std::string HttpRequest::getMimeTypeString() const
 	}
 	else
 	{
-		error("Content-Type header not found", "HttpRequest::getMimeTypeString");
+		warning("Content-Type header not found", "HttpRequest::getMimeTypeString");
 	}
 	return "text/plain";
 }

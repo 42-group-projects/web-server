@@ -27,7 +27,6 @@ const std::vector<t_server_config>& ServerConfig::getConfiguration() const { ret
 
 t_request_config ServerConfig::getRequestConfig(const std::string &serverName, const std::string& ip, int port, const std::string &requestedPath) const
 {
-	std::cout << "debug 1 server name: " << serverName << " ip: " << ip << " port: " << port << " " << std::endl;
 	std::pair<std::string, int> ipPort(ip, port);
 	const t_server_config *sconf = NULL;
 	std::vector<const t_server_config*> exactMatches;
@@ -46,7 +45,6 @@ t_request_config ServerConfig::getRequestConfig(const std::string &serverName, c
 		}
 	}
 
-	std::cout << "debug 2" << std::endl;
 	const std::vector<const t_server_config*> &servers = !exactMatches.empty() ? exactMatches : catchAll;
 
 	for (size_t i = 0; i < servers.size() && !sconf; ++i)
@@ -63,15 +61,11 @@ t_request_config ServerConfig::getRequestConfig(const std::string &serverName, c
 		}
 	}
 
-	std::cout << "debug 3" << std::endl;
-
 	if (!sconf)
 		sconf = servers[0];
 
-	std::cout << "debug 4" << std::endl;
 	SafePath sp(requestedPath, sconf);
 	const t_location_config &lConf = sconf->locations.at(sp.getLocation());
-	std::cout << "debug 5" << std::endl;
 	t_request_config rConf =
 	{
 		sp,
@@ -91,7 +85,6 @@ t_request_config ServerConfig::getRequestConfig(const std::string &serverName, c
 		lConf.upload_store,
 		lConf.cgi_pass
 	};
-	std::cout << "debug 5" << std::endl;
 	return rConf;
 }
 

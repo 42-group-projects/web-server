@@ -18,12 +18,12 @@ class CgiHandler
 		std::string getQuaryString(const std::string& uri);
 		std::string getCgiPath(std::string uri, const t_request_config& req_config);
 		std::string getExtention(const std::string& uri);
-		HttpResponse makeResponse(const std::string& cgi_output);
+		// HttpResponse makeResponse(const std::string& cgi_output);
 
 	public:
 	    CgiHandler(const t_request_config& req_config);
 	    ~CgiHandler();
 
-		bool isCgiRequest(const HttpRequest& req);
+		// bool isCgiRequest(const HttpRequest& req);
 		HttpResponse runCgi(const HttpRequest& req);
 };
