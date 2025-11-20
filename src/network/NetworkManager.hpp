@@ -29,6 +29,10 @@ private:
     const ServerConfig& config;
     bool running;
 
+    //=====================================
+    std::map<int, std::string> clientIps;
+    //==============================Clement
+
     std::vector<int> listeners;                 // リスニングFD一覧
     std::vector<struct pollfd> pollfds;         // 監視対象（リスナー + クライアント）
     std::map<int, bool> isListener;             // fd がリスナーかどうか

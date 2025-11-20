@@ -6,13 +6,16 @@ HttpHandler::HttpHandler() {}
 
 HttpHandler::~HttpHandler() {}
 
-HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConfig& config)
+// HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConfig& config)
+//==========================================================================================================
+HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConfig& config, std::string& ip)
+//===================================================================================================Clement
 {
 
 	// so i think i need to get the int from the net working layer to figure out witch config its going to be using here... need to talk to tsubo about it.
-	std::string server_name = config.getConfiguration()[0].server_name[0];
-	std::string ip = config.getAllListen()[0].first;
-	int port = config.getAllListen()[0].second;
+	// std::string server_name = config.getConfiguration()[0].server_name[0];
+	// std::string ip = config.getAllListen()[0].first;
+	// int port = config.getAllListen()[0].second;
 
 	// std::cout << "Server Name: " << server_name << std::endl;
 	// std::cout << "IP: " << ip << " Port: " << port << std::endl;
@@ -20,6 +23,14 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 	// std::cout << req_config << std::endl;
 	// FileSystem fs(req_config.safePath, req_config);
 	// std::cout << fs  << std::endl;
+
+	//==================================================================================================
+	std::string server_name = req.getHeaders()["Host"];
+	int pos = server_name.find_first_of(':');
+	int port = std::atoi(std::string(server_name.substr(pos + 1)).c_str());
+	server_name = server_name.substr(0, pos);
+	// std::cout << "Server name: " << server_name << "\nPort: " << port << "\nIP: " << ip << std::endl;
+	//===========================================================================================Clement
 
 	try
 	{
