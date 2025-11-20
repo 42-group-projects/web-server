@@ -1,6 +1,7 @@
 #include "ServerConfig.hpp"
 #include "error_messages.hpp"
 #include "arg_validity_checks.hpp"
+#include "../../src/errorHandling/ErrorWarning.hpp"
 
 #include <sstream>
 #include <cstdlib>
@@ -9,6 +10,7 @@ ServerConfig::ServerConfig() {}
 
 void ServerConfig::initServerConfig(int argc, char **argv)
 {
+	defaultServerSet = false;
 	TokenizeFile tokenizer(argc, argv);
 	filePath = tokenizer.getFilePath();
 	ServerBlocks serverBlocks(tokenizer);
@@ -16,6 +18,9 @@ void ServerConfig::initServerConfig(int argc, char **argv)
 
 	for (size_t i = 0; i < servers.size(); i++)
 		configuration.push_back(setServerConfig(servers[i]));
+
+	if (hasDuplicateServerBlocks())
+		error("Error: duplicate server_name:listen combination detected", "Configuration file");
 }
 
 
@@ -62,7 +67,15 @@ t_request_config ServerConfig::getRequestConfig(const std::string &serverName, c
 	}
 
 	if (!sconf)
-		sconf = servers[0];
+	{
+		int deflt = 0;
+
+		for (size_t i = 0; i < servers.size(); ++i)
+			if (servers[i]->defaultServer)
+				deflt = i;
+
+		sconf = servers[deflt];
+	}
 
 	SafePath sp(requestedPath, sconf);
 	const t_location_config &lConf = sconf->locations.at(sp.getLocation());
@@ -94,6 +107,7 @@ t_request_config ServerConfig::getRequestConfig(const std::string &serverName, c
 t_server_config ServerConfig::setServerConfig(const t_server_block &serverBlock)
 {
 	t_server_config config;
+	config.defaultServer = false;
 	config.root = "";
 	config.listen.clear();
 	config.server_name.push_back(SERVER_NAME);
@@ -122,10 +136,18 @@ t_server_config ServerConfig::setServerConfig(const t_server_block &serverBlock)
 			config.server_name = setServerName(directive);
 		else if (directive.directive.str == "error_page")
 			setErrorPage(directive, config.error_pages);
+		else if (directive.directive.str == "default")
+		{
+			if (defaultServerSet)
+				error_messages::alreadyDefined("Default server", directive.directive, filePath);
+
+			config.defaultServer = true;
+			defaultServerSet = true;
+		}
 		else if (directive.directive.str == "client_max_body_size")
 			config.client_max_body_size = setClientMaxBodySize(directive);
 		else
-			error_messages::unknownDirective(directive.directive, filePath);
+			error_messages::expected("directive value", directive.directive, filePath);
 	}
 
 	if (!listen)
@@ -134,19 +156,17 @@ t_server_config ServerConfig::setServerConfig(const t_server_block &serverBlock)
 	if (!root)
 		error_messages::missingDirective(serverBlock.directives[0].directive, "root", filePath);
 
-	bool mainLocation = false;
+	// bool mainLocation = false;
 
 	for (size_t i = 0; i < serverBlock.locations.size(); i++)
 	{
-		if (serverBlock.locations[i].name.str == "/")
-			mainLocation = true;
-
+		// if (serverBlock.locations[i].name.str == "/")
+		// 	mainLocation = true;
 		setLocation(serverBlock.locations[i], config.locations, config.root);
 	}
 
-	if (!mainLocation)
-		error_messages::missingLocation(serverBlock.directives[0].directive, filePath);
-
+	// if (!mainLocation)
+	// 	error_messages::missingLocation(serverBlock.directives[0].directive, filePath);
 	return config;
 }
 
@@ -154,11 +174,7 @@ std::string ServerConfig::setRoot(const t_directive& directive)
 {
 	arg_validity_checks::optionsCount(directive, 1, 1, filePath);
 	arg_validity_checks::checkPathEndsWithSlash(directive.options[0], filePath);
-	// if (directive.options[0].str[0] != '/')
-	// {
-	// 	std::string root = "./" + directive.options[0].str;
-	// 	return root;
-	// }
+	arg_validity_checks::checkSpecialCharacters(directive.options[0], filePath);
 	return directive.options[0].str;
 }
 
@@ -211,7 +227,6 @@ void ServerConfig::setErrorPage(const t_directive& directive, std::map<int, std:
 		errorPages.insert(p);
 	}
 }
-
 size_t ServerConfig::setClientMaxBodySize(const t_directive& directive)
 {
 	arg_validity_checks::optionsCount(directive, 1, 1, filePath);
@@ -238,7 +253,12 @@ size_t ServerConfig::setClientMaxBodySize(const t_directive& directive)
 	if (!(ss >> value) || !ss.eof())
 		error_messages::invalidClientMaxBodySize(directive.options[0], option, filePath);
 
-	return static_cast<size_t>(value * multiplier);
+	unsigned long long finalValue = value * multiplier;
+
+	if (finalValue > CONFIG_FILE_MAX_CLIENT_BODY_SIZE)
+		error_messages::invalidClientMaxBodySize(directive.options[0], option, filePath);
+
+	return static_cast<size_t>(finalValue);
 }
 
 void ServerConfig::setLocation(const t_location_block& locBlock, std::map<std::string, t_location_config>& locations, const std::string& root)
@@ -247,29 +267,83 @@ void ServerConfig::setLocation(const t_location_block& locBlock, std::map<std::s
 	t_location_config conf;
 	conf = setupDefaultLocationConfig(locBlock.name.str, root);
 	conf.exact = locBlock.exact;
+	bool rootDirective = false;
+	bool returnDirective = false;
+	bool indexDirective = false;
+	bool autoIndexDirective = false;
+	bool uploadDirective = false;
 
 	for (size_t i = 0; i < locBlock.directives.size(); i++)
 	{
-		if (locBlock.directives[i].directive.str == "methods")
+		std::string str = locBlock.directives[i].directive.str;
+
+		if (str == "methods")
 			setMethods(locBlock.directives[i], conf);
-		else if (locBlock.directives[i].directive.str == "root")
+		else if (str == "root")
+		{
+			rootDirective = true;
+
+			if (returnDirective)
+				error_messages::conflictingDirectives("return", locBlock.directives[i].directive, filePath);
+
 			conf.root = setRoot(locBlock.directives[i]);
-		else if (locBlock.directives[i].directive.str == "index")
+		}
+		else if (str == "index")
+		{
+			indexDirective = true;
+
+			if (returnDirective)
+				error_messages::conflictingDirectives("return", locBlock.directives[i].directive, filePath);
+
 			setIndex(locBlock.directives[i], conf);
-		else if (locBlock.directives[i].directive.str == "autoindex")
+		}
+		else if (str == "autoindex")
+		{
+			autoIndexDirective = true;
+
+			if (returnDirective)
+				error_messages::conflictingDirectives("return", locBlock.directives[i].directive, filePath);
+
 			setOnOffDirective(locBlock.directives[i], conf.autoindex);
-		else if (locBlock.directives[i].directive.str == "upload_store")
+		}
+		else if (str == "upload_store")
+		{
+			uploadDirective = true;
+
+			if (returnDirective)
+				error_messages::conflictingDirectives("return", locBlock.directives[i].directive, filePath);
+
 			setUploadPath(locBlock.directives[i], conf);
-		else if (locBlock.directives[i].directive.str == "return")
+		}
+		else if (str == "return")
+		{
+			returnDirective = true;
+
+			if (rootDirective)
+				error_messages::conflictingDirectives("root", locBlock.directives[i].directive, filePath);
+			else if (indexDirective)
+				error_messages::conflictingDirectives("index", locBlock.directives[i].directive, filePath);
+			else if (autoIndexDirective)
+				error_messages::conflictingDirectives("autoindex", locBlock.directives[i].directive, filePath);
+			else if (uploadDirective)
+				error_messages::conflictingDirectives("upload_store", locBlock.directives[i].directive, filePath);
+
 			setRedirect(locBlock.directives[i], conf);
-		else if (locBlock.directives[i].directive.str == "cgi_handler")
+		}
+		else if (str == "cgi_handler")
 			setCgi(locBlock.directives[i], conf);
-		else if (locBlock.directives[i].directive.str == "error_page")
+		else if (str == "error_page")
 			setErrorPage(locBlock.directives[i], conf.error_pages);
-		else if (locBlock.directives[i].directive.str == "client_max_body_size")
+		else if (str == "client_max_body_size")
 			conf.client_max_body_size = setClientMaxBodySize(locBlock.directives[i]);
 		else
-			error_messages::unknownDirective(locBlock.directives[i].directive, filePath);
+			error_messages::expected("directive value", locBlock.directives[i].directive, filePath);
+	}
+
+	for (std::map<std::string, t_location_config>::const_iterator it = locations.begin(); it != locations.end(); ++it)
+	{
+		if (it->first == locBlock.name.str)
+			error_messages::duplicateDirectives("location", locBlock.name, filePath);
 	}
 
 	locations.insert(std::make_pair(locBlock.name.str, conf));
@@ -357,7 +431,6 @@ void ServerConfig::setRedirect(const t_directive& directive, t_location_config& 
 void ServerConfig::setCgi(const t_directive& directive, t_location_config& conf)
 {
 	arg_validity_checks::optionsCount(directive, 1, 2, filePath);
-	arg_validity_checks::checkAbsolutePath(directive.options[1], filePath);
 
 	if (!(directive.options[0].str.size() > 1 && directive.options[0].str[0] == '.'))
 		error_messages::invalidCgiExtension(directive.options[0], filePath);
@@ -365,7 +438,34 @@ void ServerConfig::setCgi(const t_directive& directive, t_location_config& conf)
 	conf.cgi_pass[directive.options[0].str] = directive.options[1].str;
 }
 
+bool ServerConfig::hasDuplicateServerBlocks() const
+{
+	std::set<std::string> seen; // stores "server_name:ip:port" strings
 
+	for (size_t i = 0; i < configuration.size(); ++i)
+	{
+		const t_server_config &srv = configuration[i];
+
+		for (size_t j = 0; j < srv.server_name.size(); ++j)
+		{
+			const std::string &name = srv.server_name[j];
+
+			for (size_t k = 0; k < srv.listen.size(); ++k)
+			{
+				const std::pair<std::string, int> &listen = srv.listen[k];
+				std::stringstream key;
+				key << name << ":" << listen.first << ":" << listen.second;
+
+				if (seen.count(key.str()) > 0)
+					return true; // duplicate found
+
+				seen.insert(key.str());
+			}
+		}
+	}
+
+	return false; // no duplicates
+}
 
 
 #define COLOR_RESET		"\033[0m"

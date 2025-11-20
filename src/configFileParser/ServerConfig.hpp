@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <set>
 #include <map>
 
 #include "../../include/defaultConfigs.hpp"
@@ -33,6 +34,7 @@ typedef struct t_location_config
 
 typedef struct t_server_config
 {
+	bool defaultServer;
 	std::string root;
 	std::vector<std::pair<std::string, int> > listen;
 	std::map<int, std::string> error_pages;
@@ -82,6 +84,7 @@ private:
 	std::string filePath;
 	std::vector<t_server_config> configuration;
 	std::vector<std::pair<std::string, int> > allListen;
+	bool defaultServerSet;
 
 	t_server_config setServerConfig(const t_server_block& serverBlock);
 	std::string setRoot(const t_directive& directive);
@@ -98,6 +101,8 @@ private:
 	void setUploadPath(const t_directive& directive, t_location_config& conf);
 	void setRedirect(const t_directive& directive, t_location_config& conf);
 	void setCgi(const t_directive& directive, t_location_config& conf);
+
+	bool hasDuplicateServerBlocks() const;
 };
 
 std::ostream& operator<<(std::ostream& os, const ServerConfig& config);

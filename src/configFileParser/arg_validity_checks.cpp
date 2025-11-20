@@ -31,6 +31,17 @@ void checkPathEndsWithSlash(const t_token& token, std::string& p)
 		error_messages::pathEndsWithSlash(token, p);
 }
 
+void checkSpecialCharacters(const t_token& token, std::string& p)
+{
+	for (size_t i = 0; i < token.str.size(); ++i)
+	{
+		unsigned char c = token.str[i];
+
+		if (c < 32 || c > 126)
+			error_messages::invalidCharacterInPath(token, p);
+	}
+}
+
 void checkIP(const t_token& token, std::string& ip, std::string& p)
 {
 	std::stringstream ss(ip);

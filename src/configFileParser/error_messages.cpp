@@ -12,6 +12,11 @@ static std::string toStr(int n)
 	return ss.str();
 }
 
+void alreadyDefined(const std::string& what, const t_token& token, const std::string& filePath)
+{
+	error(what + " already defined.",
+	      filePath + ":" + toStr(token.line) + ":" + toStr(token.col));
+}
 void expected(const std::string& what, const t_token& token, const std::string& filePath)
 {
 	error("Expected " + what,
@@ -20,7 +25,13 @@ void expected(const std::string& what, const t_token& token, const std::string& 
 
 void unexpected(const std::string& what, const t_token& token, const std::string& filePath)
 {
-	error("Unexpected " + what,
+	error("Unexpected token " + what,
+	      filePath + ":" + toStr(token.line) + ":" + toStr(token.col));
+}
+
+void tooBig(const std::string& what, const t_token& token, const std::string& filePath)
+{
+	error(what + " too big.",
 	      filePath + ":" + toStr(token.line) + ":" + toStr(token.col));
 }
 
@@ -50,7 +61,7 @@ void missingLocation(const t_token& token, const std::string& filePath)
 
 void tooManyArguments(const t_token& token, const std::string& filePath)
 {
-	error("Too many arguments for directive " + token.str,
+	error("Syntax error, too many arguments for directive " + token.str,
 	      filePath + ":" + toStr(token.line) + ":" + toStr(token.col));
 }
 
@@ -66,6 +77,12 @@ void pathEndsWithSlash(const t_token& token, const std::string& filePath)
 	      filePath + ":" + toStr(token.line) + ":" + toStr(token.col));
 }
 
+void invalidCharacterInPath(const t_token& token, const std::string& filePath)
+{
+	error("Invalid character in path \"" + token.str + "\" .",
+	      filePath + ":" + toStr(token.line) + ":" + toStr(token.col));
+}
+
 void invalidIp(const t_token& token, const std::string& ip, const std::string& filePath)
 {
 	error(ip + " is not a valid IP.",
@@ -74,13 +91,13 @@ void invalidIp(const t_token& token, const std::string& ip, const std::string& f
 
 void invalidPort(const t_token& token, int port, const std::string& filePath)
 {
-	error(toStr(port) + " is not a valid port.",
+	error(toStr(port) + " is an invalid port number.",
 	      filePath + ":" + toStr(token.line) + ":" + toStr(token.col));
 }
 
 void invalidPort(const t_token& token, const std::string& portStr, const std::string& filePath)
 {
-	error(portStr + " is not a valid port.",
+	error(portStr + " is an invalid port number.",
 	      filePath + ":" + toStr(token.line) + ":" + toStr(token.col));
 }
 
@@ -102,9 +119,15 @@ void invalidClientMaxBodySize(const t_token& token, const std::string& value, co
 	      filePath + ":" + toStr(token.line) + ":" + toStr(token.col));
 }
 
-void unknownDirective(const t_token& token, const std::string& filePath)
+void conflictingDirectives(const std::string& other, const t_token& token, const std::string& filePath)
 {
-	error("Unknown directive \"" + token.str + "\".",
+	error("Directives \"" + other + "\" and \"" + token.str + "\" cannot be used together.",
+	      filePath + ":" + toStr(token.line) + ":" + toStr(token.col));
+}
+
+void duplicateDirectives(const std::string& other, const t_token& token, const std::string& filePath)
+{
+	error("Duplicate " + other + " directives",
 	      filePath + ":" + toStr(token.line) + ":" + toStr(token.col));
 }
 
