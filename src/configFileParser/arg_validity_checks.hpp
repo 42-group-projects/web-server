@@ -10,6 +10,7 @@ void optionsCount(const t_directive& directive, unsigned int min, std::string& p
 void optionsCount(const t_directive& directive, unsigned int min, unsigned int max, std::string& p);
 void checkAbsolutePath(const t_token& token, std::string& p);
 void checkPathEndsWithSlash(const t_token& token, std::string& p);
+void checkSpecialCharacters(const t_token& token, std::string& p);
 void checkIP(const t_token& token, std::string& ip, std::string& p);
 void checkPort(const t_token& token, int port, std::string& p);
 void isValidStatusCode(const t_directive& directive, std::string& p);

@@ -28,13 +28,13 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 	std::string server_name = req.getHeaders()["Host"];
 	int pos = server_name.find_first_of(':');
 	server_name = server_name.substr(0, pos);
-	std::cout << "Server name: " << server_name << "\nPort: " << port << "\nIP: " << ip << std::endl;
+	// std::cout << "Server name: " << server_name << "\nPort: " << port << "\nIP: " << ip << std::endl;
 	//===========================================================================================Clement
 
 	try
 	{
 		req_config = config.getRequestConfig(server_name, ip, port, req.getUri());
-		std::cout << req_config << std::endl;
+		// std::cout << req_config << std::endl;
 	}
 	catch(const std::exception& e)
 	{

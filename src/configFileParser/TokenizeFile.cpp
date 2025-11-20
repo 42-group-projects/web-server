@@ -18,6 +18,10 @@ TokenizeFile::TokenizeFile(int argc, char **argv)
 	else
 	{
 		std::string arg(argv[1]);
+
+		if (arg == "-c" && argc >= 3)
+			arg = std::string(argv[2]);
+
 		size_t ext = arg.rfind(".conf");
 
 		if (ext != std::string::npos && ext + 5 == arg.size())
@@ -31,6 +35,13 @@ TokenizeFile::TokenizeFile(int argc, char **argv)
 
 	removeComments(rawConfig);
 	tokenize(rawConfig);
+
+	if (!tokens.size())
+		error("Empty configuration.", "Configuration file");
+
+	for (size_t i = 0; i < tokens.size(); i++)
+		if (tokens[i].str.size() > CONFIG_FILE_MAX_TOKEN_SIZE)
+			error_messages::tooBig("Token", tokens[i], filePath);
 }
 
 const std::string& TokenizeFile::getFilePath() const { return filePath; }
@@ -39,7 +50,7 @@ const std::vector<t_token>& TokenizeFile::getTokens() const { return tokens; }
 
 std::vector<std::string> TokenizeFile::loadConfigFile(const std::string& path)
 {
-	std::ifstream file(path.c_str());
+	std::ifstream file(path.c_str(), std::ios::binary);
 
 	if (!file)
 	{
@@ -55,8 +66,23 @@ std::vector<std::string> TokenizeFile::loadConfigFile(const std::string& path)
 	filePath = path;
 	std::vector<std::string> lines;
 	std::string line;
+	char c;
 
-	while (std::getline(file, line))
+	while (file.get(c))
+	{
+		if (c == '\0')
+			error("Null byte detected.", "Configuration file");
+
+		if (c == '\n')
+		{
+			lines.push_back(line);
+			line.clear();
+		}
+		else if (c != '\r')
+			line.push_back(c);
+	}
+
+	if (!line.empty())
 		lines.push_back(line);
 
 	return lines;

@@ -23,6 +23,10 @@
 #define MAX_PAYLOAD_SIZE 1024 * 50 // this is also flexable, set to 50KB for now
 #define MAX_REQUEST_LINE_LENGTH 1024 * 2 // this is also flexable
 
+//Parser
+#define CONFIG_FILE_MAX_TOKEN_SIZE 200
+#define CONFIG_FILE_MAX_CLIENT_BODY_SIZE 2UL * 1024 * 1024 * 1024 // 2GB (To keep users from setting crazy numbers)
+
 //Location specific
 #define GET_ALLOWED      true
 #define POST_ALLOWED     false
