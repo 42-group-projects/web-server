@@ -30,6 +30,6 @@ class HttpHandler
 
 		// HttpResponse handleRequest(const HttpRequest& req, const ServerConfig& config);
 		//==============================================================================================
-		HttpResponse handleRequest(const HttpRequest& req, const ServerConfig& config, std::string& ip);
+		HttpResponse handleRequest(const HttpRequest& req, const ServerConfig& config, std::string& ip, int port);
 		//=======================================================================================Clement
 };

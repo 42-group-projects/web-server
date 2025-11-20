@@ -31,6 +31,7 @@ private:
 
     //=====================================
     std::map<int, std::string> clientIps;
+    std::map<int, int> clientPorts;
     //==============================Clement
 
     std::vector<int> listeners;                 // リスニングFD一覧
