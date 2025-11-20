@@ -112,7 +112,22 @@ void NetworkManager::handleListenerEvent(int fd)
         addPollFd(cfd, POLLIN, false);
         char ipbuf[INET_ADDRSTRLEN];
         const char *p = inet_ntop(AF_INET, &cli.sin_addr, ipbuf, sizeof(ipbuf));
-        std::cout << "Accepted fd=" << cfd << " from " << (p ? p : "?") << ":" << ntohs(cli.sin_port) << std::endl;
+
+        // std::cout << "Accepted fd=" << cfd << " from " << (p ? p : "?") << ":" << ntohs(cli.sin_port) << std::endl;
+        //==============================
+        clientIps[cfd] = std::string(p);
+        struct sockaddr_in localAddr;
+        socklen_t addrlen = sizeof(localAddr);
+        if (getsockname(cfd, (struct sockaddr*)&localAddr, &addrlen) == 0)
+        {
+            int serverPort = ntohs(localAddr.sin_port);
+            clientPorts[cfd] = serverPort;
+        }
+        std::cout 
+            << "Accepted fd=" << cfd
+            << " from " << (p ? p : "?") << ":" << ntohs(cli.sin_port)
+            << " on port " << clientPorts[cfd] << std::endl;
+        //=======================Clement
     }
 }
 
@@ -263,7 +278,12 @@ bool NetworkManager::tryParseRequest(int fd)
         }
         // ハンドラ呼び出し
         HttpHandler handler;
-        HttpResponse res = handler.handleRequest(req, config);
+
+        // HttpResponse res = handler.handleRequest(req, config);
+        //===================================================================
+        HttpResponse res = handler.handleRequest(req, config, clientIps[fd], clientPorts[fd]);
+        //============================================================Clement
+
         // バージョンのフォールバック（不正な既定値 "Http1.1" を避ける）
         if (res.getVersion().empty() || res.getVersion().find("HTTP/") != 0) {
             res.setVersion("HTTP/1.1");
@@ -300,7 +320,12 @@ bool NetworkManager::tryParseRequest(int fd)
             }
 
             HttpHandler handler;
-            HttpResponse res = handler.handleRequest(req, config);
+
+            // HttpResponse res = handler.handleRequest(req, config);
+            //===================================================================
+            HttpResponse res = handler.handleRequest(req, config, clientIps[fd], clientPorts[fd]);
+            //============================================================Clement
+            
             if (res.getVersion().empty() || res.getVersion().find("HTTP/") != 0) {
                 res.setVersion("HTTP/1.1");
             }
