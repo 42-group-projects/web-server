@@ -8,7 +8,7 @@ namespace arg_validity_checks
 void optionsCount(const t_directive& directive, unsigned int min, std::string& p)
 {
 	if (directive.options.size() < min)
-		error_messages::missingArgument(directive.directive, p);
+		error_messages::parserError("Missing argument for directive", directive.directive.str, directive.directive, p);
 }
 
 void optionsCount(const t_directive& directive, unsigned int min, unsigned int max, std::string& p)
@@ -16,19 +16,19 @@ void optionsCount(const t_directive& directive, unsigned int min, unsigned int m
 	optionsCount(directive, min, p);
 
 	if (directive.options.size() > max)
-		error_messages::tooManyArguments(directive.directive, p);
+		error_messages::parserError("Too many arguments for directive", directive.directive.str, directive.directive, p);
 }
 
 void checkAbsolutePath(const t_token& token, std::string& p)
 {
 	if (token.str[0] != '/')
-		error_messages::notAbsolutePath(token, p);
+		error_messages::parserError(token.str, "is not an absolute path", token, p);
 }
 
 void checkPathEndsWithSlash(const t_token& token, std::string& p)
 {
 	if (token.str[token.str.size() - 1] == '/')
-		error_messages::pathEndsWithSlash(token, p);
+		error_messages::parserError(token.str, "cannot end with '/'", token, p);
 }
 
 void checkIP(const t_token& token, std::string& ip, std::string& p)
@@ -40,28 +40,28 @@ void checkIP(const t_token& token, std::string& ip, std::string& p)
 	while (std::getline(ss, segment, '.'))
 	{
 		if (segment.empty() || segment.size() > 3)
-			error_messages::invalidIp(token, ip, p);
+			error_messages::parserError(token.str, "is nto a valid IP adress", token, p);
 
 		for (std::string::size_type i = 0; i < segment.size(); ++i)
 			if (!std::isdigit(segment[i]))
-				error_messages::invalidIp(token, ip, p);
+				error_messages::parserError(token.str, "is nto a valid IP adress", token, p);
 
 		int num = std::atoi(segment.c_str());
 
 		if (num < 0 || num > 255)
-			error_messages::invalidIp(token, ip, p);
+			error_messages::parserError(token.str, "is nto a valid IP adress", token, p);
 
 		count++;
 	}
 
 	if (count != 4)
-		error_messages::invalidIp(token, ip, p);
+		error_messages::parserError(token.str, "is nto a valid IP adress", token, p);
 }
 
 void checkPort(const t_token& token, int port, std::string& p)
 {
 	if (port < 1 || port > 65535)
-		error_messages::invalidPort(token, port, p);
+		error_messages::parserError(token.str, "is nto a valid port", token, p);
 }
 
 void isValidStatusCode(const t_directive& directive, std::string& p)
@@ -81,7 +81,7 @@ void isValidStatusCode(const t_directive& directive, std::string& p)
 		const std::string& s = directive.options[i].str;
 
 		if (!isNumber(s))
-			error_messages::invalidStatusCode(directive.options[i], p);
+			error_messages::parserError(directive.options[i].str, "is not a valid status code", directive.options[i], p);
 
 		int code = std::atoi(s.c_str());
 		bool valid = false;
@@ -96,7 +96,7 @@ void isValidStatusCode(const t_directive& directive, std::string& p)
 		}
 
 		if (!valid)
-			error_messages::invalidStatusCode(directive.options[i], p);
+			error_messages::parserError(directive.options[i].str, "is not a valid status code", directive.options[i], p);
 	}
 }
 
@@ -110,11 +110,5 @@ bool isNumber(const std::string &s)
 			return false;
 
 	return true;
-}
-
-void endsWithHtml(const t_token& token, std::string& p)
-{
-	if (token.str.size() < 5 || token.str.substr(token.str.size() - 5) != ".html")
-		error_messages::notHtml(token, p);
 }
 }

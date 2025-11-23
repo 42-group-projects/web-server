@@ -28,6 +28,7 @@ class ServerBlocks
 public:
     ServerBlocks(const TokenizeFile& tokenizedFile);
     const std::vector<t_server_block>& getServerBlocks() const;
+
 private:
     std::string filePath;
     std::vector<t_server_block> serverBlocks;

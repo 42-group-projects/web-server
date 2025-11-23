@@ -12,7 +12,7 @@ ServerBlocks::ServerBlocks(const TokenizeFile& tokenizedFile) : filePath(tokeniz
 		for (size_t j = 0; j < rawServerBlocks[i].size(); j++)
 		{
 			if (rawServerBlocks[i][j].str == "{" || rawServerBlocks[i][j].str == ";")
-				error_messages::unexpected(rawServerBlocks[i][j].str, rawServerBlocks[i][j], filePath);
+				error_messages::parserError("Unexpected", rawServerBlocks[i][j].str, rawServerBlocks[i][j], filePath);
 			else if (rawServerBlocks[i][j].str == "location")
 				locationBlock(j, i, rawServerBlocks, serverBlock);
 			else
@@ -42,12 +42,12 @@ std::vector<std::vector<t_token> > ServerBlocks::getRawServerBlocks(const std::v
 	for (size_t i = 0; i < tokens.size(); i++)
 	{
 		if (tokens[i].str != "server")
-			error_messages::expected("server block", tokens[i], filePath);
+			error_messages::parserError("Expected", "server block", tokens[i], filePath);
 
 		i++;
 
 		if (i >= tokens.size() || tokens[i].str != "{")
-			error_messages::expected("{", tokens[i], filePath);
+			error_messages::parserError("Expected", "{", tokens[i], filePath);
 
 		i++;
 		size_t start = i;
@@ -61,7 +61,7 @@ std::vector<std::vector<t_token> > ServerBlocks::getRawServerBlocks(const std::v
 				if (braceLevel == 1)
 					braceLevel++;
 				else
-					error_messages::unexpected("{", tokens[i], filePath);
+					error_messages::parserError("Unexpected", "{", tokens[i], filePath);
 			}
 			else if (tokens[i].str == "}")
 			{
@@ -78,7 +78,7 @@ std::vector<std::vector<t_token> > ServerBlocks::getRawServerBlocks(const std::v
 		}
 
 		if (!closed)
-			error_messages::unclosed('{', tokens[start - 2].line, tokens[start - 2].col, filePath);
+			error_messages::parserError("Unclosed", "{", tokens[start - 2], filePath);
 
 		rawServerBlocks.push_back(std::vector<t_token>(tokens.begin() + start, tokens.begin() + i));
 	}
@@ -99,7 +99,7 @@ void ServerBlocks::locationBlock(size_t& j, size_t& i, std::vector<std::vector<t
 	j++;
 
 	if (j >= rawServerBlocks[i].size() || rawServerBlocks[i][j].str == "{" || rawServerBlocks[i][j].str == ";")
-		error_messages::unexpected(rawServerBlocks[i][j].str, rawServerBlocks[i][j], filePath);
+		error_messages::parserError("Unexpected" , rawServerBlocks[i][j].str, rawServerBlocks[i][j], filePath);
 
 	t_location_block location;
 
@@ -115,7 +115,7 @@ void ServerBlocks::locationBlock(size_t& j, size_t& i, std::vector<std::vector<t
 	j++;
 
 	if (j >= rawServerBlocks[i].size() || rawServerBlocks[i][j].str != "{")
-		error_messages::expected("{", rawServerBlocks[i][j], filePath);
+		error_messages::parserError("Expected", "{", rawServerBlocks[i][j], filePath);
 
 	j++;
 
@@ -138,9 +138,10 @@ void ServerBlocks::locationBlock(size_t& j, size_t& i, std::vector<std::vector<t
 	}
 
 	if (j >= rawServerBlocks[i].size() || rawServerBlocks[i][j].str != "}")
-		error_messages::unclosed('{', location.name.line, location.name.col, filePath);
+		error_messages::parserError("Unclosed", "{", location.name, filePath);
 
 	serverBlock.locations.push_back(location);
 }
+
 const std::vector<t_server_block>& ServerBlocks::getServerBlocks() const { return serverBlocks; }
 

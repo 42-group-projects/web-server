@@ -141,9 +141,6 @@ const std::string FileSystem::getFileContents() const
 
 	std::ifstream file(sp.getFullPath().c_str(), std::ios::binary);
 
-
-	// std::cout << "Opening file: " << sp.getFullPath() << std::endl;
-
 	if (!file)
 		error("Couldn't open file '" + sp.getFullPath() + "'", "File system");
 

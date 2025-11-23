@@ -14,5 +14,4 @@ void checkIP(const t_token& token, std::string& ip, std::string& p);
 void checkPort(const t_token& token, int port, std::string& p);
 void isValidStatusCode(const t_directive& directive, std::string& p);
 bool isNumber(const std::string &s);
-void endsWithHtml(const t_token& token, std::string& p);
 }

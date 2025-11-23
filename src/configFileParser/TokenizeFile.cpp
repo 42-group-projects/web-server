@@ -160,7 +160,13 @@ void TokenizeFile::handleQuotedToken
 	}
 
 	if (!closed)
-		error_messages::unclosed(quote, lineStart + 1, colStart, filePath);
+	{
+		t_token tok;
+		tok.str = "";
+		tok.line = (int)lineStart + 1;
+		tok.col = (int)colStart;
+		error_messages::parserError("Unclosed", std::string(1, quote), tok, filePath);
+	}
 
 	t_token token;
 	token.line = lineStart + 1;
