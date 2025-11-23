@@ -61,7 +61,7 @@ std::vector<std::vector<t_token> > ServerBlocks::getRawServerBlocks(const std::v
 				if (braceLevel == 1)
 					braceLevel++;
 				else
-					error_messages::unexpected("{", tokens[i], filePath);
+					error_messages::expected("directive value", tokens[i], filePath);
 			}
 			else if (tokens[i].str == "}")
 			{
