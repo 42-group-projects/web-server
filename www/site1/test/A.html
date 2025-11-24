@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hello World - Site 1</title>
+    <link rel="stylesheet" href="styles/style.css">
+</head>
+<body>
+    <header>
+        <h1>Hello, World! Site 1</h1>
+        <img src="images/42.png" alt="Cute Cat">
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="./upload.html">Upload Page</a></li>
+            <li><a href="./errors/400.html">400 Bad Request</a></li>
+            <li><a href="./errors/403.html">403 Forbidden</a></li>
+            <li><a href="./errors/404.html">404 Not Found</a></li>
+            <li><a href="./errors/405.html">405 Method Not Allowed</a></li>
+            <li><a href="./errors/413.html">413 Payload Too Large</a></li>
+            <li><a href="./errors/500.html">500 Internal Server Error</a></li>
+            <li><a href="./redirection/old.html">Redirection Test</a></li>
+            <li><a href="./redirection/new.html">Redirection Target</a></li>
+            <li><a href="./cgi-bin/test.php">PHP CGI Test</a></li>
+            <li><a href="./cgi-bin/test.py">Python CGI Test</a></li>
+        </ul>
+    </nav>
+
+    <section class="post-form">
+        <form action="./cgi-bin/post.cgi" method="post" accept-charset="utf-8">
+            <label for="postmsg">POST to .post.cgi:</label>
+            <input id="postmsg" name="message" type="text" placeholder="Type a message" required>
+            <button type="submit">Send</button>
+        </form>
+    </section>
+</body>
+</html>

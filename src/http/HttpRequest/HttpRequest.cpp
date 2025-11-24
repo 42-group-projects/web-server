@@ -60,6 +60,8 @@ void HttpRequest::parseRequest(const std::string &request)
 			error("Malformed request line", "Request Parser");
 		}
 
+		uri = decodeUri(uri);
+
 		// Parse headers
 		int header_count = 0;
 		while (std::getline(request_stream, line))
@@ -196,6 +198,40 @@ std::string HttpRequest::getMimeTypeString() const
 	}
 	return "text/plain";
 }
+
+std::string HttpRequest::decodeUri(const std::string& encoded_uri)
+{
+	std::string safe_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.~/";
+
+	std::string decoded;
+	char ch;
+	unsigned int i, ii;
+	for (i = 0; i < encoded_uri.length(); i++)
+	{
+
+		if (int(encoded_uri[i]) == 37)// %
+		{
+			sscanf(encoded_uri.substr(i + 1, 2).c_str(), "%x", &ii);
+			ch = static_cast<char>(ii);
+			if(safe_chars.find(ch) == std::string::npos)
+			{
+				decoded += ch;
+				i = i + 2;
+			}
+			else
+			{
+				decoded += ch;
+				i = i + 2;
+			}
+		}
+		else
+		{
+			decoded += encoded_uri[i];
+		}
+	}
+	return decoded;
+}
+
 
 void HttpRequest::displayRequest() const
 {

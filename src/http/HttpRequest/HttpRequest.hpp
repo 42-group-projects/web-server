@@ -22,6 +22,7 @@ class   HttpRequest
 		void parseRequestLine(std::istringstream& line_stream);
 		void parseHeaders(std::istringstream& line_stream);
 		void parseQueryParams(const std::string& query_string);
+		std::string decodeUri(const std::string& encoded_uri);
 
 	public:
 		// Constructors, destructor, and assignment operator
