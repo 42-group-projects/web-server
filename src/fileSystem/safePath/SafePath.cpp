@@ -77,7 +77,7 @@ SafePath::SafePath(const std::string& requestedPath, const t_request_config& req
 
 	std::string root = req_conf.root;
 
-	if (location == "/")
+	if (location == "/" || requestedPath.size() < location.size() || requestedPath.substr(0, location.size()) != location)
 		fullPath = root + requestedPath;
 	else
 	{

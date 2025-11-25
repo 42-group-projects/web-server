@@ -67,7 +67,6 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 	// }
 
 
-	// Standard requestHttpHandler::HttpHandler(t_request_config req_config)
 	try
 	{
 		if(hasHttpRequestErrors(req))
@@ -79,7 +78,18 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 		{
 			return handleRedirects(req);
 		}
+	}
+	catch (const std::exception& e)
+	{
+		std::cerr << "Exception caught in HttpHandler::handleRequest: 2\n";
+		std::cerr << e.what() << '\n';
+		// Proceed to standard request handling
+	}
 
+
+	// Standard requestHttpHandler::HttpHandler(t_request_config req_config)
+	try
+	{
 		switch (req.getMethod())
 		{
 			case GET:
@@ -97,7 +107,8 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 	}
 	catch(const std::exception& e)
 	{
-		std::cerr << "Exception caught in HttpHandler::handleRequest: 2\n";
+
+		std::cerr << "Exception caught in HttpHandler::handleRequest: 3\n";
 		std::cerr << e.what() << '\n';
 		//TODO: fiuger out what kind of response we want to send back here...
 		return handleErrorPages(req, INTERNAL_SERVER_ERROR);
@@ -156,11 +167,10 @@ HttpResponse HttpHandler::handleErrorPages(const HttpRequest& req, e_status_code
 	std::map<int, std::string> error_pages = req_config.error_pages;
 	std::string error_page_path = error_pages[response_code];
 	FileSystem fs(req_config.safePath, req_config);
-
 	fs.errorPage(response_code, req_config);
 
 	if(response_code == METHOD_NOT_ALLOWED)
-		res.setHeader("Allow", addAllowHeaders());
+	res.setHeader("Allow", addAllowHeaders());
 	res.setStatus(response_code);
 	res.setVersion(req.getVersion());
 	res.setMimeType(getMimeTypeString(fs.getMimeType()));
