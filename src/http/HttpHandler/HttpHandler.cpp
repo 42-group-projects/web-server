@@ -170,7 +170,7 @@ HttpResponse HttpHandler::handleErrorPages(const HttpRequest& req, e_status_code
 	fs.errorPage(response_code, req_config);
 
 	if(response_code == METHOD_NOT_ALLOWED)
-	res.setHeader("Allow", addAllowHeaders());
+		res.setHeader("Allow", addAllowHeaders());
 	res.setStatus(response_code);
 	res.setVersion(req.getVersion());
 	res.setMimeType(getMimeTypeString(fs.getMimeType()));
