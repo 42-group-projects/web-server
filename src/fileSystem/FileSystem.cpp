@@ -17,7 +17,7 @@ FileSystem::FileSystem(SafePath sp, t_request_config& conf) : sp(sp)
 				newPath = sp.getFullPath() + "/" + conf.index;
 			else
 				newPath = sp.getFullPath() + conf.index;
-			
+
 			SafePath backup = sp;
 
 			this->sp.setFullPath(newPath);
@@ -145,7 +145,7 @@ const std::string FileSystem::getFileContents() const
 	// std::cout << "Opening file: " << sp.getFullPath() << std::endl;
 
 	if (!file)
-		error("Couldn't open file '" + sp.getFullPath() + "'", "File system");
+		warning("Couldn't open file '" + sp.getFullPath() + "'", "File system");
 
 	std::ostringstream oss;
 	oss << file.rdbuf();

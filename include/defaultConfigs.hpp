@@ -10,8 +10,7 @@
 
 //Default configuration file location
 // uncomment out ../configFiles/test.conf if you want to run the tester.
-#define DEFAULT_CONF_FILE "configFiles/default.conf"
-// #define DEFAULT_CONF_FILE "../configFiles/test.conf"
+#define DEFAULT_CONF_FILE "../configFiles/test.conf"
 
 //Server
 #define SERVER_NAME "_"
