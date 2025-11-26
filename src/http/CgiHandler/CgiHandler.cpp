@@ -13,68 +13,69 @@ HttpResponse CgiHandler::runCgi(const HttpRequest& req)
 {
 	HttpRequest request = req;
 	std::string output;
-	int pipefd[2];
+	int out_pipe[2];
+	int in_pipe[2]; // for POST body
 
-	if (pipe(pipefd) == -1)
-	{
+	if (pipe(out_pipe) == -1)
 		error("pipe() failed", "CgiHandler::runCgi");
-	}
+
+	bool is_post = (req.getMethod() == POST);
+	if (is_post && pipe(in_pipe) == -1)
+		error("pipe() failed", "CgiHandler::runCgi");
+
 	pid_t pid = fork();
 	if (pid == -1)
-	{
 		error("fork() failed", "CgiHandler::runCgi");
-	}
-	std::cout << "Forked process with PID: " << pid << std::endl;
 
-	
-
-	if(pid == 0)
+	if (pid == 0)
 	{
-
 		std::string cgi_path = getCgiPath(req.getUri(), req_config);
-		// char cwd[PATH_MAX];
-		// std::cout << "PWD: " << getcwd(cwd, sizeof(cwd)) << std::endl;
-		std::cout << "debug: CGI Path: " << cgi_path << std::endl;
 		char **args = makeArgs(req);
-		std::cout << "debuggin 1: Executing CGI script: " << args[0] << " :: " << args[1] << std::endl;
 		char **envp = makeEnvs(req);
-		std::cout << "debuggin 2: Executing CGI script: " << std::endl;
 
-		
-
-		if (dup2(pipefd[WRITE_FD], STDOUT_FILENO) == -1 || dup2(pipefd[WRITE_FD], STDERR_FILENO) == -1)
-		{
+		// stdout and stderr
+		if (dup2(out_pipe[WRITE_FD], STDOUT_FILENO) == -1 || dup2(out_pipe[WRITE_FD], STDERR_FILENO) == -1)
 			error("dup2() failed", "CgiHandler::runCgi");
-		}
-		close(pipefd[READ_FD]);
-		close(pipefd[WRITE_FD]);
+		close(out_pipe[READ_FD]);
+		close(out_pipe[WRITE_FD]);
 
-		if(execve(cgi_path.c_str(), args, envp) == -1)
+		if (is_post)
 		{
-			error("Failed to execute CGI script", "CgiHandler::runCgi");
+			if (dup2(in_pipe[READ_FD], STDIN_FILENO) == -1)
+				error("dup2() failed for stdin", "CgiHandler::runCgi");
+			close(in_pipe[WRITE_FD]);
+			close(in_pipe[READ_FD]);
 		}
+
+		if (execve(cgi_path.c_str(), args, envp) == -1)
+			error("Failed to execute CGI script", "CgiHandler::runCgi");
+
 		exit(EXIT_FAILURE);
 	}
 	else
 	{
-		// read child's output
-		close(pipefd[WRITE_FD]);
+		// parent process
+		close(out_pipe[WRITE_FD]);
+		if (is_post)
+		{
+			close(in_pipe[READ_FD]);
+			write(in_pipe[WRITE_FD], req.getBody().c_str(), req.getBody().size());
+			close(in_pipe[WRITE_FD]);
+		}
+
 		char buf[4096];
 		ssize_t n;
-		while ((n = read(pipefd[READ_FD], buf, sizeof(buf))) > 0)
-		{
+		while ((n = read(out_pipe[READ_FD], buf, sizeof(buf))) > 0)
 			output.append(buf, n);
-		}
-		close(pipefd[READ_FD]);
+		close(out_pipe[READ_FD]);
+
 		waitpid(pid, NULL, 0);
 	}
 
 	HttpResponse res;
-
-	// std::cout << "CGI Output:\n" << output << std::endl;
-
 	return res.parseCgiResponse(output);
 }
+
 
 char **CgiHandler::makeEnvs(const HttpRequest& req)
 {

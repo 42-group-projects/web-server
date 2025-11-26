@@ -47,24 +47,24 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 		return handleErrorPages(req, CONTENT_TOO_LARGE);
 
 	// CGI request
-	// try
-	// {
-	// 	// FileSystem fs(req_config.safePath, req_config);
-	// 	// LocationConfig location_config = config[fs];
+	try
+	{
+		FileSystem fs(req_config.safePath, req_config);
+		// LocationConfig location_config = config[fs];
 
-	// 	CgiHandler cgi_handler(req_config);
-	// 	// if (false) // --- IGNORE ---
-	// 	if (isCgiRequest(req))
-	// 	{
-	// 		std::cout << "Handling CGI request for URI: " << req.getUri() << std::endl;
-	// 		return cgi_handler.runCgi(req);
-	// 	}
-	// }
-	// catch (const std::exception& e)
-	// {
-	// 	std::cerr << e.what() << std::endl;
-	// 	std::cerr << "Falling back to standard request handling." << std::endl;
-	// }
+		CgiHandler cgi_handler(req_config);
+		// if (false) // --- IGNORE ---
+		if (isCgiRequest(req))
+		{
+			std::cout << "Handling CGI request for URI: " << req.getUri() << std::endl;
+			return cgi_handler.runCgi(req);
+		}
+	}
+	catch (const std::exception& e)
+	{
+		std::cerr << e.what() << std::endl;
+		std::cerr << "Falling back to standard request handling." << std::endl;
+	}
 
 
 	try
