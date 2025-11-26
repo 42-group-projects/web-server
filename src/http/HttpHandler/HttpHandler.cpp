@@ -34,7 +34,6 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 	try
 	{
 		req_config = config.getRequestConfig(server_name, ip, port, req.getUri());
-		// std::cout << req_config << std::endl;
 	}
 	catch(const std::exception& e)
 	{
@@ -86,8 +85,6 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 		// Proceed to standard request handling
 	}
 
-
-	// Standard requestHttpHandler::HttpHandler(t_request_config req_config)
 	try
 	{
 		switch (req.getMethod())
@@ -110,9 +107,7 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 
 		std::cerr << "Exception caught in HttpHandler::handleRequest: 3\n";
 		std::cerr << e.what() << '\n';
-		//TODO: fiuger out what kind of response we want to send back here...
 		return handleErrorPages(req, INTERNAL_SERVER_ERROR);
-		// return handleErrorPages(req, );
 	}
 }
 
@@ -163,6 +158,8 @@ std::string  HttpHandler::addAllowHeaders()
 HttpResponse HttpHandler::handleErrorPages(const HttpRequest& req, e_status_code response_code)
 {
 
+	(void)req;
+
 	HttpResponse res;
 	std::map<int, std::string> error_pages = req_config.error_pages;
 	std::string error_page_path = error_pages[response_code];
@@ -172,7 +169,7 @@ HttpResponse HttpHandler::handleErrorPages(const HttpRequest& req, e_status_code
 	if(response_code == METHOD_NOT_ALLOWED)
 		res.setHeader("Allow", addAllowHeaders());
 	res.setStatus(response_code);
-	res.setVersion(req.getVersion());
+	res.setVersion("HTTP/1.1");
 	res.setMimeType(getMimeTypeString(fs.getMimeType()));
 	if(fs.exists())
 		res.setBody(fs.getFileContents());
@@ -181,11 +178,15 @@ HttpResponse HttpHandler::handleErrorPages(const HttpRequest& req, e_status_code
 
 HttpResponse HttpHandler::handleRedirects(const HttpRequest& req)
 {
+
+	(void)req;
+
 	HttpResponse res;
-	res.setStatus(static_cast<e_status_code>(req_config.redirect_code)); // e.g. 301 or 302
-	res.setVersion(req.getVersion());
+	//Making headers
+	res.setStatus(static_cast<e_status_code>(req_config.redirect_code));
+	res.setVersion("HTTP/1.1");
 	res.setHeader("Location", req_config.redirect_url);
-	// Minimal body for HTTP/1.0 clients
+	//Makiong Body
 	std::stringstream string_stream;
 	string_stream  << "<html><head><title>Redirect</title></head><body>"
 					<< "<h1>Resource moved</h1><p><a href=\"" << req_config.redirect_url
