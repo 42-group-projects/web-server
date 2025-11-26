@@ -19,8 +19,6 @@ HttpResponse HttpHandler::handleGet(const HttpRequest& req)
 		return handleErrorPages(req, METHOD_NOT_ALLOWED);
 	}
 
-	std::cerr << "Handling GET request for URI: debug 5" << req.getUri() << std::endl;
-
 	res.setStatus(getStatusCodeFromInt(code));
 	res.setMimeType(getMimeTypeString(fs.getMimeType()));
 	res.setBody(fs.getFileContents());

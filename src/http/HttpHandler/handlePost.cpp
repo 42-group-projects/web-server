@@ -74,12 +74,15 @@ HttpResponse HttpHandler::writeFile(const HttpRequest& req, const std::string& f
 
 		FileSystem check_file(SafePath(file_path_ss.str(), req_config, false), req_config);
 		if (check_file.exists())
-			error("File already exists: " + file_name, "HttpHandler::writeFile");
+		{
+			warning("File already exists: " + file_name, "HttpHandler::writeFile");
+			return HttpHandler::handleErrorPages(req, CONFLICT);
+		}
 
 		std::ofstream outfile(file_path_ss.str().c_str(), std::ios::binary);
 		if (!outfile.is_open())
 		{
-			error("Failed to open file for writing", "HttpHandler::writeFile");
+			warning("Failed to open file for writing", "HttpHandler::writeFile");
 			return HttpHandler::handleErrorPages(req, INTERNAL_SERVER_ERROR);
 		}
 

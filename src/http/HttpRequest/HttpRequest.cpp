@@ -47,7 +47,6 @@ void HttpRequest::parseRequest(const std::string &request)
 		if (line.empty() || line == "\r" || line == "\n")
 			error("Empty request line encountered", "Request Parser");
 
-
 		if(line.length() > MAX_REQUEST_LINE_LENGTH)
 		{
 			error("Max Request Line Limit breached", "Request Parser");
@@ -81,7 +80,6 @@ void HttpRequest::parseRequest(const std::string &request)
 				error("Exceeded maximum number of headers", "Request Parser");
 			}
 		}
-
 		// query parameters
 		if (uri.find('?') != std::string::npos)
 		{
@@ -99,6 +97,10 @@ void HttpRequest::parseRequest(const std::string &request)
 			if (!body.empty())
 				body += "\n";
 			body += body_line;
+		}
+		if(!hasHost(headers))
+		{
+			error("Malformed header: Host name not present", "Request Parser");
 		}
 	}
 	catch (const std::runtime_error& e)
@@ -123,7 +125,78 @@ void HttpRequest::parseRequestLine(std::istringstream& line_stream)
 			method = DELETE;
 		else
 			method = UNDEFINED;
+
+		// Handle absolute URLs in request line
+		if (uri.find("://") != std::string::npos)
+		{
+			parseAbsoluteUrl(uri);
+		}
 	}
+}
+
+void HttpRequest::parseAbsoluteUrl(std::string& absolute_url)
+{
+	size_t protocol_end = absolute_url.find("://");
+	if (protocol_end == std::string::npos)
+		return; // Not an absolute URL
+
+	std::string protocol = absolute_url.substr(0, protocol_end);
+
+	if (protocol != "http" && protocol != "https")
+	{
+		error("Unsupported protocol in absolute URL: " + protocol, "Request Parser");
+		return;
+	}
+
+	std::string remainder = absolute_url.substr(protocol_end + 3);
+	size_t path_start = remainder.find('/');
+
+	std::string host_port;
+	std::string path;
+
+	if (path_start != std::string::npos)
+	{
+		host_port = remainder.substr(0, path_start);
+		path = remainder.substr(path_start);
+	}
+	else
+	{
+		host_port = remainder;
+		path = "/"; // Default path if none specified
+	}
+
+	// Extract host and port
+	size_t port_start = host_port.find(':');
+	if (port_start != std::string::npos)
+	{
+		this->host = host_port.substr(0, port_start);
+		std::string port_str = host_port.substr(port_start + 1);
+
+		std::istringstream iss(port_str);
+		int port;
+		if (!(iss >> port) || port <= 0 || port > 65535)
+		{
+			error("Invalid port number in absolute URL: " + port_str, "Request Parser");
+			return;
+		}
+	}
+	else
+	{
+		this->host = host_port;
+	}
+	// Validate host is not empty
+	if (this->host.empty())
+	{
+		error("Empty host in absolute URL", "Request Parser");
+		return;
+	}
+	setHeader("Host", this->host);
+	size_t fragment_pos = path.find('#');
+	if (fragment_pos != std::string::npos)
+	{
+		path = path.substr(0, fragment_pos);
+	}
+	this->uri = path;
 }
 
 void HttpRequest::parseHeaders(std::istringstream& line_stream)
@@ -139,18 +212,24 @@ void HttpRequest::parseHeaders(std::istringstream& line_stream)
 
 		key.erase(key.find_last_not_of(" \t\r\n") + 1);
 		value.erase(0, value.find_first_not_of(" \t\r\n"));
-
 		if (key.empty() || value.empty() || key.size() > MAX_HEADERS_SIZE || value.size() > MAX_HEADERS_SIZE)
 		{
 			error("Malformed header line: key or value is empty", "Request Parser");
 		}
 
+		if (key == "Content-Length")
+		{
+			for (size_t i = 0; i < value.size(); ++i)
+			{
+				if (value[i] < '0' || value[i] > '9')
+				{
+					error("Invalid Content-Length header: " + value, "Request Parser");
+				}
+			}
+		}
+
 		headers[key] = value;
 	}
-	// if(!hasHost(headers))
-	// {
-	// 	error("Malformed header: Host name not present", "Request Parser");
-	// }
 }
 
 void HttpRequest::parseQueryParams(std::string const &query_string)
@@ -201,27 +280,46 @@ std::string HttpRequest::getMimeTypeString() const
 
 std::string HttpRequest::decodeUri(const std::string& encoded_uri)
 {
-	std::string safe_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.~/";
-
 	std::string decoded;
 	char ch;
-	unsigned int i, ii;
+	unsigned int i, j;
+
 	for (i = 0; i < encoded_uri.length(); i++)
 	{
-
-		if (int(encoded_uri[i]) == 37)// %
+		if (int(encoded_uri[i]) == 37 && i + 2 < encoded_uri.length()) // %
 		{
-			sscanf(encoded_uri.substr(i + 1, 2).c_str(), "%x", &ii);
-			ch = static_cast<char>(ii);
-			if(safe_chars.find(ch) == std::string::npos)
+			// Parse the hex digits after %
+			if (sscanf(encoded_uri.substr(i + 1, 2).c_str(), "%x", &j) == 1)
 			{
-				decoded += ch;
-				i = i + 2;
+				ch = static_cast<char>(j);
+
+				// Security check: Reject null bytes (potential null byte injection attack)
+				if (ch == '\0')
+				{
+					error("Null byte detected in URI", "Request Parser");
+					return encoded_uri; // Return original to avoid processing malformed URI
+				}
+
+				// Do NOT decode path separators and other reserved characters
+				// %2F (/) should remain encoded to distinguish from literal /
+				// %3F (?), %23 (#), etc. should also remain encoded
+				if (ch == '/' || ch == '?' || ch == '#' || ch == '%')
+				{
+					// Keep the percent-encoded form for path-significant characters
+					decoded += encoded_uri.substr(i, 3);
+					i += 2;
+				}
+				else
+				{
+					// Decode other characters (spaces, etc.)
+					decoded += ch;
+					i += 2; // Skip the two hex digits
+				}
 			}
 			else
 			{
-				decoded += ch;
-				i = i + 2;
+				// Invalid hex encoding, keep as-is
+				decoded += encoded_uri[i];
 			}
 		}
 		else
