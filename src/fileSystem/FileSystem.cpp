@@ -1,4 +1,6 @@
 #include "../src/fileSystem/FileSystem.hpp"
+#include <errno.h>
+#include <string.h>
 
 FileSystem::FileSystem(SafePath sp, t_request_config& conf) : sp(sp)
 {
@@ -6,30 +8,32 @@ FileSystem::FileSystem(SafePath sp, t_request_config& conf) : sp(sp)
 	errorPageStr = "";
 	isErrorPage = NOT_ERROR_PAGE;
 	fillMetadata();
-
 	if (isDirectory)
 	{
 		if (!conf.index.empty())
 		{
-			std::string newPath;
+			std::string indexPath = sp.getFullPath() + "/" + conf.index;
 
-			if (sp.getRequestedPath()[sp.getRequestedPath().size() - 1] != '/')
-				newPath = sp.getFullPath() + "/" + conf.index;
-			else
-				newPath = sp.getFullPath() + conf.index;
+			SafePath indexSafePath;
+			indexSafePath.setFullPath(indexPath);
 
-			SafePath backup = sp;
+			struct stat indexStat;
+			bool indexExists = (stat(indexPath.c_str(), &indexStat) == 0);
 
-			this->sp.setFullPath(newPath);
-			fillMetadata();
-			if (!isExists && conf.autoindex)
+			if (indexExists)
 			{
-				sp = backup;
+				this->sp.setFullPath(indexPath);
+				fillMetadata();
+			}
+			else if (conf.autoindex)
+			{
 				fillDirectoryListingMetadata();
 			}
 		}
 		else if (conf.autoindex)
+		{
 			fillDirectoryListingMetadata();
+		}
 	}
 }
 

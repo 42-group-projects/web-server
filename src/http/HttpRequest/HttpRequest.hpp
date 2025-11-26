@@ -23,6 +23,7 @@ class   HttpRequest
 		void parseHeaders(std::istringstream& line_stream);
 		void parseQueryParams(const std::string& query_string);
 		std::string decodeUri(const std::string& encoded_uri);
+		void parseAbsoluteUrl(std::string& absolute_url);
 
 	public:
 		// Constructors, destructor, and assignment operator
@@ -44,6 +45,7 @@ class   HttpRequest
 		std::string getQueryString() const { return quary_string; }
 		std::string getBody() const { return body; }
 		std::string getParsingError() const { return parsing_error; }
+		std::string getHost() const { return host; }
 		std::string getMimeTypeString() const;
 		// Setters
 		void setMethod(e_method m) { method = m; }
