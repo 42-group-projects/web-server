@@ -14,24 +14,19 @@ FileSystem::FileSystem(SafePath sp, t_request_config& conf) : sp(sp)
 		{
 			std::string indexPath = sp.getFullPath() + "/" + conf.index;
 
-			// Create a new SafePath for the index file to test if it exists
 			SafePath indexSafePath;
 			indexSafePath.setFullPath(indexPath);
 
-			// Temporarily check if index file exists
 			struct stat indexStat;
 			bool indexExists = (stat(indexPath.c_str(), &indexStat) == 0);
 
 			if (indexExists)
 			{
-				// Index file exists, use it
 				this->sp.setFullPath(indexPath);
 				fillMetadata();
 			}
 			else if (conf.autoindex)
 			{
-				// Index file doesn't exist but autoindex is enabled
-				// Keep the original directory path and show directory listing
 				fillDirectoryListingMetadata();
 			}
 		}
