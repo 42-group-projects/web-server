@@ -6,7 +6,6 @@ FileSystem::FileSystem(SafePath sp, t_request_config& conf) : sp(sp)
 	errorPageStr = "";
 	isErrorPage = NOT_ERROR_PAGE;
 	fillMetadata();
-
 	if (isDirectory)
 	{
 		if (!conf.index.empty())
@@ -166,7 +165,7 @@ void FileSystem::errorPage(e_status_code code, t_request_config& conf)
 
 		try
 		{
-			SafePath newPath(errorPagePath, conf);
+			SafePath newPath(errorPagePath, conf, true);
 			sp = newPath;
 			fillMetadata();
 

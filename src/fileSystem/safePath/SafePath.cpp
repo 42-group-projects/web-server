@@ -67,15 +67,18 @@ SafePath::SafePath(const std::string& path, const t_server_config* serverConf)
 	}
 }
 
-
-SafePath::SafePath(const std::string& requestedPath, const t_request_config& req_conf)
+SafePath::SafePath(const std::string& requestedPath, const t_request_config& req_conf, bool useServerRoot)
 {
 	if (requestedPath.find("..") != std::string::npos)
 		error("Unsafe path '" + requestedPath + "'", "SafePath");
 
 	location = req_conf.location;
 
-	std::string root = req_conf.root;
+	std::string root;
+	if (useServerRoot)
+		root = req_conf.serverRoot;
+	else
+		root = req_conf.root;
 
 	if (location == "/" || requestedPath.size() < location.size() || requestedPath.substr(0, location.size()) != location)
 		fullPath = root + requestedPath;
@@ -84,7 +87,6 @@ SafePath::SafePath(const std::string& requestedPath, const t_request_config& req
 		std::string remainder = requestedPath.substr(location.size());
 		fullPath = root + remainder;
 	}
-	std::cout << "Full path resolved: " << fullPath << std::endl;
 }
 
 

@@ -8,22 +8,27 @@
 
 #define READ_FD  0
 #define WRITE_FD 1
+
 class CgiHandler
 {
-	private:
-	    t_request_config req_config;
-	    // Helper methods
-		char **makeEnvs(const HttpRequest& req);
-		char **makeArgs(const HttpRequest& req);
-		std::string getQuaryString(const std::string& uri);
-		std::string getCgiPath(std::string uri, const t_request_config& req_config);
-		std::string getExtention(const std::string& uri);
-		// HttpResponse makeResponse(const std::string& cgi_output);
+private:
+	t_request_config req_config;
 
-	public:
-	    CgiHandler(const t_request_config& req_config);
-	    ~CgiHandler();
+	// Helpers
+	void detectCgiType(const HttpRequest& req);
+	char **makeEnvs(const HttpRequest& req);
+	char **makeArgs(const HttpRequest& req);
+	std::string getQueryString(const std::string& uri);
+	std::string getExtension(const std::string& uri);
 
-		// bool isCgiRequest(const HttpRequest& req);
-		HttpResponse runCgi(const HttpRequest& req);
+	// CGI state
+	std::string cgi_interpreter;
+	std::string script_name;
+	std::string path_info;
+
+public:
+	CgiHandler(const t_request_config& req_config);
+	~CgiHandler();
+
+	HttpResponse runCgi(const HttpRequest& req);
 };
