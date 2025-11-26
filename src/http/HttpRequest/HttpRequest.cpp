@@ -81,7 +81,6 @@ void HttpRequest::parseRequest(const std::string &request)
 				error("Exceeded maximum number of headers", "Request Parser");
 			}
 		}
-
 		// query parameters
 		if (uri.find('?') != std::string::npos)
 		{
@@ -99,6 +98,10 @@ void HttpRequest::parseRequest(const std::string &request)
 			if (!body.empty())
 				body += "\n";
 			body += body_line;
+		}
+		if(!hasHost(headers))
+		{
+			error("Malformed header: Host name not present", "Request Parser");
 		}
 	}
 	catch (const std::runtime_error& e)
@@ -123,7 +126,85 @@ void HttpRequest::parseRequestLine(std::istringstream& line_stream)
 			method = DELETE;
 		else
 			method = UNDEFINED;
+
+		// Handle absolute URLs in request line
+		if (uri.find("://") != std::string::npos)
+		{
+			parseAbsoluteUrl(uri);
+		}
 	}
+}
+
+void HttpRequest::parseAbsoluteUrl(std::string& absolute_url)
+{
+	// Find protocol
+	size_t protocol_end = absolute_url.find("://");
+	if (protocol_end == std::string::npos)
+		return; // Not an absolute URL
+
+	std::string protocol = absolute_url.substr(0, protocol_end);
+
+	// Only accept HTTP/HTTPS protocols
+	if (protocol != "http" && protocol != "https")
+	{
+		error("Unsupported protocol in absolute URL: " + protocol, "Request Parser");
+		return;
+	}
+
+	// Extract everything after protocol://
+	std::string remainder = absolute_url.substr(protocol_end + 3);
+
+	// Find the start of the path (first '/' after the host)
+	size_t path_start = remainder.find('/');
+
+	std::string host_port;
+	std::string path;
+
+	if (path_start != std::string::npos)
+	{
+		host_port = remainder.substr(0, path_start);
+		path = remainder.substr(path_start);
+	}
+	else
+	{
+		host_port = remainder;
+		path = "/"; // Default path if none specified
+	}
+
+	// Extract host and port
+	size_t port_start = host_port.find(':');
+	if (port_start != std::string::npos)
+	{
+		this->host = host_port.substr(0, port_start);
+		std::string port_str = host_port.substr(port_start + 1);
+
+		// Validate port number (C++98 compatible)
+		std::istringstream iss(port_str);
+		int port;
+		if (!(iss >> port) || port <= 0 || port > 65535)
+		{
+			error("Invalid port number in absolute URL: " + port_str, "Request Parser");
+			return;
+		}
+	}
+	else
+	{
+		this->host = host_port;
+	}
+	// Validate host is not empty
+	if (this->host.empty())
+	{
+		error("Empty host in absolute URL", "Request Parser");
+		return;
+	}
+	setHeader("Host", this->host);
+	// Strip fragment if present (everything after #)
+	size_t fragment_pos = path.find('#');
+	if (fragment_pos != std::string::npos)
+	{
+		path = path.substr(0, fragment_pos);
+	}
+	this->uri = path;
 }
 
 void HttpRequest::parseHeaders(std::istringstream& line_stream)
@@ -147,10 +228,6 @@ void HttpRequest::parseHeaders(std::istringstream& line_stream)
 
 		headers[key] = value;
 	}
-	// if(!hasHost(headers))
-	// {
-	// 	error("Malformed header: Host name not present", "Request Parser");
-	// }
 }
 
 void HttpRequest::parseQueryParams(std::string const &query_string)
