@@ -217,7 +217,7 @@ void HttpHandler::finalizeResponse(HttpResponse& res, const HttpRequest& req)
 
     if (keepAlive) {
         res.setHeader("Connection", "keep-alive");
-        res.setHeader("Keep-Alive", "timeout=5, max=100");
+        // res.setHeader("Keep-Alive", "timeout=5, max=100");
     } else {
         res.setHeader("Connection", "close");
     }

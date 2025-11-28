@@ -1,6 +1,9 @@
 #include "enums.hpp"
 #include "../../include/imports.hpp"
 #include "./utils.hpp"
+#include <ctime>       // for std::time, std::gmtime, std::tm
+#include <sstream>     // for std::ostringstream
+#include <iomanip>     // for std::setfill, std::setw
 
 std::string getMethodString(e_method method)
 {
@@ -180,8 +183,6 @@ std::string getMimeTypeString(e_mimeType mimeType)
 
 e_mimeType getMimeTypeEnum(const std::string mimeTypeStr)
 {
-	// Debug output to see what we're actually receiving
-
 	if (mimeTypeStr == "text/html")
 		return TEXT_HTML;
 	else if (mimeTypeStr == "text/css")
@@ -245,12 +246,23 @@ std::string getMimeTypeExtention(e_mimeType mimeType)
 
 std:: string getCurrentTime()
 {
-	//TODO:: replace with c++ time functions
-	time_t now = time(NULL);
-	struct tm *tm_info = gmtime(&now);
-	char buffer[100];
-	strftime(buffer, sizeof(buffer), "%a, %d %b %Y %H:%M:%S GMT", tm_info);
-	return std::string(buffer);
+	std::time_t now = std::time(NULL);
+    std::tm *tm_info = std::gmtime(&now);
+    
+    const char* days[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+    const char* months[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", 
+                            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+    
+    std::ostringstream oss;
+    oss << days[tm_info->tm_wday] << ", "
+        << std::setfill('0') << std::setw(2) << tm_info->tm_mday << " "
+        << months[tm_info->tm_mon] << " "
+        << (1900 + tm_info->tm_year) << " "
+        << std::setfill('0') << std::setw(2) << tm_info->tm_hour << ":"
+        << std::setfill('0') << std::setw(2) << tm_info->tm_min << ":"
+        << std::setfill('0') << std::setw(2) << tm_info->tm_sec << " GMT";
+    
+    return oss.str();
 	
 }
 
