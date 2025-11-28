@@ -187,11 +187,12 @@ char **CgiHandler::makeEnvs(const HttpRequest& req)
 	env_vars["SERVER_PROTOCOL"] = req.getVersion();
 	env_vars["QUERY_STRING"] = req.getQueryString();
 
-
+	if (!req.getBody().empty())
+	{
 		env_vars["CONTENT_TYPE"] = req.getMimeTypeString();
 		env_vars["CONTENT_LENGTH"] = headers["Content-Length"];
-
-
+	}
+	
 	if (cgi_interpreter.find("php-cgi") != std::string::npos)
 	{
 		SafePath sp(script_name, req_config, false);
