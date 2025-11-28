@@ -192,7 +192,12 @@ char **CgiHandler::makeEnvs(const HttpRequest& req)
 		env_vars["CONTENT_TYPE"] = req.getMimeTypeString();
 		env_vars["CONTENT_LENGTH"] = headers["Content-Length"];
 	}
-	
+	else
+	{
+		env_vars["CONTENT_TYPE"] = APPLICATION_OCTET_STREAM;
+		env_vars["CONTENT_LENGTH"] = "0";
+	}
+
 	if (cgi_interpreter.find("php-cgi") != std::string::npos)
 	{
 		SafePath sp(script_name, req_config, false);
