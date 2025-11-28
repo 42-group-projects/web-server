@@ -241,13 +241,17 @@ std::string getMimeTypeExtention(e_mimeType mimeType)
 			return ".unknown";
 	}
 }
+
+
 std:: string getCurrentTime()
 {
+	//TODO:: replace with c++ time functions
 	time_t now = time(NULL);
 	struct tm *tm_info = gmtime(&now);
 	char buffer[100];
 	strftime(buffer, sizeof(buffer), "%a, %d %b %Y %H:%M:%S GMT", tm_info);
 	return std::string(buffer);
+	
 }
 
 e_status_code getStatusCodeFromInt(int code)

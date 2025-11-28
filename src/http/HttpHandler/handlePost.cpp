@@ -168,15 +168,12 @@ std::string formatFileName(const HttpRequest &req)
 		std::cerr << e.what() << '\n';
 	}
 
-	// might have to delelte this block later if we decide to make filename mandatory
 	if(file_name.empty())
 	{
-		// TODO: generate a unique filename not using a timestamp
-		// to avoid potential collisions in high-frequency uploads
 		std::stringstream ss;
 		e_mimeType mime_enum = getMimeTypeEnum(req.getMimeTypeString());
 		std::string ext = getMimeTypeExtention(mime_enum);
-		ss << "upload_file_" << time(NULL) << ext;
+		ss << "upload_file_" << std::time(NULL) << ext;
 		file_name = ss.str();
 	}
 

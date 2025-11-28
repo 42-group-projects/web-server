@@ -135,8 +135,6 @@ char **CgiHandler::makeArgs(const HttpRequest& req)
 
 	std::string script_filename = req.getUri();
 
-
-	// TODO: NEED TO FIX THIS PATH FINDING LOGIC
 	size_t last_slash = script_filename.find_last_of('/');
 
 	std::string script_path;

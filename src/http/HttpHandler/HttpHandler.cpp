@@ -221,6 +221,9 @@ void HttpHandler::finalizeResponse(HttpResponse& res, const HttpRequest& req)
     } else {
         res.setHeader("Connection", "close");
     }
+
+	res.setHeader("Date", getCurrentTime());
+	res.setHeader("Server", req_config.server_name[0]);
 }
 
 bool HttpHandler::isCgiRequest(const HttpRequest& req)
