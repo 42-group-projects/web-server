@@ -66,7 +66,7 @@ HttpResponse CgiHandler::runCgi(const HttpRequest& req)
 
 		write(status_pipe[1], &fail, 1);
 		close(status_pipe[1]);
-		_exit(0);
+		std::exit(0);
 	}
 	else
 	{
@@ -147,6 +147,13 @@ char **CgiHandler::makeArgs(const HttpRequest& req)
 	size_t last_slash = script_name.find_last_of('/');
 	std::string script_base = (last_slash != std::string::npos) ? script_name.substr(last_slash + 1) : script_name;
 	SafePath sp(script_name, req_config, false);
+	if (sp.getFullPath()[0] != '/')
+		sp.setFullPath("./" + sp.getFullPath());
+	else
+		sp.setFullPath("." + sp.getFullPath());
+	std::cout << "+++++++++++" << std::endl;
+	std::cout << sp << std::endl;
+	std::cout << "+++++++++++" << std::endl;
 	
 	FileSystem fs(sp, req_config);
 	if (!fs.exists())

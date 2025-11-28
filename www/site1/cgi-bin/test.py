@@ -8,7 +8,7 @@ print("<title>CGI Example</title>")
 print("</head>")
 print("<body>")
 
-name = form.getvalue("name", "Guest")
+name = format.getvalue("name", "Guest")
 
 print("".format(name))
 print("</body>")
