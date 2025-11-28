@@ -66,7 +66,7 @@ HttpResponse CgiHandler::runCgi(const HttpRequest& req)
 
 		write(status_pipe[1], &fail, 1);
 		close(status_pipe[1]);
-		_exit(0); // ensure child exits
+		_exit(0);
 	}
 	else
 	{
@@ -105,9 +105,6 @@ HttpResponse CgiHandler::runCgi(const HttpRequest& req)
 	return res.parseCgiResponse(output);
 }
 
-
-
-
 void CgiHandler::detectCgiType(const HttpRequest& req)
 {
 	std::string uri = req.getUri();
@@ -145,8 +142,7 @@ void CgiHandler::detectCgiType(const HttpRequest& req)
 
 char **CgiHandler::makeArgs(const HttpRequest& req)
 {
-	if (cgi_interpreter.empty())
-		detectCgiType(req);
+	detectCgiType(req);
 
 	size_t last_slash = script_name.find_last_of('/');
 	std::string script_base = (last_slash != std::string::npos) ? script_name.substr(last_slash + 1) : script_name;

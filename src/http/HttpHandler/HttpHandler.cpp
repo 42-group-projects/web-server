@@ -33,6 +33,7 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 	try
 	{
 		req_config = config.getRequestConfig(server_name, ip, port, req.getUri());
+		std::cout << req_config << std::endl;
 	}
 	catch(const std::exception& e)
 	{
