@@ -169,8 +169,6 @@ void FileSystem::errorPage(e_status_code code, t_request_config& conf)
 		{
 			SafePath newPath(errorPagePath, conf, false);
 			sp = newPath;
-			std::cout << errorPagePath << std::endl;
-			std::cout << sp << std::endl;
 			fillMetadata();
 
 			if (!isExists)
