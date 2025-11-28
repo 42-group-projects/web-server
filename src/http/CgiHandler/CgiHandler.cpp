@@ -151,9 +151,6 @@ char **CgiHandler::makeArgs(const HttpRequest& req)
 		sp.setFullPath("./" + sp.getFullPath());
 	else
 		sp.setFullPath("." + sp.getFullPath());
-	std::cout << "+++++++++++" << std::endl;
-	std::cout << sp << std::endl;
-	std::cout << "+++++++++++" << std::endl;
 	
 	FileSystem fs(sp, req_config);
 	if (!fs.exists())
