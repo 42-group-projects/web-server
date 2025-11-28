@@ -41,6 +41,7 @@ class   HttpRequest
 		std::string getUri() const { return uri; }
 		std::string getVersion() const { return version; }
 		std::map<std::string, std::string> getHeaders() const { return headers; }
+		std::string getHeader(const std::string &key) const { return headers.at(key); }
 		std::map<std::string, std::string> getQueryParams() const { return query_params; }
 		std::string getQueryString() const { return quary_string; }
 		std::string getBody() const { return body; }

@@ -38,5 +38,7 @@ HttpResponse HttpHandler::handleDelete(const HttpRequest& req)
 		std::cerr << e.what() << '\n';
 		return handleErrorPages(req, INTERNAL_SERVER_ERROR);
 	}
+
+	finalizeResponse(res, req);
 	return res;
 }

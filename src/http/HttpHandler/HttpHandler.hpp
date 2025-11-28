@@ -21,6 +21,7 @@ class HttpHandler
 		HttpResponse handleErrorPages(const HttpRequest& req, e_status_code response_code);
 		HttpResponse handleRedirects(const HttpRequest& req);
 		bool isCgiRequest(const HttpRequest& req);
+		void finalizeResponse(HttpResponse& res, const HttpRequest& req);
 
 		HttpResponse writeFile(const HttpRequest& req, const std::string& file_name, const std::string& content);
 

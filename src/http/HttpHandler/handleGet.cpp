@@ -23,5 +23,6 @@ HttpResponse HttpHandler::handleGet(const HttpRequest& req)
 	res.setMimeType(getMimeTypeString(fs.getMimeType()));
 	res.setBody(fs.getFileContents());
 
+	finalizeResponse(res, req);
 	return res;
 }

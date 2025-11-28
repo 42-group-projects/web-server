@@ -197,6 +197,32 @@ HttpResponse HttpHandler::handleRedirects(const HttpRequest& req)
 	return res;
 }
 
+void HttpHandler::finalizeResponse(HttpResponse& res, const HttpRequest& req)
+{
+    std::string connHdr;
+    try {
+        connHdr = req.getHeader("Connection");
+    } catch(...) {
+        connHdr = "";
+    }
+
+    bool keepAlive = false;
+    if (req.getVersion() == "HTTP/1.1") {
+        // HTTP/1.1 defaults to keep-alive unless client says close
+        keepAlive = !(connHdr == "close" || connHdr == "Close");
+    } else {
+        // HTTP/1.0 defaults to close unless client explicitly asks
+        keepAlive = (connHdr == "keep-alive" || connHdr == "Keep-Alive");
+    }
+
+    if (keepAlive) {
+        res.setHeader("Connection", "keep-alive");
+        res.setHeader("Keep-Alive", "timeout=5, max=100");
+    } else {
+        res.setHeader("Connection", "close");
+    }
+}
+
 bool HttpHandler::isCgiRequest(const HttpRequest& req)
 {
 	// Determine if requested URI targets a CGI script.

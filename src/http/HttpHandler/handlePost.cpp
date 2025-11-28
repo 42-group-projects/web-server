@@ -54,6 +54,8 @@ HttpResponse HttpHandler::handlePost(const HttpRequest& req)
 		res.setStatus(CREATED);
 		res.setMimeType("text/plain");
 		res.setBody("Files uploaded successfully: " + uploaded_files.str() + "\n");
+
+		finalizeResponse(res, req);
 		return res;
 	}
 
