@@ -19,6 +19,7 @@
 typedef struct t_request_config
 {
 	SafePath safePath;
+	std::string serverRoot;
 	std::string root;
 	std::map<int, std::string> error_pages;
 	size_t client_max_body_size;

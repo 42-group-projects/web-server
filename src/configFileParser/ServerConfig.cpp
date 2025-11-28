@@ -27,7 +27,6 @@ t_request_config ServerConfig::getRequestConfig(const std::string &serverName, c
 	const t_server_config *sconf = NULL;
 	std::vector<const t_server_config*> exactMatches;
 	std::vector<const t_server_config*> catchAll;
-
 	for (size_t i = 0; i < configuration.size(); ++i)
 	{
 		for (size_t j = 0; j < configuration[i].listen.size(); ++j)
@@ -73,6 +72,7 @@ t_request_config ServerConfig::getRequestConfig(const std::string &serverName, c
 	t_request_config rConf =
 	{
 		sp,
+		sconf->root,
 		lConf.root.empty() ? sconf->root : lConf.root,
 		lConf.error_pages.empty() ? sconf->error_pages : lConf.error_pages,
 		lConf.client_max_body_size ? lConf.client_max_body_size : sconf->client_max_body_size,

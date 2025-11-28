@@ -30,10 +30,10 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 	server_name = server_name.substr(0, pos);
 	// std::cout << "Server name: " << server_name << "\nPort: " << port << "\nIP: " << ip << std::endl;
 	//===========================================================================================Clement
-
 	try
 	{
 		req_config = config.getRequestConfig(server_name, ip, port, req.getUri());
+		// std::cout << req_config << std::endl;
 	}
 	catch(const std::exception& e)
 	{
@@ -46,24 +46,40 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 		return handleErrorPages(req, CONTENT_TOO_LARGE);
 
 	// CGI request
-	// try
-	// {
-	// 	// FileSystem fs(req_config.safePath, req_config);
-	// 	// LocationConfig location_config = config[fs];
+	try
+	{
+		CgiHandler cgi_handler(req_config);
+		// if (false) // --- IGNORE ---
+		if (isCgiRequest(req))
+		{
+			if (req_config.cgi_pass.empty())
+				return handleErrorPages(req, FORBIDDEN);
+			std::cout << "Handling CGI request for URI: " << req.getUri() << std::endl;
+			return cgi_handler.runCgi(req);
+		}
+	}
+	catch (const std::exception& e)
+	{
+		std::cerr << e.what();
 
-	// 	CgiHandler cgi_handler(req_config);
-	// 	// if (false) // --- IGNORE ---
-	// 	if (isCgiRequest(req))
-	// 	{
-	// 		std::cout << "Handling CGI request for URI: " << req.getUri() << std::endl;
-	// 		return cgi_handler.runCgi(req);
-	// 	}
-	// }
-	// catch (const std::exception& e)
-	// {
-	// 	std::cerr << e.what() << std::endl;
-	// 	std::cerr << "Falling back to standard request handling." << std::endl;
-	// }
+		std::string msg(e.what());
+		if (std::string(msg).find("File does not exist") != std::string::npos)
+		{
+			return handleErrorPages(req, NOT_FOUND);
+		}
+		else if (std::string(msg).find("permissions") != std::string::npos
+			|| std::string(msg).find("unsafe") != std::string::npos)
+		{
+			return handleErrorPages(req, FORBIDDEN);
+		}
+		else if (std::string(msg).find("failed") != std::string::npos
+			|| std::string(msg).find("terminated") != std::string::npos)
+		{
+			return handleErrorPages(req, INTERNAL_SERVER_ERROR);
+		}
+		//else
+			//fallback to normal handling
+	}
 
 
 	try

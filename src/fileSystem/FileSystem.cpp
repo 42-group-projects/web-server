@@ -145,9 +145,6 @@ const std::string FileSystem::getFileContents() const
 
 	std::ifstream file(sp.getFullPath().c_str(), std::ios::binary);
 
-
-	// std::cout << "Opening file: " << sp.getFullPath() << std::endl;
-
 	if (!file)
 		warning("Couldn't open file '" + sp.getFullPath() + "'", "File system");
 
@@ -170,7 +167,7 @@ void FileSystem::errorPage(e_status_code code, t_request_config& conf)
 
 		try
 		{
-			SafePath newPath(errorPagePath, conf);
+			SafePath newPath(errorPagePath, conf, false);
 			sp = newPath;
 			fillMetadata();
 

@@ -64,7 +64,6 @@ std::string HttpResponse::serializeHeaders(void)
 
 HttpResponse &HttpResponse::parseCgiResponse(const std::string& cgi_output)
 {
-	std::cout << "Parsing CGI response..." << cgi_output << std::endl;
 	int cut_size = 0;
 	size_t header_end = cgi_output.find("\r\n\r\n");
 	cut_size = 4;

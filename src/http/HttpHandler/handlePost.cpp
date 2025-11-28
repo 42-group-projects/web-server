@@ -72,7 +72,7 @@ HttpResponse HttpHandler::writeFile(const HttpRequest& req, const std::string& f
 		std::stringstream file_path_ss;
 		file_path_ss << req_config.upload_store << "/" << file_name;
 
-		FileSystem check_file(SafePath(file_path_ss.str(), req_config), req_config);
+		FileSystem check_file(SafePath(file_path_ss.str(), req_config, false), req_config);
 		if (check_file.exists())
 		{
 			warning("File already exists: " + file_name, "HttpHandler::writeFile");
