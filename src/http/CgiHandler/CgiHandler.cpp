@@ -22,18 +22,18 @@ HttpResponse CgiHandler::runCgi(const HttpRequest& req)
 
 
 	if (pipe(out_pipe) == -1 || pipe(status_pipe) == -1)
-		throw std::runtime_error("pipe() failed in runCgi");
+		error("pipe() failed in runCgi", "CgiHandler::runCgi");
 
 	bool is_post = (req.getMethod() == POST);
 	if (is_post)
 	{
 		if (pipe(in_pipe) == -1)
-			throw std::runtime_error("pipe() failed in runCgi");
+			error("pipe() failed in runCgi", "CgiHandler::runCgi");
 	}
 
 	pid_t pid = fork();
 	if (pid == -1)
-		throw std::runtime_error("fork() failed in runCgi");
+		error("fork() failed in runCgi", "CgiHandler::runCgi");
 
 	if (pid == 0)
 	{
@@ -96,10 +96,10 @@ HttpResponse CgiHandler::runCgi(const HttpRequest& req)
 		waitpid(pid, &wstatus, 0);
 
 		if (child_status)
-			throw std::runtime_error("CGI script failed to execute");
+			error("CGI script failed to execute", "CgiHandler::runCgi");
 
 		if (!WIFEXITED(wstatus) || WEXITSTATUS(wstatus) != 0)
-			throw std::runtime_error("CGI script terminated abnormally");
+			error("CGI script terminated abnormally", "CgiHandler::runCgi");
 	}
 	HttpResponse res;
 	return res.parseCgiResponse(output);
@@ -138,8 +138,6 @@ void CgiHandler::detectCgiType(const HttpRequest& req)
 		path_info = "";
 }
 
-
-
 char **CgiHandler::makeArgs(const HttpRequest& req)
 {
 	detectCgiType(req);
@@ -159,16 +157,10 @@ char **CgiHandler::makeArgs(const HttpRequest& req)
 		error("Missing permissions", "CgiHandler::makeArgs");
 
 	char **args;
-	if (cgi_interpreter.find("php-cgi") != std::string::npos) {
-		args = new char*[2];
-		args[0] = strdup(cgi_interpreter.c_str());
-		args[1] = NULL;
-	} else {
-		args = new char*[3];
-		args[0] = strdup(cgi_interpreter.c_str());
-		args[1] = strdup(sp.getFullPath().c_str());
-		args[2] = NULL;
-	}
+	args = new char*[3];
+	args[0] = strdup(cgi_interpreter.c_str());
+	args[1] = strdup(sp.getFullPath().c_str());
+	args[2] = NULL;
 	return args;
 }
 
@@ -196,14 +188,6 @@ char **CgiHandler::makeEnvs(const HttpRequest& req)
 	{
 		env_vars["CONTENT_TYPE"] = APPLICATION_OCTET_STREAM;
 		env_vars["CONTENT_LENGTH"] = "0";
-	}
-
-	if (cgi_interpreter.find("php-cgi") != std::string::npos)
-	{
-		SafePath sp(script_name, req_config, false);
-		env_vars["SCRIPT_FILENAME"] = sp.getFullPath();
-		env_vars["REDIRECT_STATUS"] = "200";
-		env_vars["SERVER_SOFTWARE"] = "webserv/1.0";
 	}
 
 	for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); ++it)
