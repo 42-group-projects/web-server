@@ -63,7 +63,8 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 		std::cerr << e.what();
 
 		std::string msg(e.what());
-		if (std::string(msg).find("File does not exist") != std::string::npos)
+		if (std::string(msg).find("File does not exist") != std::string::npos
+			|| std::string(msg).find("code injection") != std::string::npos)
 		{
 			return handleErrorPages(req, NOT_FOUND);
 		}

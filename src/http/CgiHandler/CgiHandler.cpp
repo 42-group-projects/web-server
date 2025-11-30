@@ -185,7 +185,7 @@ char **CgiHandler::makeEnvs(const HttpRequest& req)
 	env_vars["REQUEST_METHOD"] = getMethodString(req.getMethod());
 	env_vars["SERVER_NAME"] = headers["Host"];
 	env_vars["SERVER_PROTOCOL"] = req.getVersion();
-	env_vars["QUERY_STRING"] = req.getQueryString();
+	env_vars["QUERY_STRING"] = getQueryString(req);
 
 	if (!req.getBody().empty())
 	{
@@ -226,13 +226,14 @@ char **CgiHandler::makeEnvs(const HttpRequest& req)
 	return envp;
 }
 
-
-std::string CgiHandler::getQueryString(const std::string& uri)
+std::string CgiHandler::getQueryString(const HttpRequest& req)
 {
-	size_t query_pos = uri.find('?');
-	if (query_pos != std::string::npos)
-		return uri.substr(query_pos + 1);
-	return "";
+	const std::string allowed = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-%=&";
+	std::string qs = req.getQueryString();
+	for (size_t i = 0; i < qs.size(); i++)
+		if (allowed.find(qs[i]) == std::string::npos)
+			error("Cannot run CGI, possible code injection", "CgiHandler::getQueryString");
+	return qs;
 }
 
 std::string CgiHandler::getExtension(const std::string& uri)
