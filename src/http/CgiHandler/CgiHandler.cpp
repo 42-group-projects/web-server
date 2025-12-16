@@ -258,24 +258,23 @@ bool isWhiteListed(char c)
 }
 std::string CgiHandler::sanitizeQueryString(const std::string& query)
 {
-    std::string sanitized;
-    sanitized.reserve(query.size());
-    
-    for (size_t i = 0; i < query.size(); ++i)
-    {
-        char c = query[i];
-        
-        if (isWhiteListed(c))
-        {
-            sanitized += c;
-        }
-        else
-        {
-            char buf[4];
-            std::sprintf(buf, "%%%02X", (unsigned char)c);
-            sanitized += buf;
-        }
-    }
-    
-    return sanitized;
+	std::string sanitized;
+	sanitized.reserve(query.size());
+
+	for (size_t i = 0; i < query.size(); ++i)
+	{
+		char c = query[i];
+		if (isWhiteListed(c))
+		{
+		    sanitized += c;
+		}
+		else
+		{
+			char buf[4];
+			std::sprintf(buf, "%%%02X", (unsigned char)c);
+			sanitized += buf;
+		}
+	}
+
+	return sanitized;
 }
