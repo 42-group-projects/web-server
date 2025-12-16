@@ -185,7 +185,7 @@ char **CgiHandler::makeEnvs(const HttpRequest& req)
 	env_vars["REQUEST_METHOD"] = getMethodString(req.getMethod());
 	env_vars["SERVER_NAME"] = headers["Host"];
 	env_vars["SERVER_PROTOCOL"] = req.getVersion();
-	env_vars["QUERY_STRING"] = req.getQueryString();
+	env_vars["QUERY_STRING"] = sanitizeQueryString(req.getQueryString());
 
 	if (!req.getBody().empty())
 	{
@@ -246,4 +246,36 @@ std::string CgiHandler::getExtension(const std::string& uri)
 	if (pos == std::string::npos)
 		return ext;
 	return ext.substr(0, pos);
+}
+
+bool isWhiteListed(char c)
+{
+	return ( (c >= 'a' && c <= 'z') ||
+			 (c >= 'A' && c <= 'Z') ||
+			 (c >= '0' && c <= '9') ||
+			 c == '-' || c == '_' || c == '.' ||
+			 c == '=' || c == '&' || c == '%' );
+}
+std::string CgiHandler::sanitizeQueryString(const std::string& query)
+{
+    std::string sanitized;
+    sanitized.reserve(query.size());
+    
+    for (size_t i = 0; i < query.size(); ++i)
+    {
+        char c = query[i];
+        
+        if (isWhiteListed(c))
+        {
+            sanitized += c;
+        }
+        else
+        {
+            char buf[4];
+            std::sprintf(buf, "%%%02X", (unsigned char)c);
+            sanitized += buf;
+        }
+    }
+    
+    return sanitized;
 }
