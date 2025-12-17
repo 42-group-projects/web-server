@@ -74,17 +74,25 @@ std::vector<FileEntry> DirectoryListing::listDir(const std::string& path)
 
 std::string DirectoryListing::createLinkList(std::vector<FileEntry> entries)
 {
-	std::string list;
+    std::string list;
 
-	for (size_t i = 0; i < entries.size(); i++)
-	{
-		if (entries[i].isDir)
-			list += "\t\t" + liStart + entries[i].name + hrefEnd + entries[i].name + "/" + liEnd + "\n";
-		else
-			list += "\t\t" + liStart + entries[i].name + hrefEnd + entries[i].name + liEnd + "\n";
-	}
+    if (entries.empty())
+    {
+        list = "\t\t<li>No files</li>\n";
+    }
+    else
+    {
+        for (size_t i = 0; i < entries.size(); i++)
+        {
+            if (entries[i].isDir)
+                list += "\t\t" + liStart + entries[i].name + hrefEnd + entries[i].name + "/" + liEnd + "\n";
+            else
+                list += "\t\t" + liStart + entries[i].name + hrefEnd + entries[i].name + liEnd + "\n";
+        }
+    }
 
-	return list;
+    return list;
 }
+
 
 const std::string& DirectoryListing::getHtml() const { return html; }

@@ -21,7 +21,11 @@ enum e_method
 	UNDEFINED,
 	GET,
 	POST,
-	DELETE
+	DELETE,
+	PUT,
+	PATCH,
+	OPTIONS,
+	HEAD
 };
 
 enum e_error_page_type

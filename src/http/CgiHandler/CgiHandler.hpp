@@ -18,7 +18,7 @@ private:
 	void detectCgiType(const HttpRequest& req);
 	char **makeEnvs(const HttpRequest& req);
 	char **makeArgs(const HttpRequest& req);
-	std::string getQueryString(const std::string& uri);
+	std::string getQueryString(const HttpRequest& req);
 	std::string getExtension(const std::string& uri);
 	std::string sanitizeQueryString(const std::string& query);
 

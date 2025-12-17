@@ -33,7 +33,7 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 	try
 	{
 		req_config = config.getRequestConfig(server_name, ip, port, req.getUri());
-		// std::cout << req_config << std::endl;
+		std::cout << req_config << std::endl;
 	}
 	catch(const std::exception& e)
 	{
@@ -63,7 +63,8 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 		std::cerr << e.what();
 
 		std::string msg(e.what());
-		if (std::string(msg).find("File does not exist") != std::string::npos)
+		if (std::string(msg).find("File does not exist") != std::string::npos
+			|| std::string(msg).find("code injection") != std::string::npos)
 		{
 			return handleErrorPages(req, NOT_FOUND);
 		}
@@ -114,6 +115,12 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 			case DELETE:
 				return handleDelete(req);
 
+			case PUT:
+			case PATCH:
+			case OPTIONS:
+			case HEAD:
+				return handleErrorPages(req, METHOD_NOT_ALLOWED);
+				
 			default:
 				return handleErrorPages(req, NOT_IMPLEMENTED);
 		}

@@ -269,8 +269,10 @@ void BlocksParser::setLocation(const t_location_block& locBlock, std::map<std::s
 
 t_location_config BlocksParser::setupDefaultLocationConfig(const std::string& location, const std::string& root)
 {
+	(void)root; //need cleanup
+	
 	t_location_config conf;
-	conf.root = root;
+	conf.root = "";
 	conf.client_max_body_size = 0;
 	conf.location = location;
 	conf.getAllowed = GET_ALLOWED;
