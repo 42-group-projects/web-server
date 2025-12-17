@@ -20,6 +20,7 @@ private:
 	char **makeArgs(const HttpRequest& req);
 	std::string getQueryString(const HttpRequest& req);
 	std::string getExtension(const std::string& uri);
+	std::string sanitizeQueryString(const std::string& query);
 
 	// CGI state
 	std::string cgi_interpreter;
