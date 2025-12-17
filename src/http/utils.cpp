@@ -15,6 +15,18 @@ std::string getMethodString(e_method method)
 		case DELETE:
 			return "DELETE";
 
+		case PUT:
+			return "PUT";
+
+		case PATCH:
+			return "PATCH";
+
+		case OPTIONS:
+			return "OPTIONS";
+
+		case HEAD:
+			return "HEAD";
+
 		default:
 			return "UNKNOWN";
 	}

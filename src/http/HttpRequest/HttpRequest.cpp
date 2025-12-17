@@ -123,10 +123,17 @@ void HttpRequest::parseRequestLine(std::istringstream& line_stream)
 			method = POST;
 		else if (method_str == "DELETE")
 			method = DELETE;
+		else if (method_str == "PUT")
+			method = PUT;
+		else if (method_str == "PATCH")
+			method = PATCH;
+		else if (method_str == "OPTIONS")
+			method = OPTIONS;
+		else if (method_str == "HEAD")
+			method = HEAD;
 		else
 			method = UNDEFINED;
 
-		// Handle absolute URLs in request line
 		if (uri.find("://") != std::string::npos)
 		{
 			parseAbsoluteUrl(uri);

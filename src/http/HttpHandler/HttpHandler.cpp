@@ -115,6 +115,12 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 			case DELETE:
 				return handleDelete(req);
 
+			case PUT:
+			case PATCH:
+			case OPTIONS:
+			case HEAD:
+				return handleErrorPages(req, METHOD_NOT_ALLOWED);
+				
 			default:
 				return handleErrorPages(req, NOT_IMPLEMENTED);
 		}
