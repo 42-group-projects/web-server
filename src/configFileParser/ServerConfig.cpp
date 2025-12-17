@@ -89,6 +89,7 @@ t_request_config ServerConfig::getRequestConfig(const std::string &serverName, c
 		lConf.upload_store,
 		lConf.cgi_pass
 	};
+	std::cout << "lconf.root = " << lConf.root << std::endl;
 	return rConf;
 }
 

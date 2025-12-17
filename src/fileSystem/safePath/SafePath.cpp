@@ -8,64 +8,69 @@ struct t_server_config;
 SafePath::SafePath() : requestedPath(""), fullPath(""), location("") {}
 
 SafePath::SafePath(const std::string& path, const t_server_config* serverConf)
-	: requestedPath(path)
+    : requestedPath(path)
 {
-	if (path.find("..") != std::string::npos)
-		error("Unsafe path '" + requestedPath + "'", "SafePath");
+    if (path.find("..") != std::string::npos)
+        error("Unsafe path '" + requestedPath + "'", "SafePath");
 
-	std::vector<std::string> reqSegments = splitPath(path);
-	location = "/";
-	size_t longest = 0;
+    std::vector<std::string> reqSegments = splitPath(path);
+    location = "/";
+    size_t longest = 0;
 
-	for (std::map<std::string, t_location_config>::const_iterator it = serverConf->locations.begin();
-	        it != serverConf->locations.end(); ++it)
-	{
-		const std::string& loc = it->first;
-		const t_location_config& conf = it->second;
-		std::vector<std::string> locSegments = splitPath(loc);
+    // Find best matching location
+    for (std::map<std::string, t_location_config>::const_iterator it = serverConf->locations.begin();
+            it != serverConf->locations.end(); ++it)
+    {
+        const std::string& loc = it->first;
+        const t_location_config& conf = it->second;
+        std::vector<std::string> locSegments = splitPath(loc);
 
-		bool match = false;
+        bool match = false;
 
-		if (conf.exact)
-		{
-			match = (reqSegments == locSegments);
-		}
-		else
-		{
-			if (reqSegments.size() >= locSegments.size())
-			{
-				match = true;
-				for (size_t i = 0; i < locSegments.size(); ++i)
-				{
-					if (reqSegments[i] != locSegments[i])
-					{
-						match = false;
-						break;
-					}
-				}
-			}
-		}
+        if (conf.exact)
+            match = (reqSegments == locSegments);
+        else if (reqSegments.size() >= locSegments.size())
+        {
+            match = true;
+            for (size_t i = 0; i < locSegments.size(); ++i)
+            {
+                if (reqSegments[i] != locSegments[i])
+                {
+                    match = false;
+                    break;
+                }
+            }
+        }
 
-		if (match && loc.size() > longest)
-		{
-			location = loc;
-			longest = loc.size();
-		}
-	}
+        if (match && loc.size() > longest)
+        {
+            location = loc;
+            longest = loc.size();
+        }
+    }
 
-	std::string root = serverConf->locations.at(location).root;
+    const t_location_config& lConf = serverConf->locations.at(location);
+    bool useServerRoot = lConf.root.empty();
+    std::string root = useServerRoot ? serverConf->root : lConf.root;
 
-	if (location == "/")
-		fullPath = root + requestedPath;
-	else
-	{
-		std::vector<std::string> locSegments = splitPath(location);
-		std::string remainder;
-		for (size_t i = locSegments.size(); i < reqSegments.size(); ++i)
-			remainder += "/" + reqSegments[i];
-		fullPath = root + remainder;
-	}
+    if (useServerRoot)
+    {
+        // Keep full requested path (including /static)
+        fullPath = root + requestedPath;
+    }
+    else
+    {
+        // Strip location prefix
+        std::string remainder;
+        std::vector<std::string> locSegments = splitPath(location);
+        for (size_t i = locSegments.size(); i < reqSegments.size(); ++i)
+            remainder += "/" + reqSegments[i];
+        fullPath = root + remainder;
+    }
+
+    std::cout << fullPath << " normal" << std::endl;
 }
+
 
 SafePath::SafePath(const std::string& requestedPath, const t_request_config& req_conf, bool useServerRoot)
 {
@@ -87,6 +92,7 @@ SafePath::SafePath(const std::string& requestedPath, const t_request_config& req
 		std::string remainder = requestedPath.substr(location.size());
 		fullPath = root + remainder;
 	}
+		std::cout << fullPath << " second" << std::endl;
 }
 
 
