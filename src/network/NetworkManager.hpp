@@ -47,9 +47,25 @@ private:
         size_t contentLength;   // Content-Length（なければ (size_t)-1）
         // chunked 解析用一時状態
         size_t chunkParsePos;   // 次のチャンクサイズ行の開始位置（buf 内）
+
+        // keep-alive / connection management
+        bool wantClose;         // このレスポンス送信後に接続を閉じるか
+        size_t requestCount;    // この接続で処理したリクエスト数
+        time_t lastActivity;    // 最終I/O時刻（timeout判定用）
     };
 
     std::map<int, ConnState> states;             // 各接続の状態
+
+    // chunked decode result to distinguish “need more” vs “bad request”
+    enum ChunkDecodeResult {
+        CHUNK_OK = 0,
+        CHUNK_NEED_MORE,
+        CHUNK_INVALID
+    };
+
+    // hard limits (DoS / memory protection)
+    static const size_t kMaxHeaderBytes = 32 * 1024;        // 32KB
+    static const size_t kMaxBodyBytes = 10 * 1024 * 1024;   // 10MB
 
     // 内部ユーティリティ
     bool addListener(const std::string &ip, int port);
@@ -66,7 +82,17 @@ private:
     // パース補助
     bool tryParseRequest(int fd); // 完全なリクエストを1つ消化したら true（ループで複数処理）
     void parseHeadersAndInitState(ConnState &st);
+    static std::map<std::string, std::string> parseHeaderMap(const std::string &headersRaw);
     static std::string toLower(const std::string &s);
     static std::string trim(const std::string &s);
-    bool tryDecodeChunked(ConnState &st, std::string &decodedBody, size_t &totalConsumed);
+    ChunkDecodeResult tryDecodeChunked(ConnState &st, std::string &decodedBody, size_t &totalConsumed);
+
+    // keep-alive policy
+    static const int kKeepAliveTimeoutSec = 60;
+    static const size_t kMaxRequestsPerConnection = 100;
+
+    void touchActivity(int fd);
+    void cleanupIdleConnections();
+    bool shouldKeepAlive(const std::string &requestHead) const;
+    bool isBodyLengthRequiredError(const std::string &requestHead) const;
 };
