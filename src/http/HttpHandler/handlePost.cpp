@@ -13,7 +13,7 @@ struct MultipartFile {
 std::vector<MultipartFile> parseMultipartFormData(const std::string& body, const std::string& boundary);
 std::string extractBoundary(const std::string& contentType);
 std::string formatFileName(const HttpRequest &req);
-std::string getFileNamFromHeader(const HttpRequest &req);
+std::string getFileNameFromHeader(const HttpRequest &req);
 
 HttpResponse HttpHandler::handlePost(const HttpRequest& req)
 {
@@ -46,7 +46,11 @@ HttpResponse HttpHandler::handlePost(const HttpRequest& req)
 			HttpResponse fileRes = writeFile(req, files[i].filename, files[i].content);
 			if (fileRes.getStatus() != CREATED)
 				return fileRes; // Return error if any file fails
-			uploaded_files << files[i].filename;
+			std::stringstream ss;
+			e_mimeType mime_enum = getMimeTypeEnum(req.getMimeTypeString());
+			std::string ext = getMimeTypeExtention(mime_enum);
+			ss << files[i].filename << "_" << std::time(NULL) << ext;
+			uploaded_files << ss.str();
 			if (i < files.size() - 1)
 				uploaded_files << ", ";
 		}
@@ -159,29 +163,32 @@ std::string formatFileName(const HttpRequest &req)
 
 	try
 	{
-		file_name  = getFileNamFromHeader(req);
+		file_name  = getFileNameFromHeader(req);
 	}
 	catch(const std::exception& e)
 	{
 		std::cerr << e.what() << '\n';
 	}
 
-	// might have to delelte this block later if we decide to make filename mandatory
 	if(file_name.empty())
 	{
-		// TODO: generate a unique filename not using a timestamp
-		// to avoid potential collisions in high-frequency uploads
 		std::stringstream ss;
 		e_mimeType mime_enum = getMimeTypeEnum(req.getMimeTypeString());
 		std::string ext = getMimeTypeExtention(mime_enum);
-		ss << "upload_file_" << time(NULL) << ext;
+		ss << "upload_file_" << std::time(NULL) << ext;
 		file_name = ss.str();
+		return file_name;
 	}
 
+	std::stringstream ss;
+	e_mimeType mime_enum = getMimeTypeEnum(req.getMimeTypeString());
+	std::string ext = getMimeTypeExtention(mime_enum);
+	ss << file_name << "_" << std::time(NULL) << ext;
+	file_name = ss.str();
 	return file_name;
 }
 
-std::string getFileNamFromHeader(const HttpRequest &req)
+std::string getFileNameFromHeader(const HttpRequest &req)
 {
 	std::string file_name;
 	std::map<std::string, std::string> headers = req.getHeaders();

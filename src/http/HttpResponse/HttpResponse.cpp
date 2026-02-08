@@ -43,6 +43,7 @@ std::string HttpResponse::serializeHeaders(void)
 	res << "Content-Length: " << body.size() << "\r\n";
 	res << "Date: " << getCurrentTime() << "\r\n";
 	// TODO: need to get the host name from the net work layer and set it here.
+	// this ill be over writtten in network layer
 	res << "Server: " << "placeholder" << "\r\n";
 	res << "Host: "  << "place holder "<<"\r\n";
 

@@ -255,10 +255,10 @@ std::string getMimeTypeExtention(e_mimeType mimeType)
 }
 std:: string getCurrentTime()
 {
-	time_t now = time(NULL);
-	struct tm *tm_info = gmtime(&now);
+	time_t now = std::time(NULL);
+	struct tm *tm_info = std::gmtime(&now);
 	char buffer[100];
-	strftime(buffer, sizeof(buffer), "%a, %d %b %Y %H:%M:%S GMT", tm_info);
+	std::strftime(buffer, sizeof(buffer), "%a, %d %b %Y %H:%M:%S GMT", tm_info);
 	return std::string(buffer);
 }
 
