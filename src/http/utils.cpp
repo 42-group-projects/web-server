@@ -192,8 +192,6 @@ std::string getMimeTypeString(e_mimeType mimeType)
 
 e_mimeType getMimeTypeEnum(const std::string mimeTypeStr)
 {
-	// Debug output to see what we're actually receiving
-
 	if (mimeTypeStr == "text/html")
 		return TEXT_HTML;
 	else if (mimeTypeStr == "text/css")
