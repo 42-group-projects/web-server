@@ -597,6 +597,12 @@ bool NetworkManager::tryParseRequest(int fd)
                 complete = true;
             }
         }
+
+        // Clamp totalConsumed to the end of the chunked body/trailer, but never past the current buffer size.
+        if (complete) {
+            if (totalConsumed > st.buf.size())
+                totalConsumed = st.buf.size();
+        }
     }
     else {
         size_t bodyHave = (st.buf.size() >= st.headerEndPos) ? (st.buf.size() - st.headerEndPos) : 0;
@@ -774,14 +780,35 @@ NetworkManager::ChunkDecodeResult NetworkManager::tryDecodeChunked(ConnState &st
                 return CHUNK_INVALID;
         }
 
+        // Debug: show where we are and the parsed chunk size
+        std::cerr << "[NM][chunked] p=" << p << " lineEnd=" << lineEnd
+                  << " sizeLine='" << sizeLine << "' chunkSize=" << chunkSize
+                  << " buf.size=" << st.buf.size() << std::endl;
+
         p = lineEnd + 2;
 
         if (chunkSize == 0) {
-            // Trailer headers (optional) end with CRLFCRLF.
+            // RFC 7230: after last-chunk (0\r\n), there may be trailer-fields, then a final CRLF.
+            // The minimal valid ending is "0\r\n\r\n" (no trailers).
+            if (st.buf.size() < p + 2)
+                return CHUNK_NEED_MORE;
+
+            // If trailers are empty, we should see CRLF immediately.
+            if (st.buf.compare(p, 2, "\r\n") == 0) {
+                totalConsumed = p + 2;
+                std::cerr << "[NM][chunked] end (no trailers) totalConsumed=" << totalConsumed << std::endl;
+                return CHUNK_OK;
+            }
+
+            // Otherwise, read trailers until CRLFCRLF.
             size_t trailerEnd = st.buf.find("\r\n\r\n", p);
+            std::cerr << "[NM][chunked] chunkSize=0 trailer search from p=" << p
+                      << " trailerEnd=" << (trailerEnd == std::string::npos ? -1 : (long long)trailerEnd)
+                      << " buf.size=" << st.buf.size() << std::endl;
             if (trailerEnd == std::string::npos)
                 return CHUNK_NEED_MORE;
             totalConsumed = trailerEnd + 4;
+            std::cerr << "[NM][chunked] end (with trailers) totalConsumed=" << totalConsumed << std::endl;
             return CHUNK_OK;
         }
 
