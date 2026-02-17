@@ -29,7 +29,6 @@ HttpResponse HttpHandler::handlePost(const HttpRequest& req)
 
 	std::string contentType = req.getMimeTypeString();
 
-	// Check if this is multipart/form-data
 	if (contentType.find("multipart/form-data") != std::string::npos)
 	{
 		std::string boundary = extractBoundary(contentType);
@@ -62,45 +61,85 @@ HttpResponse HttpHandler::handlePost(const HttpRequest& req)
 	return writeFile(req, file_name, req.getBody());
 }
 
+std::string sanitizeFilename(const std::string& filename)
+{
+	std::string safe;
+	for (size_t i = 0; i < filename.size(); ++i)
+	{
+		char c = filename[i];
+		// Allow alphanumeric, dots, underscores, hyphens
+		if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || 
+			(c >= '0' && c <= '9') || c == '.' || c == '_' || c == '-')
+		{
+			safe += c;
+		}
+	}
+	return safe;
+}
+
 HttpResponse HttpHandler::writeFile(const HttpRequest& req, const std::string& file_name, const std::string& content)
 {
-	HttpResponse res;
-	res.setVersion(req.getVersion());
+    HttpResponse res;
+    res.setVersion(req.getVersion());
 
-	try
-	{
-		std::stringstream file_path_ss;
-		file_path_ss << req_config.upload_store << "/" << file_name;
+    try
+    {
+        std::string safe_name = sanitizeFilename(file_name);
+        if (safe_name.empty())
+        {
+            warning("Invalid filename after sanitization", "HttpHandler::writeFile");
+            return HttpHandler::handleErrorPages(req, BAD_REQUEST);
+        }
 
-		FileSystem check_file(SafePath(file_path_ss.str(), req_config, false), req_config);
-		if (check_file.exists())
-		{
-			warning("File already exists: " + file_name, "HttpHandler::writeFile");
-			return HttpHandler::handleErrorPages(req, CONFLICT);
-		}
+        std::stringstream file_path_ss;
+        file_path_ss << req_config.upload_store << "/" << safe_name;
+        std::string file_path = file_path_ss.str();
 
-		std::ofstream outfile(file_path_ss.str().c_str(), std::ios::binary);
-		if (!outfile.is_open())
-		{
-			warning("Failed to open file for writing", "HttpHandler::writeFile");
-			return HttpHandler::handleErrorPages(req, INTERNAL_SERVER_ERROR);
-		}
+        struct stat st;
+        if (stat(file_path.c_str(), &st) == 0)  // 0 means file exists
+        {
+            warning("File already exists: " + safe_name, "HttpHandler::writeFile");
+            return HttpHandler::handleErrorPages(req, CONFLICT);
+        }
 
-		outfile << content;
-		outfile.close();
+        if (stat(req_config.upload_store.c_str(), &st) != 0)
+        {
+            if (mkdir(req_config.upload_store.c_str(), 0755) != 0)
+            {
+                warning("Failed to create upload directory", "HttpHandler::writeFile");
+                return HttpHandler::handleErrorPages(req, INTERNAL_SERVER_ERROR);
+            }
+        }
 
-		res.setStatus(CREATED);
-		res.setMimeType("text/plain");
-		res.setHeader("Location", req_config.upload_store + "/" + file_name);
-		res.setBody("File uploaded successfully as " + file_name + "\n");
-		return res;
-	}
-	catch(const std::exception& e)
-	{
-		std::cerr << e.what() << '\n';
-		return HttpHandler::handleErrorPages(req, INTERNAL_SERVER_ERROR);
-	}
+        std::ofstream outfile(file_path.c_str(), std::ios::binary);
+        if (!outfile.is_open())
+        {
+            warning("Failed to open file for writing", "HttpHandler::writeFile");
+            return HttpHandler::handleErrorPages(req, INTERNAL_SERVER_ERROR);
+        }
+
+        outfile.write(content.c_str(), content.size());
+        if (outfile.bad())
+        {
+            warning("Error writing to file", "HttpHandler::writeFile");
+            outfile.close();
+            return HttpHandler::handleErrorPages(req, INTERNAL_SERVER_ERROR);
+        }
+        outfile.close();
+
+        res.setStatus(CREATED);
+        res.setMimeType("text/plain");
+        res.setHeader("Location", req_config.upload_store + "/" + safe_name);
+        res.setBody("File uploaded successfully as " + safe_name + "\n");
+        return res;
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
+        return HttpHandler::handleErrorPages(req, INTERNAL_SERVER_ERROR);
+    }
 }
+
 
 std::string extractBoundary(const std::string& contentType)
 {
@@ -166,15 +205,12 @@ std::string formatFileName(const HttpRequest &req)
 		std::cerr << e.what() << '\n';
 	}
 
-	// might have to delelte this block later if we decide to make filename mandatory
 	if(file_name.empty())
 	{
-		// TODO: generate a unique filename not using a timestamp
-		// to avoid potential collisions in high-frequency uploads
 		std::stringstream ss;
 		e_mimeType mime_enum = getMimeTypeEnum(req.getMimeTypeString());
 		std::string ext = getMimeTypeExtention(mime_enum);
-		ss << "upload_file_" << time(NULL) << ext;
+		ss << "upload_file_" << std::time(NULL) << ext;
 		file_name = ss.str();
 	}
 
