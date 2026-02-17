@@ -110,29 +110,30 @@ void NetworkManager::cleanupIdleConnections()
 {
     time_t now = std::time(NULL);
 
-    for (std::vector<struct pollfd>::iterator it = pollfds.begin(); it != pollfds.end(); )
+    // NOTE: removeFd() erases from pollfds; vector iterators would become invalid.
+    // Iterate by index to safely erase while scanning.
+    for (size_t i = 0; i < pollfds.size(); )
     {
-        int fd = it->fd;
+        int fd = pollfds[i].fd;
         if (isListener.count(fd) && isListener[fd]) {
-            ++it;
+            ++i;
             continue;
         }
 
         std::map<int, ConnState>::iterator stIt = states.find(fd);
         if (stIt == states.end()) {
-            ++it;
+            ++i;
             continue;
         }
 
         ConnState &st = stIt->second;
         if (st.lastActivity != 0 && (now - st.lastActivity) > kKeepAliveTimeoutSec)
         {
-            int toClose = fd;
-            ++it;
-            removeFd(toClose);
+            removeFd(fd);
+            // pollfds shrank; do not increment i
             continue;
         }
-        ++it;
+        ++i;
     }
 }
 
@@ -253,6 +254,15 @@ void NetworkManager::handleClientRead(int fd)
     char buf[4096];
     ssize_t n = recv(fd, buf, sizeof(buf), 0);
     if (n == 0) {
+        // Peer performed an orderly shutdown (FIN). If we already have buffered data,
+        // keep the fd around long enough to parse and respond, then close.
+        std::map<int, ConnState>::iterator it = states.find(fd);
+        if (it != states.end() && !it->second.buf.empty()) {
+            it->second.wantClose = true;
+            while (tryParseRequest(fd)) {
+            }
+            return;
+        }
         removeFd(fd);
         return;
     }
@@ -272,7 +282,7 @@ void NetworkManager::handleClientRead(int fd)
     if (st.buf.size() > kMaxHeaderBytes + kMaxBodyBytes) {
         HttpResponse res;
         res.setVersion("HTTP/1.1");
-		// Todo: setServer("webserv"); setHost(site1, site2, ...);
+        // Todo: setServer("webserv"); setHost(site1, site2, ...);
         res.setStatus(CONTENT_TOO_LARGE);
         res.setMimeType("text/plain");
         res.setBody("Payload Too Large\n");
@@ -333,8 +343,45 @@ void NetworkManager::handleClientWrite(int fd)
             }
         }
 
-        // If the client already sent the next request in the same TCP stream (common with nc/printf),
-        // it may already be in st.buf. Poll might not re-notify POLLIN, so proactively parse it.
+        // Drain any data already waiting in the kernel receive buffer.
+        // This avoids depending on a new POLLIN notification when the client already sent
+        // the next request before we re-enabled reading.
+        while (true) {
+            char rbuf[4096];
+            ssize_t rn = recv(fd, rbuf, sizeof(rbuf), 0);
+            if (rn > 0) {
+                touchActivity(fd);
+                states[fd].buf.append(rbuf, rn);
+                if (states[fd].buf.size() > kMaxHeaderBytes + kMaxBodyBytes) {
+                    HttpResponse res;
+                    res.setVersion("HTTP/1.1");
+                    res.setStatus(CONTENT_TOO_LARGE);
+                    res.setMimeType("text/plain");
+                    res.setBody("Payload Too Large\n");
+                    states[fd].wantClose = true;
+                    res.setHeader("Connection", "close");
+
+                    sendBufs[fd] = res.generateResponse(res.getStatus());
+                    for (size_t j = 0; j < pollfds.size(); ++j)
+                        if (pollfds[j].fd == fd) { pollfds[j].events &= ~POLLIN; pollfds[j].events |= POLLOUT; break; }
+                    break;
+                }
+                continue;
+            }
+            if (rn == 0) {
+                // peer closed
+                removeFd(fd);
+                return;
+            }
+            if (rn < 0) {
+                if (errno == EAGAIN || errno == EWOULDBLOCK)
+                    break;
+                removeFd(fd);
+                return;
+            }
+        }
+
+        // Now parse any buffered requests.
         while (tryParseRequest(fd)) {
         }
 
@@ -418,27 +465,22 @@ bool NetworkManager::tryParseRequest(int fd)
         st.headerEndPos = pos + 4;
         parseHeadersAndInitState(st);
 
-        // If Content-Length is absurdly large, reject early (avoid waiting forever)
-        if (!st.isChunked && st.contentLength != (size_t)-1 && st.contentLength > kMaxBodyBytes) {
-            HttpResponse res;
-            res.setVersion("HTTP/1.1");
-            res.setStatus(CONTENT_TOO_LARGE);
-            res.setMimeType("text/plain");
-            res.setBody("Payload Too Large\n");
-            st.wantClose = true;
-            res.setHeader("Connection", "close");
-
-            sendBufs[fd] = res.generateResponse(res.getStatus());
-            for (size_t i = 0; i < pollfds.size(); ++i)
-                if (pollfds[i].fd == fd) { pollfds[i].events &= ~POLLIN; pollfds[i].events |= POLLOUT; break; }
-            return false;
-        }
+        std::cerr << "[NM][fd=" << fd << "] header parsed: headerEndPos=" << st.headerEndPos
+                  << " buf.size=" << st.buf.size() << " isChunked=" << (st.isChunked ? 1 : 0)
+                  << " contentLength=" << (st.contentLength == (size_t)-1 ? -1 : (long long)st.contentLength)
+                  << std::endl;
     }
 
     bool complete = false;
     size_t totalConsumed = 0;
 
     std::string requestHead = st.buf.substr(0, st.headerEndPos);
+
+    {
+        size_t lineEnd = requestHead.find("\r\n");
+        std::string rl = (lineEnd == std::string::npos) ? requestHead : requestHead.substr(0, lineEnd);
+        std::cerr << "[NM][fd=" << fd << "] requestLine='" << rl << "'" << std::endl;
+    }
 
     bool lengthRequired = isBodyLengthRequiredError(requestHead);
 
@@ -468,6 +510,9 @@ bool NetworkManager::tryParseRequest(int fd)
     else if (st.isChunked) {
         std::string decoded;
         ChunkDecodeResult r = tryDecodeChunked(st, decoded, totalConsumed);
+        std::cerr << "[NM][fd=" << fd << "] chunked decode result=" << (int)r
+                  << " decoded.size=" << decoded.size() << " totalConsumed=" << totalConsumed
+                  << " buf.size=" << st.buf.size() << std::endl;
         if (r == CHUNK_NEED_MORE) {
             // If chunked body grows too large without completing, reject to avoid memory exhaustion
             if (st.buf.size() > kMaxHeaderBytes + kMaxBodyBytes) {
@@ -556,6 +601,8 @@ bool NetworkManager::tryParseRequest(int fd)
     else {
         size_t bodyHave = (st.buf.size() >= st.headerEndPos) ? (st.buf.size() - st.headerEndPos) : 0;
         size_t need = (st.contentLength == (size_t)-1) ? 0 : st.contentLength;
+        std::cerr << "[NM][fd=" << fd << "] non-chunked bodyHave=" << bodyHave << " need=" << need
+                  << " headerEndPos=" << st.headerEndPos << " buf.size=" << st.buf.size() << std::endl;
         if (bodyHave >= need) {
             totalConsumed = st.headerEndPos + need;
             std::string body = (need == 0) ? std::string() : st.buf.substr(st.headerEndPos, need);
@@ -599,8 +646,22 @@ bool NetworkManager::tryParseRequest(int fd)
 
     touchActivity(fd);
 
+    std::cerr << "[NM][fd=" << fd << "] complete, erasing consumed bytes=" << totalConsumed
+              << " from buf.size=" << st.buf.size() << std::endl;
+
     if (totalConsumed > 0 && totalConsumed <= st.buf.size())
         st.buf.erase(0, totalConsumed);
+
+    if (!st.buf.empty()) {
+        std::string peek = st.buf.substr(0, st.buf.size() > 80 ? 80 : st.buf.size());
+        for (size_t i = 0; i < peek.size(); ++i) {
+            if (peek[i] == '\r') peek[i] = 'R';
+            else if (peek[i] == '\n') peek[i] = 'N';
+        }
+        std::cerr << "[NM][fd=" << fd << "] remaining buf.size=" << st.buf.size() << " peek(80)='" << peek << "'" << std::endl;
+    } else {
+        std::cerr << "[NM][fd=" << fd << "] remaining buf empty" << std::endl;
+    }
 
     st.headerDone = false;
     st.headerEndPos = 0;
