@@ -24,12 +24,9 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 	// FileSystem fs(req_config.safePath, req_config);
 	// std::cout << fs  << std::endl;
 
-	//==================================================================================================
 	std::string server_name = req.getHeaders()["Host"];
 	int pos = server_name.find_first_of(':');
 	server_name = server_name.substr(0, pos);
-	// std::cout << "Server name: " << server_name << "\nPort: " << port << "\nIP: " << ip << std::endl;
-	//===========================================================================================Clement
 	try
 	{
 		req_config = config.getRequestConfig(server_name, ip, port, req.getUri());
@@ -44,6 +41,21 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 
 	if(req.getBody().size() > req_config.client_max_body_size)
 		return handleErrorPages(req, CONTENT_TOO_LARGE);
+
+	// Reject requests that try to use both Content-Length and chunked Transfer-Encoding
+	const std::map<std::string, std::string>& headers = req.getHeaders();
+	std::map<std::string, std::string>::const_iterator teIt = headers.find("Transfer-Encoding");
+	std::map<std::string, std::string>::const_iterator clIt = headers.find("Content-Length");
+
+	if (teIt != headers.end() && clIt != headers.end())
+	{
+		std::string teVal = teIt->second;
+		for (size_t i = 0; i < teVal.size(); ++i)
+			teVal[i] = static_cast<char>(std::tolower(static_cast<unsigned char>(teVal[i])));
+
+		if (teVal.find("chunked") != std::string::npos)
+			return handleErrorPages(req, BAD_REQUEST);
+	}
 
 	// CGI request
 	try
