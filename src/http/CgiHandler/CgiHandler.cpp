@@ -88,14 +88,14 @@ HttpResponse CgiHandler::runCgi(const HttpRequest& req)
 		}
 		close(out_pipe[READ_FD]);
 
-		char child_status;
-		read(status_pipe[0], &child_status, 1);
+		char child_status = 0;  // Initialize to 0 (success)
+		ssize_t status_bytes = read(status_pipe[0], &child_status, 1);
 		close(status_pipe[0]);
 
 		int wstatus;
 		waitpid(pid, &wstatus, 0);
 
-		if (child_status)
+		if (status_bytes > 0 && child_status)
 			error("CGI script failed to execute", "CgiHandler::runCgi");
 
 		if (!WIFEXITED(wstatus) || WEXITSTATUS(wstatus) != 0)
@@ -149,7 +149,7 @@ char **CgiHandler::makeArgs(const HttpRequest& req)
 		sp.setFullPath("./" + sp.getFullPath());
 	else
 		sp.setFullPath("." + sp.getFullPath());
-	
+
 	FileSystem fs(sp, req_config);
 	if (!fs.exists())
 		error("File does not exist", "CgiHandler::makeArgs");

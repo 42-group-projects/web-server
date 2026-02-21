@@ -30,7 +30,7 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 	try
 	{
 		req_config = config.getRequestConfig(server_name, ip, port, req.getUri());
-		std::cout << req_config << std::endl;
+		// std::cout << req_config << std::endl;
 	}
 	catch(const std::exception& e)
 	{
@@ -85,13 +85,16 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 		{
 			return handleErrorPages(req, FORBIDDEN);
 		}
-		else if (std::string(msg).find("failed") != std::string::npos
-			|| std::string(msg).find("terminated") != std::string::npos)
+		else if (std::string(msg).find("failed") != std::string::npos)
+		{
+			// this is there because if the cgi script fails to execute for some reason, we want to return a 500 error instead of crashing the server or returning a 404 or something else that might be misleading.
+			return handleErrorPages(req, IM_A_TEAPOT);
+		}
+		else if(std::string(msg).find("terminated") != std::string::npos)
 		{
 			return handleErrorPages(req, INTERNAL_SERVER_ERROR);
 		}
-		//else
-			//fallback to normal handling
+		//else fallback to normal handling
 	}
 
 
@@ -132,7 +135,7 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 			case OPTIONS:
 			case HEAD:
 				return handleErrorPages(req, METHOD_NOT_ALLOWED);
-				
+
 			default:
 				return handleErrorPages(req, NOT_IMPLEMENTED);
 		}

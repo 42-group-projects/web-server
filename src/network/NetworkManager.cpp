@@ -223,7 +223,7 @@ void NetworkManager::handleListenerEvent(int fd)
             int serverPort = ntohs(localAddr.sin_port);
             clientPorts[cfd] = serverPort;
         }
-        std::cout 
+        std::cout
             << "Accepted fd=" << cfd
             << " from " << (p ? p : "?") << ":" << ntohs(cli.sin_port)
             << " on port " << clientPorts[cfd] << std::endl;
