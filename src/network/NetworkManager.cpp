@@ -235,6 +235,8 @@ void NetworkManager::queueSimpleOkResponse(int fd)
     static const char body[] = "Hello from webserv\n";
     std::ostringstream oss;
     oss << "HTTP/1.1 200 OK\r\n";
+    oss << "Server: webserv\r\n";
+    oss << "Host: " << getServerName(clientPorts[fd]) << "\r\n";
     oss << "Content-Type: text/plain\r\n";
     oss << "Content-Length: " << sizeof(body) - 1 << "\r\n";
     oss << "Connection: close\r\n\r\n";
@@ -282,7 +284,8 @@ void NetworkManager::handleClientRead(int fd)
     if (st.buf.size() > kMaxHeaderBytes + kMaxBodyBytes) {
         HttpResponse res;
         res.setVersion("HTTP/1.1");
-        // Todo: setServer("webserv"); setHost(site1, site2, ...);
+        res.setHeader("Server", "webserv");
+        res.setHeader("Host", getServerName(clientPorts[fd]));
         res.setStatus(CONTENT_TOO_LARGE);
         res.setMimeType("text/plain");
         res.setBody("Payload Too Large\n");
@@ -355,6 +358,8 @@ void NetworkManager::handleClientWrite(int fd)
                 if (states[fd].buf.size() > kMaxHeaderBytes + kMaxBodyBytes) {
                     HttpResponse res;
                     res.setVersion("HTTP/1.1");
+                    res.setHeader("Server", "webserv");
+                    res.setHeader("Host", getServerName(clientPorts[fd]));
                     res.setStatus(CONTENT_TOO_LARGE);
                     res.setMimeType("text/plain");
                     res.setBody("Payload Too Large\n");
@@ -440,6 +445,8 @@ bool NetworkManager::tryParseRequest(int fd)
         if (st.buf.size() > kMaxHeaderBytes) {
             HttpResponse res;
             res.setVersion("HTTP/1.1");
+            res.setHeader("Server", "webserv");
+            res.setHeader("Host", getServerName(clientPorts[fd]));
             res.setStatus(REQUEST_HEADER_FIELDS_TOO_LARGE);
             res.setMimeType("text/plain");
             res.setBody("Request Header Fields Too Large\n");
@@ -487,6 +494,8 @@ bool NetworkManager::tryParseRequest(int fd)
     if (lengthRequired) {
         HttpResponse res;
         res.setVersion("HTTP/1.1");
+        res.setHeader("Server", "webserv");
+        res.setHeader("Host", getServerName(clientPorts[fd]));
         res.setStatus(LENGTH_REQUIRED);
         res.setMimeType("text/plain");
         res.setBody("Length Required\n");
@@ -518,6 +527,8 @@ bool NetworkManager::tryParseRequest(int fd)
             if (st.buf.size() > kMaxHeaderBytes + kMaxBodyBytes) {
                 HttpResponse res;
                 res.setVersion("HTTP/1.1");
+                res.setHeader("Server", "webserv");
+                res.setHeader("Host", getServerName(clientPorts[fd]));
                 res.setStatus(CONTENT_TOO_LARGE);
                 res.setMimeType("text/plain");
                 res.setBody("Payload Too Large\n");
@@ -533,6 +544,8 @@ bool NetworkManager::tryParseRequest(int fd)
         if (r == CHUNK_INVALID) {
             HttpResponse res;
             res.setVersion("HTTP/1.1");
+            res.setHeader("Server", "webserv");
+            res.setHeader("Host", getServerName(clientPorts[fd]));
             res.setStatus(BAD_REQUEST);
             res.setMimeType("text/plain");
             res.setBody("Bad Request\n");
@@ -550,6 +563,8 @@ bool NetworkManager::tryParseRequest(int fd)
             if (decoded.size() > kMaxBodyBytes) {
                 HttpResponse res;
                 res.setVersion("HTTP/1.1");
+                res.setHeader("Server", "webserv");
+                res.setHeader("Host", getServerName(clientPorts[fd]));
                 res.setStatus(CONTENT_TOO_LARGE);
                 res.setMimeType("text/plain");
                 res.setBody("Payload Too Large\n");
@@ -581,6 +596,8 @@ bool NetworkManager::tryParseRequest(int fd)
                     if (res.getMimeType().empty()) res.setMimeType("text/plain");
                     if (res.getBody().empty()) res.setBody("Internal Server Error\n");
                 }
+                res.setHeader("Server", "webserv");
+                res.setHeader("Host", getServerName(clientPorts[fd]));
 
                 bool keep = shouldKeepAlive(requestHead);
                 st.requestCount++;
@@ -631,6 +648,8 @@ bool NetworkManager::tryParseRequest(int fd)
                 if (res.getMimeType().empty()) res.setMimeType("text/plain");
                 if (res.getBody().empty()) res.setBody("Internal Server Error\n");
             }
+            res.setHeader("Server", "webserv");
+            res.setHeader("Host", getServerName(clientPorts[fd]));
 
             bool keep = shouldKeepAlive(requestHead);
             st.requestCount++;
@@ -726,6 +745,20 @@ void NetworkManager::parseHeadersAndInitState(ConnState &st)
         std::istringstream iss(v);
         size_t n; if (iss >> n) st.contentLength = n;
     }
+}
+
+std::string NetworkManager::getServerName(int port) const
+{
+    const std::vector<t_server_config>& configs = config.getConfiguration();
+    for (size_t i = 0; i < configs.size(); ++i) {
+        for (size_t j = 0; j < configs[i].listen.size(); ++j) {
+            if (configs[i].listen[j].second == port) {
+                if (!configs[i].server_name.empty())
+                    return configs[i].server_name[0];
+            }
+        }
+    }
+    return "localhost";
 }
 
 std::string NetworkManager::toLower(const std::string &s)

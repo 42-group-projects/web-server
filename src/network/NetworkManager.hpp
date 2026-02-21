@@ -95,4 +95,5 @@ private:
     void cleanupIdleConnections();
     bool shouldKeepAlive(const std::string &requestHead) const;
     bool isBodyLengthRequiredError(const std::string &requestHead) const;
+    std::string getServerName(int port) const;
 };

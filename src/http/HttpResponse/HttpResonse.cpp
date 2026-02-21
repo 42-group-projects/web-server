@@ -42,9 +42,6 @@ std::string HttpResponse::serializeHeaders(void)
 	res << "Content-Type: " << mime_type << "\r\n";
 	res << "Content-Length: " << body.size() << "\r\n";
 	res << "Date: " << getCurrentTime() << "\r\n";
-	// TODO: need to get the host name from the net work layer and set it here.
-	res << "Server: " << "placeholder" << "\r\n";
-	res << "Host: "  << "place holder "<<"\r\n";
 
 	for (std::map<std::string, std::string>::iterator it = headers.begin(); it != headers.end(); ++it)
 	{
