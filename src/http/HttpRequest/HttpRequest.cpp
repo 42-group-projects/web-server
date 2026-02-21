@@ -226,9 +226,20 @@ void HttpRequest::parseHeaders(std::istringstream& line_stream)
 
 		if (key == "Content-Length")
 		{
-			for (size_t i = 0; i < value.size(); ++i)
+			// Trim whitespace from value first
+			std::string trimmed = value;
+			size_t start = trimmed.find_first_not_of(" \t");
+			size_t end = trimmed.find_last_not_of(" \t");
+
+			if (start != std::string::npos && end != std::string::npos)
+				trimmed = trimmed.substr(start, end - start + 1);
+			else
+				trimmed = "";
+
+			// Now check if all remaining characters are digits
+			for (size_t i = 0; i < trimmed.size(); ++i)
 			{
-				if (value[i] < '0' || value[i] > '9')
+				if (trimmed[i] < '0' || trimmed[i] > '9')
 				{
 					error("Invalid Content-Length header: " + value, "Request Parser");
 				}

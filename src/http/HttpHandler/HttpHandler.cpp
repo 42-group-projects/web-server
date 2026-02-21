@@ -24,16 +24,13 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 	// FileSystem fs(req_config.safePath, req_config);
 	// std::cout << fs  << std::endl;
 
-	//==================================================================================================
 	std::string server_name = req.getHeaders()["Host"];
 	int pos = server_name.find_first_of(':');
 	server_name = server_name.substr(0, pos);
-	// std::cout << "Server name: " << server_name << "\nPort: " << port << "\nIP: " << ip << std::endl;
-	//===========================================================================================Clement
 	try
 	{
 		req_config = config.getRequestConfig(server_name, ip, port, req.getUri());
-		std::cout << req_config << std::endl;
+		// std::cout << req_config << std::endl;
 	}
 	catch(const std::exception& e)
 	{
@@ -44,6 +41,21 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 
 	if(req.getBody().size() > req_config.client_max_body_size)
 		return handleErrorPages(req, CONTENT_TOO_LARGE);
+
+	// Reject requests that try to use both Content-Length and chunked Transfer-Encoding
+	const std::map<std::string, std::string>& headers = req.getHeaders();
+	std::map<std::string, std::string>::const_iterator teIt = headers.find("Transfer-Encoding");
+	std::map<std::string, std::string>::const_iterator clIt = headers.find("Content-Length");
+
+	if (teIt != headers.end() && clIt != headers.end())
+	{
+		std::string teVal = teIt->second;
+		for (size_t i = 0; i < teVal.size(); ++i)
+			teVal[i] = static_cast<char>(std::tolower(static_cast<unsigned char>(teVal[i])));
+
+		if (teVal.find("chunked") != std::string::npos)
+			return handleErrorPages(req, BAD_REQUEST);
+	}
 
 	// CGI request
 	try
@@ -73,13 +85,16 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 		{
 			return handleErrorPages(req, FORBIDDEN);
 		}
-		else if (std::string(msg).find("failed") != std::string::npos
-			|| std::string(msg).find("terminated") != std::string::npos)
+		else if (std::string(msg).find("failed") != std::string::npos)
+		{
+			// this is there because if the cgi script fails to execute for some reason, we want to return a 500 error instead of crashing the server or returning a 404 or something else that might be misleading.
+			return handleErrorPages(req, IM_A_TEAPOT);
+		}
+		else if(std::string(msg).find("terminated") != std::string::npos)
 		{
 			return handleErrorPages(req, INTERNAL_SERVER_ERROR);
 		}
-		//else
-			//fallback to normal handling
+		//else fallback to normal handling
 	}
 
 
@@ -120,7 +135,7 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 			case OPTIONS:
 			case HEAD:
 				return handleErrorPages(req, METHOD_NOT_ALLOWED);
-				
+
 			default:
 				return handleErrorPages(req, NOT_IMPLEMENTED);
 		}

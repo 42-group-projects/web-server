@@ -14,7 +14,6 @@ private:
 	std::string mime_type;
 	std::map<std::string, std::string> headers;
 	std::string body;
-	// s_request_config req_config;
 
 public:
 	// Constructors, destructor, and assignment operator
