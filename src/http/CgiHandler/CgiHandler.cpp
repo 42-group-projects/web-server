@@ -1,11 +1,6 @@
 #include "CgiHandler.hpp"
 #include "../utils.hpp"
-#include <sys/stat.h>
-#include <unistd.h>
-#include <sys/wait.h>
-#include <cstring>
-#include <cctype>
-#include <algorithm>
+#include "../../../include/imports.hpp"
 
 CgiHandler::CgiHandler(const t_request_config& req_config)
 	: req_config(req_config), cgi_interpreter(""), script_name(""), path_info("") {}

@@ -11,6 +11,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
 #include <netinet/in.h>
 #include <sstream>
 #include <cstdlib>
@@ -26,3 +27,5 @@
 #include <cerrno>
 #include <cstring>
 #include <map>
+#include <cctype>
+

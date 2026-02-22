@@ -5,7 +5,6 @@
 #include "./HttpResponse/HttpResponse.hpp"
 #include "./../fileSystem/FileSystem.hpp"
 #include "./../configFileParser/ServerConfig.hpp"
-#include <string>
 
 std::string getMethodString(e_method method);
 std::string getMimeTypeString(e_mimeType mimeType);
