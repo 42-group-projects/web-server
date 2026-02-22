@@ -20,7 +20,6 @@ HttpResponse CgiHandler::runCgi(const HttpRequest& req)
 	int in_pipe[2];
 	int status_pipe[2];
 
-
 	if (pipe(out_pipe) == -1 || pipe(status_pipe) == -1)
 		error("pipe() failed in runCgi", "CgiHandler::runCgi");
 
@@ -241,6 +240,7 @@ bool isWhiteListed(char c)
 			 c == '-' || c == '_' || c == '.' ||
 			 c == '=' || c == '&' || c == '%' );
 }
+
 std::string CgiHandler::sanitizeQueryString(const std::string& query)
 {
 	std::string sanitized;
@@ -260,6 +260,5 @@ std::string CgiHandler::sanitizeQueryString(const std::string& query)
 			sanitized += buf;
 		}
 	}
-
 	return sanitized;
 }

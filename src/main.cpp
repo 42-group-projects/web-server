@@ -2,7 +2,6 @@
 #include "../include/enums.hpp"
 #include "http/HttpRequest/HttpRequest.hpp"
 #include "http/HttpResponse/HttpResponse.hpp"
-#include "http/httpTester.hpp"
 #include "network/NetworkManager.hpp"
 
 int main(int argc, char *argv[])
