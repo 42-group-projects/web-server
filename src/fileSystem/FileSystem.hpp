@@ -1,14 +1,5 @@
 #pragma once
 
-#include <string>
-#include <algorithm>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <fstream>
-#include <sstream>
-#include <stdexcept>
-#include <ctime>
-
 #include "../src/fileSystem/safePath/SafePath.hpp"
 #include "../src/fileSystem/directoryListing/DirectoryListing.hpp"
 #include "../src/configFileParser/ServerConfig.hpp"

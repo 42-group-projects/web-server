@@ -4,8 +4,6 @@
 #include "../../include/defaultConfigs.hpp"
 #include "error_messages.hpp"
 
-#include <fstream>
-
 TokenizeFile::TokenizeFile(int argc, char **argv)
 {
 	std::vector<std::string> rawConfig;

@@ -87,7 +87,7 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 		}
 		else if (std::string(msg).find("failed") != std::string::npos)
 		{
-			// this is there because if the cgi script fails to execute for some reason, we want to return a 500 error instead of crashing the server or returning a 404 or something else that might be misleading.
+			std::cout << "DEBUG: " << std::string(msg) << std::endl;
 			return handleErrorPages(req, IM_A_TEAPOT);
 		}
 		else if(std::string(msg).find("terminated") != std::string::npos)
@@ -114,7 +114,6 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 	{
 		std::cerr << "Exception caught in HttpHandler::handleRequest: 2\n";
 		std::cerr << e.what() << '\n';
-		// Proceed to standard request handling
 	}
 
 	try
@@ -237,11 +236,6 @@ HttpResponse HttpHandler::handleRedirects(const HttpRequest& req)
 
 bool HttpHandler::isCgiRequest(const HttpRequest& req)
 {
-	// Determine if requested URI targets a CGI script.
-	// Criteria:
-	// - The URI starts with the configured location prefix (e.g., /cgi-bin)
-	// - The script name (before any PATH_INFO and query) ends with ".cgi" OR
-	//   has an extension present in req_config.cgi_pass keys (e.g., .py, .php, .sh)
 	std::string uri = req.getUri();
 
 	// Strip query string
@@ -255,7 +249,6 @@ bool HttpHandler::isCgiRequest(const HttpRequest& req)
 	if (uri.compare(0, loc.size(), loc) != 0)
 		return false;
 
-	// Scan to find the extension of the script BEFORE PATH_INFO
 	size_t afterLoc = loc.size();
 	bool seenDot = false;
 	size_t dotPos = std::string::npos;

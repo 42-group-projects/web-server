@@ -1,8 +1,6 @@
 #include "HttpHandler.hpp"
 #include "../utils.hpp"
 
-// std::string decodeUri(const std::string& encoded_uri);
-
 HttpResponse HttpHandler::handleGet(const HttpRequest& req)
 {
 	HttpResponse res;

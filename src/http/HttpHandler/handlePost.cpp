@@ -1,8 +1,6 @@
 #include "HttpHandler.hpp"
 #include "../utils.hpp"
-#include <fstream>
-#include <unistd.h>
-
+#include "../../../include/imports.hpp"
 
 struct MultipartFile {
 	std::string filename;
@@ -67,8 +65,7 @@ std::string sanitizeFilename(const std::string& filename)
 	for (size_t i = 0; i < filename.size(); ++i)
 	{
 		char c = filename[i];
-		// Allow alphanumeric, dots, underscores, hyphens
-		if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || 
+		if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
 			(c >= '0' && c <= '9') || c == '.' || c == '_' || c == '-')
 		{
 			safe += c;

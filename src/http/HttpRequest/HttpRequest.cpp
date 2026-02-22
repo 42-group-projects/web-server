@@ -226,7 +226,6 @@ void HttpRequest::parseHeaders(std::istringstream& line_stream)
 
 		if (key == "Content-Length")
 		{
-			// Trim whitespace from value first
 			std::string trimmed = value;
 			size_t start = trimmed.find_first_not_of(" \t");
 			size_t end = trimmed.find_last_not_of(" \t");
@@ -236,7 +235,6 @@ void HttpRequest::parseHeaders(std::istringstream& line_stream)
 			else
 				trimmed = "";
 
-			// Now check if all remaining characters are digits
 			for (size_t i = 0; i < trimmed.size(); ++i)
 			{
 				if (trimmed[i] < '0' || trimmed[i] > '9')
@@ -318,9 +316,6 @@ std::string HttpRequest::decodeUri(const std::string& encoded_uri)
 					return encoded_uri; // Return original to avoid processing malformed URI
 				}
 
-				// Do NOT decode path separators and other reserved characters
-				// %2F (/) should remain encoded to distinguish from literal /
-				// %3F (?), %23 (#), etc. should also remain encoded
 				if (ch == '/' || ch == '?' || ch == '#' || ch == '%')
 				{
 					// Keep the percent-encoded form for path-significant characters
@@ -329,14 +324,12 @@ std::string HttpRequest::decodeUri(const std::string& encoded_uri)
 				}
 				else
 				{
-					// Decode other characters (spaces, etc.)
 					decoded += ch;
 					i += 2; // Skip the two hex digits
 				}
 			}
 			else
 			{
-				// Invalid hex encoding, keep as-is
 				decoded += encoded_uri[i];
 			}
 		}
@@ -347,7 +340,6 @@ std::string HttpRequest::decodeUri(const std::string& encoded_uri)
 	}
 	return decoded;
 }
-
 
 void HttpRequest::displayRequest() const
 {

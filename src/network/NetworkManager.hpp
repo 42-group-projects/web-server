@@ -3,12 +3,6 @@
 #include "../../include/imports.hpp"
 #include "../configFileParser/ServerConfig.hpp"
 
-#include <poll.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <cerrno>
-#include <cstring>
-#include <map>
 
 class NetworkManager {
 public:

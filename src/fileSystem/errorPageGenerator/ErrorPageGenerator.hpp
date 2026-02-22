@@ -1,13 +1,13 @@
 #pragma once
 
 #include "enums.hpp"
-#include <string>
+#include "../../../include/imports.hpp"
 
 class ErrorPageGenerator
 {
 private:
 	std::string html;
-	
+
 	const char* statusCodeToString(int code);
 
 public:

@@ -14,7 +14,6 @@ class CgiHandler
 private:
 	t_request_config req_config;
 
-	// Helpers
 	void detectCgiType(const HttpRequest& req);
 	char **makeEnvs(const HttpRequest& req);
 	char **makeArgs(const HttpRequest& req);
@@ -22,7 +21,6 @@ private:
 	std::string getExtension(const std::string& uri);
 	std::string sanitizeQueryString(const std::string& query);
 
-	// CGI state
 	std::string cgi_interpreter;
 	std::string script_name;
 	std::string path_info;

@@ -5,7 +5,6 @@
 #include "./HttpResponse/HttpResponse.hpp"
 #include "./../fileSystem/FileSystem.hpp"
 #include "./../configFileParser/ServerConfig.hpp"
-#include <string>
 
 std::string getMethodString(e_method method);
 std::string getMimeTypeString(e_mimeType mimeType);
@@ -15,8 +14,3 @@ std::string getStatusString(e_status_code status);
 std::string getCurrentTime();
 e_status_code getStatusCodeFromInt(int code);
 bool hasHost(std::map<std::string, std::string> headers);
-
-// void displayFileSystemInfo(FileSystem const &fs);
-// void displayConfig(ServerConfig const &config);
-// void displayServerConfigDetails(ServerConfig const &config);
-// void displayLocationConfigDetails(LocationConfig const &location);

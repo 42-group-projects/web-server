@@ -3,9 +3,6 @@
 #include "arg_validity_checks.hpp"
 #include "../../src/errorHandling/ErrorWarning.hpp"
 
-#include <sstream>
-#include <cstdlib>
-
 ServerConfig::ServerConfig() {}
 
 void ServerConfig::initServerConfig(int argc, char **argv)

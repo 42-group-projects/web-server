@@ -1,11 +1,6 @@
 #include "CgiHandler.hpp"
 #include "../utils.hpp"
-#include <sys/stat.h>
-#include <unistd.h>
-#include <sys/wait.h>
-#include <cstring>
-#include <cctype>
-#include <algorithm>
+#include "../../../include/imports.hpp"
 
 CgiHandler::CgiHandler(const t_request_config& req_config)
 	: req_config(req_config), cgi_interpreter(""), script_name(""), path_info("") {}
@@ -19,7 +14,6 @@ HttpResponse CgiHandler::runCgi(const HttpRequest& req)
 	int out_pipe[2];
 	int in_pipe[2];
 	int status_pipe[2];
-
 
 	if (pipe(out_pipe) == -1 || pipe(status_pipe) == -1)
 		error("pipe() failed in runCgi", "CgiHandler::runCgi");
@@ -45,8 +39,8 @@ HttpResponse CgiHandler::runCgi(const HttpRequest& req)
 		char fail = 0;
 
 		if (dup2(out_pipe[WRITE_FD], STDOUT_FILENO) == -1 ||
-			dup2(out_pipe[WRITE_FD], STDERR_FILENO) == -1)
-			fail = 1;
+		dup2(out_pipe[WRITE_FD], STDERR_FILENO) == -1)
+		fail = 1;
 
 		close(out_pipe[READ_FD]);
 		close(out_pipe[WRITE_FD]);
@@ -54,9 +48,21 @@ HttpResponse CgiHandler::runCgi(const HttpRequest& req)
 		if (is_post)
 		{
 			if (dup2(in_pipe[READ_FD], STDIN_FILENO) == -1)
-				fail = 1;
+			fail = 1;
 			close(in_pipe[WRITE_FD]);
 			close(in_pipe[READ_FD]);
+		}
+
+		// Change working directory to the CGI root
+		std::string relative_path;
+		if (req_config.root[0] == '/')
+			relative_path = "." + req_config.root;
+		else
+			relative_path = "./" + req_config.root;
+
+		if (chdir(relative_path.c_str()) == -1)
+		{
+			fail = 1;
 		}
 
 		if (fail == 0 && execve(cgi_interpreter.c_str(), args, envp) == -1)
@@ -156,10 +162,13 @@ char **CgiHandler::makeArgs(const HttpRequest& req)
 	if (!fs.executable())
 		error("Missing permissions", "CgiHandler::makeArgs");
 
+	// After chdir() to req_config.root, we only need the script filename
+	std::string script_for_exec = "./" + script_base;
+
 	char **args;
 	args = new char*[3];
 	args[0] = strdup(cgi_interpreter.c_str());
-	args[1] = strdup(sp.getFullPath().c_str());
+	args[1] = strdup(script_for_exec.c_str());
 	args[2] = NULL;
 	return args;
 }
@@ -241,6 +250,7 @@ bool isWhiteListed(char c)
 			 c == '-' || c == '_' || c == '.' ||
 			 c == '=' || c == '&' || c == '%' );
 }
+
 std::string CgiHandler::sanitizeQueryString(const std::string& query)
 {
 	std::string sanitized;
@@ -260,6 +270,5 @@ std::string CgiHandler::sanitizeQueryString(const std::string& query)
 			sanitized += buf;
 		}
 	}
-
 	return sanitized;
 }
