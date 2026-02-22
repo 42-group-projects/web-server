@@ -90,6 +90,10 @@ HttpResponse &HttpResponse::parseCgiResponse(const std::string& cgi_output)
 
 	while (std::getline(header_stream, line))
 	{
+		// Remove trailing \r if present (std::getline only removes \n)
+		if (!line.empty() && line[line.size() - 1] == '\r')
+			line.erase(line.size() - 1);
+
 		size_t colon_pos = line.find(':');
 		if (colon_pos != std::string::npos)
 		{
