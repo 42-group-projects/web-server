@@ -1,6 +1,6 @@
 #ifndef HTTP_REQUEST_MOCK_DATA_HPP
 #define HTTP_REQUEST_MOCK_DATA_HPP
-#include <string>
+
 
 //GET request
 const std::string simple_get_request =

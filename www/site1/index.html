@@ -26,7 +26,11 @@
             <li><a href="./cgi-bin/test.cgi">CGI Test Script</a></li>
         </ul>
     </nav>
-
+    <section class="info">
+        <h2>POST Test Information</h2>
+        <p>The POST form below sends data to a CGI script. The script processes the data and displays it back to you. It does not save anything to disk - it simply echoes the received data for testing purposes.</p>
+        <p>This is useful for testing that your web server correctly handles POST requests and passes data to CGI scripts.</p>
+    </section>
     <section class="post-form">
         <form action="./cgi-bin/post.cgi" method="post" accept-charset="utf-8">
             <label for="postmsg">POST to .post.cgi:</label>

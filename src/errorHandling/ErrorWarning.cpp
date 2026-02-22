@@ -1,5 +1,4 @@
 #include "ErrorWarning.hpp"
-#include <stdexcept>
 
 void error(const std::string& msg, const std::string& origin)
 {

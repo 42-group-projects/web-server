@@ -2,7 +2,6 @@
 
 #include "TokenizeFile.hpp"
 
-#include <vector>
 
 typedef struct s_directive
 {

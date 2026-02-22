@@ -1,6 +1,4 @@
 #include "../src/fileSystem/FileSystem.hpp"
-#include <errno.h>
-#include <string.h>
 
 FileSystem::FileSystem(SafePath sp, t_request_config& conf) : sp(sp)
 {

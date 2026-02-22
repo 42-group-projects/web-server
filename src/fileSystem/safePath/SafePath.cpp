@@ -1,6 +1,7 @@
 #include "SafePath.hpp"
 #include "../src/errorHandling/ErrorWarning.hpp"
 #include "../../configFileParser/ServerConfig.hpp"
+#include "../../../include/imports.hpp"
 
 struct t_location_config;
 struct t_server_config;
