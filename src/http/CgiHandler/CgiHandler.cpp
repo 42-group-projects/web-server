@@ -31,8 +31,6 @@ HttpResponse CgiHandler::runCgi(const HttpRequest& req)
 
 	if (pid == 0)
 	{
-		// chdir(req_config.root.c_str());
-
 		detectCgiType(req);
 		char **args = makeArgs(req);
 		char **envp = makeEnvs(req);
@@ -55,6 +53,7 @@ HttpResponse CgiHandler::runCgi(const HttpRequest& req)
 			close(in_pipe[READ_FD]);
 		}
 
+		// Change working directory to the CGI root
 		std::string relative_path;
 		if (req_config.root[0] == '/')
 			relative_path = "." + req_config.root;
