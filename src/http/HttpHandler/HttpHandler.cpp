@@ -87,7 +87,8 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 		}
 		else if (std::string(msg).find("failed") != std::string::npos)
 		{
-			return handleErrorPages(req, INTERNAL_SERVER_ERROR);
+			std::cout << "DEBUG: " << std::string(msg) << std::endl;
+			return handleErrorPages(req, IM_A_TEAPOT);
 		}
 		else if(std::string(msg).find("terminated") != std::string::npos)
 		{

@@ -269,9 +269,8 @@ void NetworkManager::handleClientRead(int fd)
         return;
     }
     if (n < 0) {
-        if (errno == EAGAIN || errno == EWOULDBLOCK)
-            return;
-        removeFd(fd);
+        // Non-blocking socket: negative return means no data available yet
+        // or a transient error - just return and wait for next poll event
         return;
     }
 
@@ -318,9 +317,8 @@ void NetworkManager::handleClientWrite(int fd)
         return;
     }
     if (n < 0) {
-        if (errno == EAGAIN || errno == EWOULDBLOCK)
-            return;
-        removeFd(fd);
+        // Non-blocking socket: negative return means cannot send yet
+        // or a transient error - just return and wait for next poll event
         return;
     }
 
