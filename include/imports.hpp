@@ -1,7 +1,6 @@
 #pragma once
 
 #include <iostream>
-#include <string>
 #include <map>
 #include <vector>
 #include <sstream>
@@ -28,4 +27,5 @@
 #include <cstring>
 #include <map>
 #include <cctype>
+#include <signal.h>
 
