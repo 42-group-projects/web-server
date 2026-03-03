@@ -35,5 +35,11 @@ You can also execute a test script by running:
 - [RFC 2612 - HTTP/1.1](https://datatracker.ietf.org/doc/html/rfc2616)
 - [nginx configuration documentation](https://nginx.org/en/docs/)
 
+**Use of Artificial Intelligence:**
+AI tools were used strictly as technical assistants during development.
+AI was not used to generate the full implementation of the project.
+All architectural design, integration, and code implementation were written and structured manually.
+AI functioned as a clarification and diagnostic tool, similar to consulting documentation or asking a peer for guidance.
+
 ## Testing suit
 - [Webserver tester made fellow 42 student](https://github.com/ulsgks/webserv-tester)
