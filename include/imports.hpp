@@ -18,14 +18,12 @@
 #include <fstream>
 #include <stdexcept>
 #include <ctime>
-#include <stdexcept>
 #include <dirent.h>
 #include <poll.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <cerrno>
 #include <cstring>
-#include <map>
 #include <cctype>
 #include <signal.h>
 
