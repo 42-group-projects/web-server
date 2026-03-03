@@ -86,46 +86,89 @@ HttpResponse CgiHandler::runCgi(const HttpRequest& req)
 			close(in_pipe[WRITE_FD]);
 		}
 
-		char buf[4096];
-		ssize_t n;
-		while ((n = read(out_pipe[READ_FD], buf, sizeof(buf))) > 0)
-		{
-			output.append(buf, n);
-		}
-		close(out_pipe[READ_FD]);
-
-		char child_status = 0;  // Initialize to 0 (success)
-		ssize_t status_bytes = read(status_pipe[0], &child_status, 1);
-		close(status_pipe[0]);
-
-		const int TIMEOUT_MS = 5000; // 5 seconds
+		const int TIMEOUT_MS = 5000;
+		const int POLL_INTERVAL_MS = 100;
 
 		struct pollfd pfd;
 		pfd.fd = out_pipe[READ_FD];
-		pfd.events = POLLIN;
+		pfd.events = POLLIN | POLLHUP | POLLERR;
 
 		int wstatus = 0;
-		int ret = poll(&pfd, 1, TIMEOUT_MS);
+		int elapsed = 0;
 
-		if (ret == 0)
+		char buffer[4096];
+
+		while (true)
 		{
-			// Timeout
-			kill(pid, SIGKILL);
-			waitpid(pid, &wstatus, 0);
-			error("CGI timeout", "CgiHandler::runCgi");
+			// 1️⃣ Check if child exited (non-blocking)
+			pid_t result = waitpid(pid, &wstatus, WNOHANG);
+
+			if (result == pid)
+				break;
+
+			if (result < 0)
+			{
+				kill(pid, SIGKILL);
+				waitpid(pid, &wstatus, 0);
+				close(out_pipe[READ_FD]);
+				error("waitpid() failed", "CgiHandler::runCgi");
+			}
+
+			// 2️⃣ Poll stdout
+			int ret = poll(&pfd, 1, POLL_INTERVAL_MS);
+
+			if (ret < 0)
+			{
+				kill(pid, SIGKILL);
+				waitpid(pid, &wstatus, 0);
+				close(out_pipe[READ_FD]);
+				error("poll() failed", "CgiHandler::runCgi");
+			}
+			if (ret > 0)
+			{
+				if (pfd.revents & POLLIN)
+				{
+					ssize_t n = read(out_pipe[READ_FD], buffer, sizeof(buffer));
+					if (n > 0)
+						output.append(buffer, n);
+				}
+
+				if (pfd.revents & POLLERR)
+				{
+					kill(pid, SIGKILL);
+					waitpid(pid, &wstatus, 0);
+					close(out_pipe[READ_FD]);
+					error("CGI pipe error", "CgiHandler::runCgi");
+				}
+			}
+
+			// 3️⃣ Enforce hard execution timeout
+			elapsed += POLL_INTERVAL_MS;
+			if (elapsed >= TIMEOUT_MS)
+			{
+				kill(pid, SIGKILL);
+				waitpid(pid, &wstatus, 0);
+				close(out_pipe[READ_FD]);
+				error("CGI execution timeout", "CgiHandler::runCgi");
+			}
 		}
-		else if (ret < 0)
+
+		// Drain remaining output after child exits
+		ssize_t n;
+		while ((n = read(out_pipe[READ_FD], buffer, sizeof(buffer))) > 0)
+			output.append(buffer, n);
+
+		close(out_pipe[READ_FD]);
+
+		// Check exec failure flag
+		char child_status = 0;
+		if (read(status_pipe[0], &child_status, 1) > 0 && child_status)
 		{
-			kill(pid, SIGKILL);
-			waitpid(pid, &wstatus, 0);
-			error("poll() failed", "CgiHandler::runCgi");
-		}
-
-		// Child produced output or exited
-		waitpid(pid, &wstatus, 0);
-
-		if (status_bytes > 0 && child_status)
+			close(status_pipe[0]);
 			error("CGI script failed to execute", "CgiHandler::runCgi");
+		}
+
+		close(status_pipe[0]);
 
 		if (!WIFEXITED(wstatus) || WEXITSTATUS(wstatus) != 0)
 			error("CGI script terminated abnormally", "CgiHandler::runCgi");
