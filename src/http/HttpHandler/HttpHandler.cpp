@@ -82,9 +82,14 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 			std::cout << "DEBUG: " << std::string(msg) << std::endl;
 			return handleErrorPages(req, IM_A_TEAPOT);
 		}
-		else if(std::string(msg).find("terminated") != std::string::npos)
+		else if(std::string(msg).find("terminated") != std::string::npos
+			|| std::string(msg).find("poll() failed") != std::string::npos)
 		{
 			return handleErrorPages(req, INTERNAL_SERVER_ERROR);
+		}
+		else if(std::string(msg).find("CGI timeout") != std::string::npos)
+		{
+			return handleErrorPages(req, GATEWAY_TIMEOUT);
 		}
 		//else fallback to normal handling
 	}

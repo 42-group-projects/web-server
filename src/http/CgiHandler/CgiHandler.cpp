@@ -98,7 +98,30 @@ HttpResponse CgiHandler::runCgi(const HttpRequest& req)
 		ssize_t status_bytes = read(status_pipe[0], &child_status, 1);
 		close(status_pipe[0]);
 
-		int wstatus;
+		const int TIMEOUT_MS = 5000; // 5 seconds
+
+		struct pollfd pfd;
+		pfd.fd = out_pipe[READ_FD];
+		pfd.events = POLLIN;
+
+		int wstatus = 0;
+		int ret = poll(&pfd, 1, TIMEOUT_MS);
+
+		if (ret == 0)
+		{
+			// Timeout
+			kill(pid, SIGKILL);
+			waitpid(pid, &wstatus, 0);
+			error("CGI timeout", "CgiHandler::runCgi");
+		}
+		else if (ret < 0)
+		{
+			kill(pid, SIGKILL);
+			waitpid(pid, &wstatus, 0);
+			error("poll() failed", "CgiHandler::runCgi");
+		}
+
+		// Child produced output or exited
 		waitpid(pid, &wstatus, 0);
 
 		if (status_bytes > 0 && child_status)
