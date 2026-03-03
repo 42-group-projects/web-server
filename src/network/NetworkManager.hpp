@@ -58,8 +58,9 @@ private:
     };
 
     // hard limits (DoS / memory protection)
-    static const size_t kMaxHeaderBytes = 32 * 1024;        // 32KB
-    static const size_t kMaxBodyBytes = 10 * 1024 * 1024;   // 10MB
+    static const size_t kMaxHeaderBytes = 32 * 1024;          // 32KB
+    //adding 100 but can be config in .conf file. 
+    static const size_t kMaxBodyBytes = 100 * 1024 * 1024;   // 100MB
 
     // 内部ユーティリティ
     bool addListener(const std::string &ip, int port);
