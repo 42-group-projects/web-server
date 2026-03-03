@@ -22,9 +22,6 @@ HttpResponse HttpHandler::handlePost(const HttpRequest& req)
 	if(!req_config.postAllowed && req_config.upload_store.empty())
 		return handleErrorPages(req, METHOD_NOT_ALLOWED);
 
-	if(req.getBody().size() > req_config.client_max_body_size)
-		return handleErrorPages(req, CONTENT_TOO_LARGE);
-
 	std::string contentType = req.getMimeTypeString();
 
 	if (contentType.find("multipart/form-data") != std::string::npos)
@@ -36,6 +33,13 @@ HttpResponse HttpHandler::handlePost(const HttpRequest& req)
 		std::vector<MultipartFile> files = parseMultipartFormData(req.getBody(), boundary);
 		if (files.empty())
 			return handleErrorPages(req, BAD_REQUEST);
+
+		// Check each individual file's content size against the limit
+		for (size_t i = 0; i < files.size(); i++)
+		{
+			if (files[i].content.size() > req_config.client_max_body_size)
+				return handleErrorPages(req, CONTENT_TOO_LARGE);
+		}
 
 		std::stringstream uploaded_files;
 		for (size_t i = 0; i < files.size(); i++)
@@ -54,7 +58,10 @@ HttpResponse HttpHandler::handlePost(const HttpRequest& req)
 		return res;
 	}
 
-	// single file upload
+	// single file upload — check the raw body size directly
+	if (req.getBody().size() > req_config.client_max_body_size)
+		return handleErrorPages(req, CONTENT_TOO_LARGE);
+
 	std::string file_name = formatFileName(req);
 	return writeFile(req, file_name, req.getBody());
 }

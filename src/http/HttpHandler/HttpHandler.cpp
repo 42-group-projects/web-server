@@ -6,13 +6,8 @@ HttpHandler::HttpHandler() {}
 
 HttpHandler::~HttpHandler() {}
 
-// HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConfig& config)
-//==========================================================================================================
 HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConfig& config, std::string& ip, int port)
-//===================================================================================================Clement
 {
-
-	// so i think i need to get the int from the net working layer to figure out witch config its going to be using here... need to talk to tsubo about it.
 	// std::string server_name = config.getConfiguration()[0].server_name[0];
 	// std::string ip = config.getAllListen()[0].first;
 	// int port = config.getAllListen()[0].second;
@@ -38,9 +33,6 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 		std::cerr << e.what() << '\n';
 		return handleErrorPages(req, FORBIDDEN);
 	}
-
-	if(req.getBody().size() > req_config.client_max_body_size)
-		return handleErrorPages(req, CONTENT_TOO_LARGE);
 
 	// Reject requests that try to use both Content-Length and chunked Transfer-Encoding
 	const std::map<std::string, std::string>& headers = req.getHeaders();
