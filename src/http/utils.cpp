@@ -183,6 +183,22 @@ std::string getMimeTypeString(e_mimeType mimeType)
 			return "application/pdf";
 		case IMAGE_SVG:
 			return "image/svg+xml";
+		case AUDIO_MPEG:
+			return "audio/mpeg";
+		case AUDIO_OGG:
+			return "audio/ogg";
+		case AUDIO_WAV:
+			return "audio/wav";
+		case AUDIO_WEBM:
+			return "audio/webm";
+		case VIDEO_MP4:
+			return "video/mp4";
+		case VIDEO_WEBM:
+			return "video/webm";
+		case VIDEO_OGG:
+			return "video/ogg";
+		case VIDEO_AVI:
+			return "video/x-msvideo";
 		case APPLICATION_OCTET_STREAM:
 			return "application/octet-stream";
 		default:
@@ -214,6 +230,22 @@ e_mimeType getMimeTypeEnum(const std::string mimeTypeStr)
 		return APPLICATION_PDF;
 	else if (mimeTypeStr == "image/svg+xml")
 		return IMAGE_SVG;
+	else if (mimeTypeStr == "audio/mpeg")
+		return AUDIO_MPEG;
+	else if (mimeTypeStr == "audio/ogg")
+		return AUDIO_OGG;
+	else if (mimeTypeStr == "audio/wav")
+		return AUDIO_WAV;
+	else if (mimeTypeStr == "audio/webm")
+		return AUDIO_WEBM;
+	else if (mimeTypeStr == "video/mp4")
+		return VIDEO_MP4;
+	else if (mimeTypeStr == "video/webm")
+		return VIDEO_WEBM;
+	else if (mimeTypeStr == "video/ogg")
+		return VIDEO_OGG;
+	else if (mimeTypeStr == "video/x-msvideo")
+		return VIDEO_AVI;
 	else if (mimeTypeStr == "application/octet-stream")
 		return APPLICATION_OCTET_STREAM;
 	else
@@ -247,6 +279,22 @@ std::string getMimeTypeExtention(e_mimeType mimeType)
 			return ".pdf";
 		case IMAGE_SVG:
 			return ".svg";
+		case AUDIO_MPEG:
+			return ".mp3";
+		case AUDIO_OGG:
+			return ".ogg";
+		case AUDIO_WAV:
+			return ".wav";
+		case AUDIO_WEBM:
+			return ".weba";
+		case VIDEO_MP4:
+			return ".mp4";
+		case VIDEO_WEBM:
+			return ".webm";
+		case VIDEO_OGG:
+			return ".ogv";
+		case VIDEO_AVI:
+			return ".avi";
 		case APPLICATION_OCTET_STREAM:
 			return ".bin";
 		default:

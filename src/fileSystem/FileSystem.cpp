@@ -130,6 +130,30 @@ e_mimeType FileSystem::detectMimeType(const SafePath& safePath)
 	if (extension == ".svg")
 		return IMAGE_SVG;
 
+	if (extension == ".mp3")
+		return AUDIO_MPEG;
+
+	if (extension == ".ogg")
+		return AUDIO_OGG;
+
+	if (extension == ".wav")
+		return AUDIO_WAV;
+
+	if (extension == ".weba")
+		return AUDIO_WEBM;
+
+	if (extension == ".mp4")
+		return VIDEO_MP4;
+
+	if (extension == ".webm")
+		return VIDEO_WEBM;
+
+	if (extension == ".ogv")
+		return VIDEO_OGG;
+
+	if (extension == ".avi")
+		return VIDEO_AVI;
+
 	return APPLICATION_OCTET_STREAM;
 }
 
@@ -165,7 +189,7 @@ void FileSystem::errorPage(e_status_code code, t_request_config& conf)
 
 		try
 		{
-			SafePath newPath(errorPagePath, conf, false);
+			SafePath newPath(errorPagePath, conf, true);
 			sp = newPath;
 			fillMetadata();
 
