@@ -6,31 +6,26 @@ HttpHandler::HttpHandler() {}
 
 HttpHandler::~HttpHandler() {}
 
+bool HttpHandler::loadRequestConfig(const HttpRequest& req, const ServerConfig& config, const std::string& ip, int port)
+{
+    std::string server_name = req.getHeaders().count("Host") ? req.getHeaders().at("Host") : "";
+    size_t pos = server_name.find(':');
+    if (pos != std::string::npos)
+        server_name = server_name.substr(0, pos);
+
+    try {
+        req_config = config.getRequestConfig(server_name, ip, port, req.getUri());
+        return true;
+    } catch (const std::exception& e) {
+        std::cerr << "[HttpHandler] Failed to get request config: " << e.what() << std::endl;
+        return false;
+    }
+}
+
 HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConfig& config, std::string& ip, int port)
 {
-	// std::string server_name = config.getConfiguration()[0].server_name[0];
-	// std::string ip = config.getAllListen()[0].first;
-	// int port = config.getAllListen()[0].second;
-
-	// std::cout << "Server Name: " << server_name << std::endl;
-	// std::cout << "IP: " << ip << " Port: " << port << std::endl;
-	// need to get this info from the network layer.
-	// std::cout << req_config << std::endl;
-	// FileSystem fs(req_config.safePath, req_config);
-	// std::cout << fs  << std::endl;
-
-	std::string server_name = req.getHeaders()["Host"];
-	int pos = server_name.find_first_of(':');
-	server_name = server_name.substr(0, pos);
-	try
+	if (!loadRequestConfig(req, config, ip, port))
 	{
-		req_config = config.getRequestConfig(server_name, ip, port, req.getUri());
-		// std::cout << req_config << std::endl;
-	}
-	catch(const std::exception& e)
-	{
-		std::cerr << "Exception caught in HttpHandler::handleRequest: 1";
-		std::cerr << e.what() << '\n';
 		return handleErrorPages(req, FORBIDDEN);
 	}
 
@@ -49,47 +44,7 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 			return handleErrorPages(req, BAD_REQUEST);
 	}
 
-	// CGI request
-	try
-	{
-		CgiHandler cgi_handler(req_config);
-		// if (false) // --- IGNORE ---
-		if (isCgiRequest(req))
-		{
-			if (req_config.cgi_pass.empty())
-				return handleErrorPages(req, FORBIDDEN);
-			std::cout << "Handling CGI request for URI: " << req.getUri() << std::endl;
-			return cgi_handler.runCgi(req);
-		}
-	}
-	catch (const std::exception& e)
-	{
-		std::cerr << e.what();
-
-		std::string msg(e.what());
-		if (std::string(msg).find("File does not exist") != std::string::npos
-			|| std::string(msg).find("code injection") != std::string::npos)
-		{
-			return handleErrorPages(req, NOT_FOUND);
-		}
-		else if (std::string(msg).find("permissions") != std::string::npos
-			|| std::string(msg).find("unsafe") != std::string::npos)
-		{
-			return handleErrorPages(req, FORBIDDEN);
-		}
-		else if(std::string(msg).find("terminated") != std::string::npos
-			|| std::string(msg).find("poll() failed") != std::string::npos
-			|| std::string(msg).find("CGI pipe error") != std::string::npos
-			|| std::string(msg).find("waitpid() failed") != std::string::npos)
-		{
-			return handleErrorPages(req, INTERNAL_SERVER_ERROR);
-		}
-		else if(std::string(msg).find("CGI execution timeout") != std::string::npos)
-		{
-			return handleErrorPages(req, GATEWAY_TIMEOUT);
-		}
-		//else fallback to normal handling
-	}
+	
 	try
 	{
 		if(hasHttpRequestErrors(req))
@@ -228,52 +183,80 @@ HttpResponse HttpHandler::handleRedirects(const HttpRequest& req)
 
 bool HttpHandler::isCgiRequest(const HttpRequest& req)
 {
-	std::string uri = req.getUri();
+    std::cout << "\n[DEBUG] Entered isCgiRequest()\n";
 
-	// Strip query string
-	size_t qpos = uri.find('?');
-	if (qpos != std::string::npos)
-		uri = uri.substr(0, qpos);
+    std::string uri = req.getUri();
+    std::cout << "[DEBUG] Original URI: '" << uri << "'\n";
 
-	const std::string& loc = req_config.location;
-	if (loc.empty())
-		return false;
-	if (uri.compare(0, loc.size(), loc) != 0)
-		return false;
+    // Strip query string
+    size_t qpos = uri.find('?');
+    if (qpos != std::string::npos) {
+        uri = uri.substr(0, qpos);
+        std::cout << "[DEBUG] URI after stripping query string: '" << uri << "'\n";
+    }
 
-	size_t afterLoc = loc.size();
-	bool seenDot = false;
-	size_t dotPos = std::string::npos;
-	size_t i = afterLoc;
-	for (; i < uri.size(); ++i)
-	{
-		char c = uri[i];
-		if (c == '/')
-		{
-			if (seenDot)
-				break; // PATH_INFO begins after the script name
-			else
-				continue; // still traversing directories before script
-		}
-		if (c == '.' && !seenDot)
-		{
-			dotPos = i;
-			seenDot = true;
-		}
-	}
+    const std::string& loc = req_config.location;
+    std::cout << "[DEBUG] CGI location configured: '" << loc << "'\n";
 
-	std::string ext;
-	if (seenDot && dotPos != std::string::npos)
-		ext = uri.substr(dotPos, i - dotPos);
+    if (loc.empty()) {
+        std::cout << "[DEBUG] Location is empty -> not CGI\n";
+        return false;
+    }
 
-	if (ext == ".cgi")
-		return true;
+    if (uri.compare(0, loc.size(), loc) != 0) {
+        std::cout << "[DEBUG] URI does not match location prefix -> not CGI\n";
+        return false;
+    }
 
-	if (!ext.empty())
-	{
-		if (req_config.cgi_pass.find(ext) != req_config.cgi_pass.end())
-			return true;
-	}
+    std::cout << "[DEBUG] URI matches location prefix\n";
 
-	return false;
+    size_t afterLoc = loc.size();
+    bool seenDot = false;
+    size_t dotPos = std::string::npos;
+    size_t i = afterLoc;
+
+    for (; i < uri.size(); ++i)
+    {
+        char c = uri[i];
+        if (c == '/')
+        {
+            if (seenDot) {
+                std::cout << "[DEBUG] Found '/' after dot at i=" << i << " -> end of script name\n";
+                break; // PATH_INFO begins after the script name
+            } else {
+                continue; // still traversing directories before script
+            }
+        }
+        if (c == '.' && !seenDot)
+        {
+            dotPos = i;
+            seenDot = true;
+            std::cout << "[DEBUG] Found '.' at position " << dotPos << "\n";
+        }
+    }
+
+    std::string ext;
+    if (seenDot && dotPos != std::string::npos)
+        ext = uri.substr(dotPos, i - dotPos);
+
+    std::cout << "[DEBUG] Extracted extension: '" << ext << "'\n";
+
+    if (ext == ".cgi") {
+        std::cout << "[DEBUG] Extension is .cgi -> CGI request!\n";
+        return true;
+    }
+
+    if (!ext.empty()) {
+        if (req_config.cgi_pass.find(ext) != req_config.cgi_pass.end()) {
+            std::cout << "[DEBUG] Extension found in cgi_pass -> CGI request!\n";
+            return true;
+        } else {
+            std::cout << "[DEBUG] Extension not in cgi_pass -> not CGI\n";
+        }
+    } else {
+        std::cout << "[DEBUG] No extension found -> not CGI\n";
+    }
+
+    std::cout << "[DEBUG] Exiting isCgiRequest() -> not CGI\n";
+    return false;
 }

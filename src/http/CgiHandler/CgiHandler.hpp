@@ -29,5 +29,5 @@ public:
 	CgiHandler(const t_request_config& req_config);
 	~CgiHandler();
 
-	HttpResponse runCgi(const HttpRequest& req);
+	int runCgi(const HttpRequest& req, pid_t& childPid, int& inFd);
 };

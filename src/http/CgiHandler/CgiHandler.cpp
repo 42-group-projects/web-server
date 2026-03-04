@@ -7,174 +7,99 @@ CgiHandler::CgiHandler(const t_request_config& req_config)
 
 CgiHandler::~CgiHandler() {}
 
-HttpResponse CgiHandler::runCgi(const HttpRequest& req)
+int CgiHandler::runCgi(const HttpRequest& req, pid_t& childPid, int& inFd)
 {
-	HttpRequest request = req;
-	std::string output;
-	int out_pipe[2];
-	int in_pipe[2];
-	int status_pipe[2];
+    HttpRequest request = req;
 
-	if (pipe(out_pipe) == -1 || pipe(status_pipe) == -1)
-		error("pipe() failed in runCgi", "CgiHandler::runCgi");
+    int out_pipe[2];
+    int in_pipe[2];
 
-	bool is_post = (req.getMethod() == POST);
-	if (is_post)
-	{
-		if (pipe(in_pipe) == -1)
-			error("pipe() failed in runCgi", "CgiHandler::runCgi");
-	}
+    bool is_post = (req.getMethod() == POST);
 
-	pid_t pid = fork();
-	if (pid == -1)
-		error("fork() failed in runCgi", "CgiHandler::runCgi");
+    if (pipe(out_pipe) == -1) return -1;
+    if (is_post && pipe(in_pipe) == -1) {
+        close(out_pipe[0]); close(out_pipe[1]);
+        return -1;
+    }
 
-	if (pid == 0)
-	{
-		detectCgiType(req);
-		char **args = makeArgs(req);
-		char **envp = makeEnvs(req);
+    pid_t pid = fork();
+    if (pid == -1) {
+        close(out_pipe[0]); close(out_pipe[1]);
+        if (is_post) { close(in_pipe[0]); close(in_pipe[1]); }
+        return -1;
+    }
 
-		close(status_pipe[0]);
-		char fail = 0;
+    if (pid == 0)
+    {
+        // --- CHILD ---
+        detectCgiType(req);
+        char **args = makeArgs(req);
+        char **envp = makeEnvs(req);
 
-		if (dup2(out_pipe[WRITE_FD], STDOUT_FILENO) == -1 ||
-		dup2(out_pipe[WRITE_FD], STDERR_FILENO) == -1)
-		fail = 1;
+        // Redirect stdout/stderr to out_pipe
+        dup2(out_pipe[WRITE_FD], STDOUT_FILENO);
+        dup2(out_pipe[WRITE_FD], STDERR_FILENO);
 
-		close(out_pipe[READ_FD]);
-		close(out_pipe[WRITE_FD]);
+        close(out_pipe[READ_FD]);
+        close(out_pipe[WRITE_FD]);
 
-		if (is_post)
-		{
-			if (dup2(in_pipe[READ_FD], STDIN_FILENO) == -1)
-			fail = 1;
-			close(in_pipe[WRITE_FD]);
-			close(in_pipe[READ_FD]);
-		}
+        if (is_post) {
+            dup2(in_pipe[READ_FD], STDIN_FILENO);
+            close(in_pipe[READ_FD]); close(in_pipe[WRITE_FD]);
+        }
 
-		// Change working directory to the CGI root
-		std::string relative_path;
-		if (req_config.root[0] == '/')
-			relative_path = "." + req_config.root;
-		else
-			relative_path = "./" + req_config.root;
+        std::string relative_path = (req_config.root[0] == '/') ? ("." + req_config.root) : ("./" + req_config.root);
+        chdir(relative_path.c_str());
 
-		if (chdir(relative_path.c_str()) == -1)
-		{
-			fail = 1;
-		}
+        execve(cgi_interpreter.c_str(), args, envp);
 
-		if (fail == 0 && execve(cgi_interpreter.c_str(), args, envp) == -1)
-		{
-			fail = 1;
-		}
+        // Exec failed: write 502 to stdout
+        std::string code = "502\n";
+        write(STDOUT_FILENO, code.c_str(), code.size());
+        _exit(1);
+    }
+    else
+    {
+	// --- PARENT ---
+	childPid = pid;
+		std::cerr << "RAW BODY: [" << req.getBody() << "]" << std::endl;
+	// Close write end for parent reading
+	close(out_pipe[WRITE_FD]);
 
-		write(status_pipe[1], &fail, 1);
-		close(status_pipe[1]);
-		std::exit(0);
-	}
-	else
-	{
-		close(out_pipe[WRITE_FD]);
-		close(status_pipe[1]);
+	if (is_post) {
+		close(in_pipe[READ_FD]);
 
-		if (is_post)
-		{
-			close(in_pipe[READ_FD]);
-			write(in_pipe[WRITE_FD], req.getBody().c_str(), req.getBody().size());
-			close(in_pipe[WRITE_FD]);
-		}
+		int writeFd = in_pipe[WRITE_FD];
 
-		const int TIMEOUT_MS = 5000;
-		const int POLL_INTERVAL_MS = 100;
+		const std::string &body = req.getBody();
+		size_t totalWritten = 0;
 
-		struct pollfd pfd;
-		pfd.fd = out_pipe[READ_FD];
-		pfd.events = POLLIN | POLLHUP | POLLERR;
+		while (totalWritten < body.size()) {
+			ssize_t n = write(writeFd,
+							body.c_str() + totalWritten,
+							body.size() - totalWritten);
 
-		int wstatus = 0;
-		int elapsed = 0;
-
-		char buffer[4096];
-
-		while (true)
-		{
-			// 1️⃣ Check if child exited (non-blocking)
-			pid_t result = waitpid(pid, &wstatus, WNOHANG);
-
-			if (result == pid)
-				break;
-
-			if (result < 0)
-			{
-				kill(pid, SIGKILL);
-				waitpid(pid, &wstatus, 0);
-				close(out_pipe[READ_FD]);
-				error("waitpid() failed", "CgiHandler::runCgi");
+			if (n <= 0) {
+				break; // write error
 			}
-
-			// 2️⃣ Poll stdout
-			int ret = poll(&pfd, 1, POLL_INTERVAL_MS);
-
-			if (ret < 0)
-			{
-				kill(pid, SIGKILL);
-				waitpid(pid, &wstatus, 0);
-				close(out_pipe[READ_FD]);
-				error("poll() failed", "CgiHandler::runCgi");
-			}
-			if (ret > 0)
-			{
-				if (pfd.revents & POLLIN)
-				{
-					ssize_t n = read(out_pipe[READ_FD], buffer, sizeof(buffer));
-					if (n > 0)
-						output.append(buffer, n);
-				}
-
-				if (pfd.revents & POLLERR)
-				{
-					kill(pid, SIGKILL);
-					waitpid(pid, &wstatus, 0);
-					close(out_pipe[READ_FD]);
-					error("CGI pipe error", "CgiHandler::runCgi");
-				}
-			}
-
-			// 3️⃣ Enforce hard execution timeout
-			elapsed += POLL_INTERVAL_MS;
-			if (elapsed >= TIMEOUT_MS)
-			{
-				kill(pid, SIGKILL);
-				waitpid(pid, &wstatus, 0);
-				close(out_pipe[READ_FD]);
-				error("CGI execution timeout", "CgiHandler::runCgi");
-			}
+			totalWritten += n;
 		}
 
-		// Drain remaining output after child exits
-		ssize_t n;
-		while ((n = read(out_pipe[READ_FD], buffer, sizeof(buffer))) > 0)
-			output.append(buffer, n);
+		// VERY IMPORTANT: signal EOF to CGI
+		close(writeFd);
 
-		close(out_pipe[READ_FD]);
-
-		// Check exec failure flag
-		char child_status = 0;
-		if (read(status_pipe[0], &child_status, 1) > 0 && child_status)
-		{
-			close(status_pipe[0]);
-			error("CGI script failed to execute", "CgiHandler::runCgi");
+		inFd = -1;  // nothing left to manage
+		}
+		else {
+			inFd = -1;
 		}
 
-		close(status_pipe[0]);
+        // Make output pipe non-blocking
+        fcntl(out_pipe[READ_FD], F_SETFL, fcntl(out_pipe[READ_FD], F_GETFL, 0) | O_NONBLOCK);
 
-		if (!WIFEXITED(wstatus) || WEXITSTATUS(wstatus) != 0)
-			error("CGI script terminated abnormally", "CgiHandler::runCgi");
-	}
-	HttpResponse res;
-	return res.parseCgiResponse(output);
+        // Return fd for asynchronous reading
+        return out_pipe[READ_FD];
+    }
 }
 
 void CgiHandler::detectCgiType(const HttpRequest& req)
@@ -229,8 +154,7 @@ char **CgiHandler::makeArgs(const HttpRequest& req)
 		error("Missing permissions", "CgiHandler::makeArgs");
 
 	// After chdir() to req_config.root, we only need the script filename
-	std::string script_for_exec = "./" + script_base;
-
+std::string script_for_exec = "." + script_name;
 	char **args;
 	args = new char*[3];
 	args[0] = strdup(cgi_interpreter.c_str());

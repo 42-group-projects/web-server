@@ -2,6 +2,7 @@
 #include "../http/HttpHandler/HttpHandler.hpp"
 #include "../http/HttpRequest/HttpRequest.hpp"
 #include "../http/HttpResponse/HttpResponse.hpp"
+#include "../http/CgiHandler/CgiHandler.hpp"
 
 NetworkManager::NetworkManager(const ServerConfig& config) : config(config), running(false) {}
 
@@ -394,41 +395,58 @@ void NetworkManager::handleClientWrite(int fd)
     it->second.erase(0, n);
 }
 
-void NetworkManager::run()
-{
+void NetworkManager::run() {
     if (!running) return;
     std::cout << "Network loop started." << std::endl;
+
     while (running) {
         cleanupIdleConnections();
 
-        int ret = poll(&pollfds[0], pollfds.size(), 1000);
-        if (ret < 0) {
-            continue;
-        }
-        if (ret == 0) {
-            continue;
-        }
+        std::vector<struct pollfd> allFds = pollfds;
+        allFds.insert(allFds.end(), cgiPollfds.begin(), cgiPollfds.end());
 
-        std::vector<struct pollfd> current = pollfds;
-        for (size_t i = 0; i < current.size(); ++i) {
-            int fd = current[i].fd;
-            short re = current[i].revents;
-            if (re == 0) continue;
+        if (!allFds.empty()) {
+            int ret = poll(&allFds[0], allFds.size(), 100); // short timeout
+            if (ret > 0) {
+                for (size_t i = 0; i < allFds.size(); ++i) {
+                    int fd = allFds[i].fd;
+                    short re = allFds[i].revents;
+                    if (!re) continue;
 
-            if (re & (POLLHUP | POLLERR | POLLNVAL)) {
-                removeFd(fd);
-                continue;
+                    // CGI pipe
+                    if (cgiPipeToClientFd.find(fd) != cgiPipeToClientFd.end()) {
+                        handleCgiOutput(fd);
+                        continue;
+                    }
+
+                    // normal fd
+                    if (isListener.count(fd) && isListener[fd]) {
+                        if (re & POLLIN) handleListenerEvent(fd);
+                        continue;
+                    }
+
+                    if (re & POLLIN) handleClientRead(fd);
+                    if (re & POLLOUT) handleClientWrite(fd);
+
+                    if (re & (POLLHUP | POLLERR | POLLNVAL)) removeFd(fd);
+                }
             }
-
-            if (isListener.count(fd) && isListener[fd]) {
-                if (re & POLLIN) handleListenerEvent(fd);
-                continue;
-            }
-
-            if (re & POLLIN) handleClientRead(fd);
-            if (re & POLLOUT) handleClientWrite(fd);
         }
     }
+}
+// --- Helper to remove CGI pipe from poll and mapping ---
+void NetworkManager::removeCgiFd(int cgiFd)
+{
+    for (size_t i = 0; i < cgiPollfds.size(); ++i)
+    {
+        if (cgiPollfds[i].fd == cgiFd)
+        {
+            cgiPollfds.erase(cgiPollfds.begin() + i);
+            break;
+        }
+    }
+    cgiPipeToClientFd.erase(cgiFd);
+    close(cgiFd);
 }
 
 bool NetworkManager::tryParseRequest(int fd)
@@ -439,7 +457,7 @@ bool NetworkManager::tryParseRequest(int fd)
         return false;
 
     if (!st.headerDone) {
-        // Header size guard: if we haven't found CRLFCRLF yet, cap buffer growth
+        // Header size guard
         if (st.buf.size() > kMaxHeaderBytes) {
             HttpResponse res;
             res.setVersion("HTTP/1.1");
@@ -454,7 +472,7 @@ bool NetworkManager::tryParseRequest(int fd)
             sendBufs[fd] = res.generateResponse(res.getStatus());
             for (size_t i = 0; i < pollfds.size(); ++i)
                 if (pollfds[i].fd == fd) { pollfds[i].events &= ~POLLIN; pollfds[i].events |= POLLOUT; break; }
-            // Drop buffered junk; we will close after sending
+
             st.buf.clear();
             st.headerDone = false;
             st.headerEndPos = 0;
@@ -476,9 +494,6 @@ bool NetworkManager::tryParseRequest(int fd)
                   << std::endl;
     }
 
-    bool complete = false;
-    size_t totalConsumed = 0;
-
     std::string requestHead = st.buf.substr(0, st.headerEndPos);
 
     {
@@ -486,6 +501,9 @@ bool NetworkManager::tryParseRequest(int fd)
         std::string rl = (lineEnd == std::string::npos) ? requestHead : requestHead.substr(0, lineEnd);
         std::cerr << "[NM][fd=" << fd << "] requestLine='" << rl << "'" << std::endl;
     }
+
+    bool complete = false;
+    size_t totalConsumed = 0;
 
     bool lengthRequired = isBodyLengthRequiredError(requestHead);
 
@@ -499,7 +517,6 @@ bool NetworkManager::tryParseRequest(int fd)
         res.setBody("Length Required\n");
 
         bool keep = shouldKeepAlive(requestHead);
-
         st.requestCount++;
         if (st.requestCount >= kMaxRequestsPerConnection)
             keep = false;
@@ -520,8 +537,8 @@ bool NetworkManager::tryParseRequest(int fd)
         std::cerr << "[NM][fd=" << fd << "] chunked decode result=" << (int)r
                   << " decoded.size=" << decoded.size() << " totalConsumed=" << totalConsumed
                   << " buf.size=" << st.buf.size() << std::endl;
+
         if (r == CHUNK_NEED_MORE) {
-            // If chunked body grows too large without completing, reject to avoid memory exhaustion
             if (st.buf.size() > kMaxHeaderBytes + kMaxBodyBytes) {
                 HttpResponse res;
                 res.setVersion("HTTP/1.1");
@@ -539,6 +556,7 @@ bool NetworkManager::tryParseRequest(int fd)
             }
             return false;
         }
+
         if (r == CHUNK_INVALID) {
             HttpResponse res;
             res.setVersion("HTTP/1.1");
@@ -554,7 +572,6 @@ bool NetworkManager::tryParseRequest(int fd)
             for (size_t i = 0; i < pollfds.size(); ++i)
                 if (pollfds[i].fd == fd) { pollfds[i].events &= ~POLLIN; pollfds[i].events |= POLLOUT; break; }
 
-            // Consume the header at least, so we don't spin; we will close after sending
             totalConsumed = st.headerEndPos;
             complete = true;
         } else {
@@ -579,12 +596,19 @@ bool NetworkManager::tryParseRequest(int fd)
                 HttpRequest req;
                 try { req.parseRequest(requestHead); } catch(...) {}
                 req.setBody(decoded);
-                {
-                    std::ostringstream cl; cl << decoded.size();
-                    req.setHeader("Content-Length", cl.str());
+                std::ostringstream cl; cl << decoded.size(); req.setHeader("Content-Length", cl.str());
+
+                // --- CGI check ---
+                HttpHandler handler;
+                handler.loadRequestConfig(req, config, clientIps[fd], clientPorts[fd]);
+                if (handler.isCgiRequest(req)) {
+                    launchCgiAsync(fd, req, st, handler);
+                    st.buf.erase(0, st.headerEndPos); // consume headers
+                    st.headerDone = false;
+                    st.headerEndPos = 0;
+                    return true; // stop normal processing
                 }
 
-                HttpHandler handler;
                 HttpResponse res = handler.handleRequest(req, config, clientIps[fd], clientPorts[fd]);
 
                 if (res.getVersion().empty() || res.getVersion().find("HTTP/") != 0)
@@ -613,17 +637,15 @@ bool NetworkManager::tryParseRequest(int fd)
             }
         }
 
-        // Clamp totalConsumed to the end of the chunked body/trailer, but never past the current buffer size.
-        if (complete) {
-            if (totalConsumed > st.buf.size())
-                totalConsumed = st.buf.size();
-        }
+        if (complete && totalConsumed > st.buf.size())
+            totalConsumed = st.buf.size();
     }
     else {
         size_t bodyHave = (st.buf.size() >= st.headerEndPos) ? (st.buf.size() - st.headerEndPos) : 0;
         size_t need = (st.contentLength == (size_t)-1) ? 0 : st.contentLength;
         std::cerr << "[NM][fd=" << fd << "] non-chunked bodyHave=" << bodyHave << " need=" << need
                   << " headerEndPos=" << st.headerEndPos << " buf.size=" << st.buf.size() << std::endl;
+
         if (bodyHave >= need) {
             totalConsumed = st.headerEndPos + need;
             std::string body = (need == 0) ? std::string() : st.buf.substr(st.headerEndPos, need);
@@ -632,11 +654,22 @@ bool NetworkManager::tryParseRequest(int fd)
             try { req.parseRequest(requestHead); } catch(...) {}
             if (!body.empty()) {
                 req.setBody(body);
-                std::ostringstream cl; cl << body.size();
-                req.setHeader("Content-Length", cl.str());
+                std::ostringstream cl; cl << body.size(); req.setHeader("Content-Length", cl.str());
             }
 
+            // --- CGI check ---
             HttpHandler handler;
+            HttpRequest tempReq;
+            handler.loadRequestConfig(tempReq, config, clientIps[fd], clientPorts[fd]);
+            try { tempReq.parseRequest(requestHead); } catch(...) {}
+            if (handler.isCgiRequest(tempReq)) {
+                launchCgiAsync(fd, tempReq, st, handler);
+                st.buf.erase(0, st.headerEndPos); // consume headers
+                st.headerDone = false;
+                st.headerEndPos = 0;
+                return true; // stop normal processing
+            }
+
             HttpResponse res = handler.handleRequest(req, config, clientIps[fd], clientPorts[fd]);
 
             if (res.getVersion().empty() || res.getVersion().find("HTTP/") != 0)
@@ -694,6 +727,7 @@ bool NetworkManager::tryParseRequest(int fd)
 
     return true;
 }
+
 
 std::map<std::string, std::string> NetworkManager::parseHeaderMap(const std::string &headersRaw)
 {
@@ -855,4 +889,244 @@ NetworkManager::ChunkDecodeResult NetworkManager::tryDecodeChunked(ConnState &st
         if (st.buf.substr(p, 2) != "\r\n") return CHUNK_INVALID;
         p += 2;
     }
+}
+
+
+
+
+bool NetworkManager::launchCgiAsync(int fd, HttpRequest &req, ConnState &st, HttpHandler &handler)
+{
+    try {
+        // handler.loadRequestConfig(req, config, clientIps[fd], clientPorts[fd]);
+        CgiHandler cgi_handler(handler.req_config);
+        
+        // st.request = req;
+        // st.handler = handler;
+
+        pid_t childPid;
+        int inFd = -1;
+        int outFd = cgi_handler.runCgi(req, childPid, inFd);
+
+        if (outFd < 0) return false;
+
+        // --- Set non-blocking ---
+        fcntl(outFd, F_SETFL, fcntl(outFd, F_GETFL, 0) | O_NONBLOCK);
+
+        st.cgiActive = true;
+        st.cgiChildPid = childPid;
+        st.cgiOutFd = outFd;
+        st.cgiInFd = inFd;
+        st.cgiOutputBuffer.clear();
+
+        // stop reading client until CGI finishes
+        for (size_t i = 0; i < pollfds.size(); ++i)
+            if (pollfds[i].fd == fd) pollfds[i].events &= ~POLLIN;
+
+        // add CGI pipe to poll
+        struct pollfd p; p.fd = outFd; p.events = POLLIN; p.revents = 0;
+        cgiPollfds.push_back(p);
+        cgiPipeToClientFd[outFd] = fd;
+
+        return true;
+    }
+    catch(...) {
+        // fallback 502
+        HttpResponse res;
+        res.setVersion("HTTP/1.1");
+        res.setStatus(BAD_GATEWAY);
+        res.setMimeType("text/plain");
+        res.setBody("CGI Launch Failed\n");
+        st.wantClose = true;
+        sendBufs[fd] = res.generateResponse(res.getStatus());
+        for (size_t i = 0; i < pollfds.size(); ++i)
+            if (pollfds[i].fd == fd) pollfds[i].events &= ~POLLIN, pollfds[i].events |= POLLOUT;
+        return false;
+    }
+}
+
+void NetworkManager::handleCgiOutput(int cgiFd)
+{
+    std::cerr << "[CGI] handleCgiOutput called for cgiFd=" << cgiFd << std::endl;
+
+    if (cgiPipeToClientFd.find(cgiFd) == cgiPipeToClientFd.end()) {
+        std::cerr << "[CGI] cgiFd not mapped to client, returning\n";
+        return;
+    }
+
+    int clientFd = cgiPipeToClientFd[cgiFd];
+
+    if (states.find(clientFd) == states.end()) {
+        std::cerr << "[CGI] clientFd=" << clientFd << " not found in states\n";
+        return;
+    }
+
+    ConnState &st = states[clientFd];
+    HttpHandler &handler = st.handler;
+    HttpRequest &request = st.request;
+
+    char buf[4096];
+
+    while (true) {
+        ssize_t n = read(cgiFd, buf, sizeof(buf));
+
+        if (n > 0) {
+            std::cerr << "[CGI] read " << n << " bytes from cgiFd=" << cgiFd << std::endl;
+            st.cgiOutputBuffer.append(buf, n);
+            std::cerr << "[CGI] accumulated CGI buffer size=" 
+                      << st.cgiOutputBuffer.size() << std::endl;
+        }
+        else if (n == 0) {
+            std::cerr << "[CGI] EOF reached for cgiFd=" << cgiFd << std::endl;
+
+            HttpResponse res;
+            std::string output = trim(st.cgiOutputBuffer);
+
+            std::cerr << "[CGI] raw CGI output size=" << output.size() << std::endl;
+
+            // show preview (sanitized)
+            std::string preview = output.substr(0, output.size() > 200 ? 200 : output.size());
+            for (size_t i = 0; i < preview.size(); ++i) {
+                if (preview[i] == '\r') preview[i] = 'R';
+                else if (preview[i] == '\n') preview[i] = 'N';
+            }
+            std::cerr << "[CGI] output preview(200)='" << preview << "'\n";
+
+            // --- Check if output is just a numeric code ---
+            bool allDigits = true;
+            for (size_t i = 0; i < output.size(); ++i) {
+                if (!::isdigit(static_cast<unsigned char>(output[i]))) {
+                    allDigits = false;
+                    break;
+                }
+            }
+
+            if (!output.empty() && output.size() <= 3 && allDigits) {
+                int codeInt = std::atoi(output.c_str());
+                std::cerr << "[CGI] numeric output detected -> status=" 
+                          << codeInt << std::endl;
+
+                e_status_code code = static_cast<e_status_code>(codeInt);
+                res = handler.handleErrorPages(request, code);
+            }
+            else {
+                std::cerr << "[CGI] parsing normal CGI response\n";
+                try {
+                    res.parseCgiResponse(st.cgiOutputBuffer);
+                }
+                catch (...) {
+                    std::cerr << "[CGI] parseCgiResponse threw exception\n";
+                    res = handler.handleErrorPages(request, INTERNAL_SERVER_ERROR);
+                }
+            }
+
+            res.setHeader("Server", "webserv");
+            res.setHeader("Host", getServerName(clientPorts[clientFd]));
+
+            bool keep = shouldKeepAlive("");
+            std::cerr << "[CGI] keepAlive decision=" << (keep ? 1 : 0) << std::endl;
+
+            st.wantClose = !keep;
+            res.setHeader("Connection", keep ? "keep-alive" : "close");
+
+            std::cerr << "[CGI] final response status=" 
+                      << res.getStatus() << std::endl;
+
+            sendBufs[clientFd] = res.generateResponse(res.getStatus());
+
+            // enable POLLOUT
+            for (size_t i = 0; i < pollfds.size(); ++i)
+                if (pollfds[i].fd == clientFd)
+                    pollfds[i].events |= POLLOUT;
+
+            std::cerr << "[CGI] response queued for clientFd=" 
+                      << clientFd << std::endl;
+
+            // cleanup
+            close(cgiFd);
+            st.cgiActive = false;
+            st.cgiOutFd = -1;
+            cgiPipeToClientFd.erase(cgiFd);
+
+            for (size_t i = 0; i < cgiPollfds.size(); ++i)
+                if (cgiPollfds[i].fd == cgiFd) {
+                    cgiPollfds.erase(cgiPollfds.begin() + i);
+                    break;
+                }
+
+            st.cgiOutputBuffer.clear();
+
+            std::cerr << "[CGI] cleanup complete for cgiFd=" 
+                      << cgiFd << std::endl;
+
+            break;
+        }
+        else { // n < 0
+            if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                std::cerr << "[CGI] EAGAIN on cgiFd=" << cgiFd << std::endl;
+                break;
+            }
+
+            std::cerr << "[CGI] read error on cgiFd=" << cgiFd 
+                      << " errno=" << errno << std::endl;
+
+            close(cgiFd);
+            st.cgiActive = false;
+            st.cgiOutFd = -1;
+
+            removeFd(clientFd);
+            cgiPipeToClientFd.erase(cgiFd);
+
+            for (size_t i = 0; i < cgiPollfds.size(); ++i)
+                if (cgiPollfds[i].fd == cgiFd) {
+                    cgiPollfds.erase(cgiPollfds.begin() + i);
+                    break;
+                }
+
+            break;
+        }
+    }
+
+    touchActivity(clientFd);
+}
+
+size_t NetworkManager::finalizeAndSendResponse(
+    int fd,
+    ConnState &st,
+    const std::string &requestHead,
+    HttpResponse &res,
+    size_t totalConsumed
+) {
+    if (res.getVersion().empty() || res.getVersion().find("HTTP/") != 0)
+        res.setVersion("HTTP/1.1");
+
+    if (res.getStatus() == UNSET) {
+        res.setStatus(INTERNAL_SERVER_ERROR);
+        if (res.getMimeType().empty()) res.setMimeType("text/plain");
+        if (res.getBody().empty()) res.setBody("Internal Server Error\n");
+    }
+
+    res.setHeader("Server", "webserv");
+    res.setHeader("Host", getServerName(clientPorts[fd]));
+
+    // keep-alive logic
+    bool keep = shouldKeepAlive(requestHead);
+    st.requestCount++;
+    if (st.requestCount >= kMaxRequestsPerConnection)
+        keep = false;
+    st.wantClose = !keep;
+    res.setHeader("Connection", keep ? "keep-alive" : "close");
+
+    // generate response bytes
+    sendBufs[fd] = res.generateResponse(res.getStatus());
+
+    // enable POLLOUT, disable POLLIN
+    for (size_t i = 0; i < pollfds.size(); ++i) {
+        if (pollfds[i].fd == fd) {
+            pollfds[i].events &= ~POLLIN;
+            pollfds[i].events |= POLLOUT;
+            break;
+        }
+    }
+
+    return totalConsumed;
 }

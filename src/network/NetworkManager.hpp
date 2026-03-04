@@ -2,6 +2,7 @@
 
 #include "../../include/imports.hpp"
 #include "../configFileParser/ServerConfig.hpp"
+#include "../http/HttpHandler/HttpHandler.hpp"
 
 
 class NetworkManager {
@@ -26,10 +27,12 @@ private:
     //=====================================
     std::map<int, std::string> clientIps;
     std::map<int, int> clientPorts;
+    std::map<int, int> cgiPipeToClientFd;
     //==============================Clement
 
     std::vector<int> listeners;                 // リスニングFD一覧
     std::vector<struct pollfd> pollfds;         // 監視対象（リスナー + クライアント）
+    std::vector<struct pollfd> cgiPollfds;      // CGI output pipes
     std::map<int, bool> isListener;             // fd がリスナーかどうか
     std::map<int, std::string> sendBufs;        // クライアント送信バッファ
 
@@ -39,13 +42,37 @@ private:
         size_t headerEndPos;    // "\r\n\r\n" の直後インデックス
         bool isChunked;         // Transfer-Encoding: chunked
         size_t contentLength;   // Content-Length（なければ (size_t)-1）
-        // chunked 解析用一時状態
         size_t chunkParsePos;   // 次のチャンクサイズ行の開始位置（buf 内）
 
         // keep-alive / connection management
         bool wantClose;         // このレスポンス送信後に接続を閉じるか
         size_t requestCount;    // この接続で処理したリクエスト数
         time_t lastActivity;    // 最終I/O時刻（timeout判定用）
+
+        // --- CGI support ---
+        bool cgiActive;   // true if a CGI is currently running
+        pid_t cgiChildPid;   // PID of the CGI child process
+        int cgiOutFd;        // pipe to read CGI stdout asynchronously
+        int cgiInFd;         // pipe for CGI stdin (POST body), -1 if GET
+        HttpRequest request;
+        HttpHandler handler;
+        std::string cgiOutputBuffer;
+
+        // Constructor (C++98 style)
+        ConnState()
+            : headerDone(false),
+            headerEndPos(0),
+            isChunked(false),
+            contentLength((size_t)-1),
+            chunkParsePos(0),
+            wantClose(true),
+            requestCount(0),
+            lastActivity(0),
+            cgiActive(false),
+            cgiChildPid(-1),
+            cgiOutFd(-1),
+            cgiInFd(-1)
+        {}
     };
 
     std::map<int, ConnState> states;             // 各接続の状態
@@ -91,4 +118,17 @@ private:
     bool shouldKeepAlive(const std::string &requestHead) const;
     bool isBodyLengthRequiredError(const std::string &requestHead) const;
     std::string getServerName(int port) const;
+
+
+
+
+    void removeCgiFd(int cgiFd);
+    bool launchCgiAsync(int fd, HttpRequest &req, ConnState &st, HttpHandler &handler);
+    void handleCgiOutput(int cgiFd);
+    size_t finalizeAndSendResponse(
+        int fd,
+        ConnState &st,
+        const std::string &requestHead,
+        HttpResponse &res,
+        size_t totalConsumed);
 };

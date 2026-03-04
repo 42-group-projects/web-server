@@ -11,22 +11,23 @@
 class HttpHandler
 {
 	private:
-		t_request_config req_config;
 		HttpResponse handleGet(const HttpRequest& req);
 		HttpResponse handlePost(const HttpRequest& req);
 		HttpResponse handleDelete(const HttpRequest& req);
 
 		bool hasHttpRequestErrors(const HttpRequest& req);
 		std::string addAllowHeaders();
-		HttpResponse handleErrorPages(const HttpRequest& req, e_status_code response_code);
 		HttpResponse handleRedirects(const HttpRequest& req);
-		bool isCgiRequest(const HttpRequest& req);
-
+		
 		HttpResponse writeFile(const HttpRequest& req, const std::string& file_name, const std::string& content);
-
-	public:
+		
+		public:
+		t_request_config req_config;
 		HttpHandler();
 		~HttpHandler();
-
+		
+		HttpResponse handleErrorPages(const HttpRequest& req, e_status_code response_code);
 		HttpResponse handleRequest(const HttpRequest& req, const ServerConfig& config, std::string& ip, int port);
+		bool isCgiRequest(const HttpRequest& req);
+		bool loadRequestConfig(const HttpRequest& req, const ServerConfig& config, const std::string& ip, int port);
 };

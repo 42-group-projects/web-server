@@ -1,7 +1,7 @@
 #include "./HttpResponse.hpp"
 #include "../utils.hpp"
 
-HttpResponse::HttpResponse() : version("Http1.1"), status(UNSET), mime_type(""), body("") {}
+HttpResponse::HttpResponse() : version("HTTP/1.1"), status(UNSET), mime_type(""), body("") {}
 
 HttpResponse::~HttpResponse() {}
 
