@@ -38,6 +38,10 @@ HttpResponse CgiHandler::runCgi(const HttpRequest& req)
 		close(status_pipe[0]);
 		char fail = 0;
 
+		// Mark status_pipe write-end close-on-exec so the parent's read
+		// returns immediately when execve succeeds
+		fcntl(status_pipe[1], F_SETFD, FD_CLOEXEC);
+
 		if (dup2(out_pipe[WRITE_FD], STDOUT_FILENO) == -1 ||
 		dup2(out_pipe[WRITE_FD], STDERR_FILENO) == -1)
 		fail = 1;
@@ -86,29 +90,25 @@ HttpResponse CgiHandler::runCgi(const HttpRequest& req)
 			close(in_pipe[WRITE_FD]);
 		}
 
-		char buf[4096];
-		ssize_t n;
-		while ((n = read(out_pipe[READ_FD], buf, sizeof(buf))) > 0)
-		{
-			output.append(buf, n);
-		}
-		close(out_pipe[READ_FD]);
-
-		char child_status = 0;  // Initialize to 0 (success)
+		// Check if exec failed in child
+		char child_status = 0;
 		ssize_t status_bytes = read(status_pipe[0], &child_status, 1);
 		close(status_pipe[0]);
-
-		int wstatus;
-		waitpid(pid, &wstatus, 0);
 
 		if (status_bytes > 0 && child_status)
 			error("CGI script failed to execute", "CgiHandler::runCgi");
 
-		if (!WIFEXITED(wstatus) || WEXITSTATUS(wstatus) != 0)
-			error("CGI script terminated abnormally", "CgiHandler::runCgi");
+		// Set pipe to non-blocking so the event loop can poll it
+		int flags = fcntl(out_pipe[READ_FD], F_GETFL, 0);
+		if (flags >= 0)
+			fcntl(out_pipe[READ_FD], F_SETFL, flags | O_NONBLOCK);
+
+		// Return immediately with the pipe fd — caller monitors it
+		HttpResponse res;
+		res.setCgiPipeFd(out_pipe[READ_FD]);
+		res.setCgiPid(pid);
+		return res;
 	}
-	HttpResponse res;
-	return res.parseCgiResponse(output);
 }
 
 void CgiHandler::detectCgiType(const HttpRequest& req)

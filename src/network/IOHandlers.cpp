@@ -2,6 +2,7 @@
 #include "../http/HttpHandler/HttpHandler.hpp"
 #include "../http/HttpRequest/HttpRequest.hpp"
 #include "../http/HttpResponse/HttpResponse.hpp"
+#include <sys/wait.h>
 
 // ============================================================================
 // I/O Event Handlers (Read/Write)
@@ -166,5 +167,113 @@ void NetworkManager::queueSimpleOkResponse(int fd)
             pollfds[i].events |= POLLOUT;
             break;
         }
+    }
+}
+
+// ============================================================================
+// Async CGI Pipe Handlers
+// ============================================================================
+
+void NetworkManager::handleCgiPipeRead(int pipeFd)
+{
+    std::map<int, PendingCgiProcess>::iterator it = pendingCgiProcesses.find(pipeFd);
+    if (it == pendingCgiProcesses.end()) return;
+
+    PendingCgiProcess &proc = it->second;
+    char buf[4096];
+    ssize_t n = read(pipeFd, buf, sizeof(buf));
+
+    if (n > 0) {
+        proc.output.append(buf, n);
+        if (proc.output.size() > kMaxBodyBytes) {
+            std::cerr << "[CGI] output too large, killing pid=" << proc.pid << std::endl;
+            kill(proc.pid, SIGKILL);
+            completeCgiProcess(pipeFd);
+        }
+        return;
+    }
+    if (n == 0) {
+        // EOF — CGI finished writing
+        completeCgiProcess(pipeFd);
+        return;
+    }
+    // n < 0: EAGAIN/EWOULDBLOCK, nothing ready yet
+}
+
+void NetworkManager::completeCgiProcess(int pipeFd)
+{
+    std::map<int, PendingCgiProcess>::iterator it = pendingCgiProcesses.find(pipeFd);
+    if (it == pendingCgiProcesses.end()) return;
+
+    PendingCgiProcess proc = it->second;  // copy before erase
+    int clientFd = proc.clientFd;
+
+    // Remove pipe from poll and close it
+    for (std::vector<struct pollfd>::iterator pi = pollfds.begin(); pi != pollfds.end(); ++pi) {
+        if (pi->fd == pipeFd) { pollfds.erase(pi); break; }
+    }
+    close(pipeFd);
+
+    // Reap child
+    int wstatus;
+    waitpid(proc.pid, &wstatus, 0);
+
+    // Build response from CGI output
+    HttpResponse res;
+    res.parseCgiResponse(proc.output);
+
+    if (res.getVersion().empty() || res.getVersion().find("HTTP/") != 0)
+        res.setVersion("HTTP/1.1");
+    if (res.getStatus() == UNSET) {
+        res.setStatus(INTERNAL_SERVER_ERROR);
+        if (res.getMimeType().empty()) res.setMimeType("text/plain");
+        if (res.getBody().empty()) res.setBody("Internal Server Error\n");
+    }
+    res.setHeader("Server", "webserv");
+    res.setHeader("Host", getServerName(clientPorts[clientFd]));
+
+    // Keep-alive decision
+    bool keep = shouldKeepAlive(proc.requestHead);
+    std::map<int, ConnState>::iterator si = states.find(clientFd);
+    if (si != states.end()) {
+        si->second.requestCount++;
+        if (si->second.requestCount >= kMaxRequestsPerConnection)
+            keep = false;
+        si->second.wantClose = !keep;
+    }
+    res.setHeader("Connection", keep ? "keep-alive" : "close");
+
+    // Queue response and switch client to write mode
+    sendBufs[clientFd] = res.generateResponse(res.getStatus());
+    enableWriteMode(clientFd);
+
+    pendingCgiProcesses.erase(it);
+    std::cerr << "[CGI] completed for client fd=" << clientFd << std::endl;
+}
+
+void NetworkManager::cleanupTimedOutCgiProcesses()
+{
+    time_t now = time(NULL);
+    std::vector<int> timedOut;
+
+    for (std::map<int, PendingCgiProcess>::iterator it = pendingCgiProcesses.begin();
+         it != pendingCgiProcesses.end(); ++it) {
+        if (now - it->second.startTime > kCgiTimeoutSec)
+            timedOut.push_back(it->first);
+    }
+
+    for (size_t i = 0; i < timedOut.size(); ++i) {
+        int pipeFd = timedOut[i];
+        PendingCgiProcess &proc = pendingCgiProcesses[pipeFd];
+        std::cerr << "[CGI] timeout pid=" << proc.pid << " client fd=" << proc.clientFd << std::endl;
+        kill(proc.pid, SIGKILL);
+        sendErrorResponse(proc.clientFd, GATEWAY_TIMEOUT, "CGI Timeout\n", proc.requestHead, true);
+
+        for (std::vector<struct pollfd>::iterator pi = pollfds.begin(); pi != pollfds.end(); ++pi) {
+            if (pi->fd == pipeFd) { pollfds.erase(pi); break; }
+        }
+        close(pipeFd);
+        waitpid(proc.pid, NULL, WNOHANG);
+        pendingCgiProcesses.erase(pipeFd);
     }
 }

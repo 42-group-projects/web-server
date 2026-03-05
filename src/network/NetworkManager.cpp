@@ -49,6 +49,7 @@ void NetworkManager::run()
     std::cout << "Network loop started." << std::endl;
     while (running) {
         cleanupIdleConnections();
+        cleanupTimedOutCgiProcesses();
 
         int ret = poll(&pollfds[0], pollfds.size(), 1000);
         if (ret < 0) {
@@ -65,12 +66,21 @@ void NetworkManager::run()
             if (re == 0) continue;
 
             if (re & (POLLHUP | POLLERR | POLLNVAL)) {
+                if (pendingCgiProcesses.count(fd)) {
+                    completeCgiProcess(fd);
+                    continue;
+                }
                 removeFd(fd);
                 continue;
             }
 
             if (isListener.count(fd) && isListener[fd]) {
                 if (re & POLLIN) handleListenerEvent(fd);
+                continue;
+            }
+
+            if (pendingCgiProcesses.count(fd)) {
+                if (re & POLLIN) handleCgiPipeRead(fd);
                 continue;
             }
 

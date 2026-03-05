@@ -14,6 +14,8 @@ private:
 	std::string mime_type;
 	std::map<std::string, std::string> headers;
 	std::string body;
+	int cgiPipeFd;   // pipe read-end for async CGI (-1 = not CGI)
+	pid_t cgiPid;    // child PID for async CGI (-1 = not CGI)
 
 public:
 	// Constructors, destructor, and assignment operator
@@ -33,6 +35,8 @@ public:
 	std::string getMimeType() const { return mime_type; };
 	std::string getBody() const { return body; }
 	std::string getHeader(const std::string &key) const { return headers.at(key); }
+	int getCgiPipeFd() const { return cgiPipeFd; }
+	pid_t getCgiPid() const { return cgiPid; }
 
 	// Setters
 	void setVersion(const std::string &ver) { version = ver; };
@@ -40,6 +44,8 @@ public:
 	void setMimeType(const std::string &type) { mime_type = type; };
 	void setBody(const std::string &b) { body = b; };
 	void setHeader(const std::string &key, const std::string &value) { headers[key] = value; };
+	void setCgiPipeFd(int fd) { cgiPipeFd = fd; }
+	void setCgiPid(pid_t pid) { cgiPid = pid; }
 };
 
 #endif

@@ -98,6 +98,23 @@ void NetworkManager::dispatchRequest(int fd, const std::string &requestHead, con
     HttpHandler handler;
     HttpResponse res = handler.handleRequest(req, config, clientIps[fd], clientPorts[fd]);
 
+    // If this is an async CGI, register the pipe and return immediately
+    if (res.getCgiPipeFd() >= 0) {
+        PendingCgiProcess proc;
+        proc.pid = res.getCgiPid();
+        proc.pipeFd = res.getCgiPipeFd();
+        proc.clientFd = fd;
+        proc.output = "";
+        proc.startTime = time(NULL);
+        proc.requestHead = requestHead;
+        pendingCgiProcesses[proc.pipeFd] = proc;
+        addPollFd(proc.pipeFd, POLLIN, false);
+        // Pause client reads while CGI is running
+        for (size_t i = 0; i < pollfds.size(); ++i)
+            if (pollfds[i].fd == fd) { pollfds[i].events &= ~POLLIN; break; }
+        return;
+    }
+
     if (res.getVersion().empty() || res.getVersion().find("HTTP/") != 0)
         res.setVersion("HTTP/1.1");
     if (res.getStatus() == UNSET) {

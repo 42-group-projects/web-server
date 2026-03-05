@@ -51,6 +51,17 @@ private:
 
     std::map<int, ConnState> states;             // 各接続の状態
 
+    // Async CGI tracking: maps pipe fd -> process info
+    struct PendingCgiProcess {
+        pid_t pid;
+        int pipeFd;         // pipe read end (monitored by poll)
+        int clientFd;       // client socket to send response to
+        std::string output; // accumulated CGI output
+        time_t startTime;
+        std::string requestHead; // for keep-alive decision
+    };
+    std::map<int, PendingCgiProcess> pendingCgiProcesses;
+
     // chunked decode result to distinguish “need more” vs “bad request”
     enum ChunkDecodeResult {
         CHUNK_OK = 0,
@@ -73,7 +84,9 @@ private:
     void handleListenerEvent(int fd);
     void handleClientRead(int fd);
     void handleClientWrite(int fd);
-    void queueSimpleOkResponse(int fd); // 最小テスト用の固定レスポンス
+    void queueSimpleOkResponse(int fd);
+    void handleCgiPipeRead(int pipeFd);
+    void completeCgiProcess(int pipeFd); // 最小テスト用の固定レスポンス
 
     // パース補助
     bool tryParseRequest(int fd);
@@ -95,9 +108,11 @@ private:
     // keep-alive policy
     static const int kKeepAliveTimeoutSec = 60;
     static const size_t kMaxRequestsPerConnection = 100;
+    static const int kCgiTimeoutSec = 3;
 
     void touchActivity(int fd);
     void cleanupIdleConnections();
+    void cleanupTimedOutCgiProcesses();
     bool shouldKeepAlive(const std::string &requestHead) const;
     bool isBodyLengthRequiredError(const std::string &requestHead) const;
     std::string getServerName(int port) const;
