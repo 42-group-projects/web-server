@@ -4,7 +4,7 @@
 #include "../http/HttpResponse/HttpResponse.hpp"
 
 // ============================================================================
-// HTTP Request Parsing Logic
+// Main request parser
 // ============================================================================
 
 bool NetworkManager::tryParseRequest(int fd)
@@ -14,29 +14,13 @@ bool NetworkManager::tryParseRequest(int fd)
     if (sendBufs.find(fd) != sendBufs.end())
         return false;
 
+    // --- Header phase ---
     if (!st.headerDone) {
-        // Header size guard: if we haven't found CRLFCRLF yet, cap buffer growth
         if (st.buf.size() > kMaxHeaderBytes) {
-            HttpResponse res;
-            res.setVersion("HTTP/1.1");
-            res.setHeader("Server", "webserv");
-            res.setHeader("Host", getServerName(clientPorts[fd]));
-            res.setStatus(REQUEST_HEADER_FIELDS_TOO_LARGE);
-            res.setMimeType("text/plain");
-            res.setBody("Request Header Fields Too Large\n");
-            st.wantClose = true;
-            res.setHeader("Connection", "close");
-
-            sendBufs[fd] = res.generateResponse(res.getStatus());
-            for (size_t i = 0; i < pollfds.size(); ++i)
-                if (pollfds[i].fd == fd) { pollfds[i].events &= ~POLLIN; pollfds[i].events |= POLLOUT; break; }
-            // Drop buffered junk; we will close after sending
+            sendErrorResponse(fd, REQUEST_HEADER_FIELDS_TOO_LARGE,
+                              "Request Header Fields Too Large\n", "", true);
             st.buf.clear();
-            st.headerDone = false;
-            st.headerEndPos = 0;
-            st.isChunked = false;
-            st.contentLength = (size_t)-1;
-            st.chunkParsePos = 0;
+            resetParseState(st);
             return false;
         }
 
@@ -52,9 +36,9 @@ bool NetworkManager::tryParseRequest(int fd)
                   << std::endl;
     }
 
+    // --- Body phase ---
     bool complete = false;
     size_t totalConsumed = 0;
-
     std::string requestHead = st.buf.substr(0, st.headerEndPos);
 
     {
@@ -63,186 +47,19 @@ bool NetworkManager::tryParseRequest(int fd)
         std::cerr << "[NM][fd=" << fd << "] requestLine='" << rl << "'" << std::endl;
     }
 
-    bool lengthRequired = isBodyLengthRequiredError(requestHead);
-
-    if (lengthRequired) {
-        HttpResponse res;
-        res.setVersion("HTTP/1.1");
-        res.setHeader("Server", "webserv");
-        res.setHeader("Host", getServerName(clientPorts[fd]));
-        res.setStatus(LENGTH_REQUIRED);
-        res.setMimeType("text/plain");
-        res.setBody("Length Required\n");
-
-        bool keep = shouldKeepAlive(requestHead);
-
-        st.requestCount++;
-        if (st.requestCount >= kMaxRequestsPerConnection)
-            keep = false;
-
-        st.wantClose = !keep;
-        res.setHeader("Connection", keep ? "keep-alive" : "close");
-
-        sendBufs[fd] = res.generateResponse(res.getStatus());
-        for (size_t i = 0; i < pollfds.size(); ++i)
-            if (pollfds[i].fd == fd) { pollfds[i].events &= ~POLLIN; pollfds[i].events |= POLLOUT; break; }
-
+    if (isBodyLengthRequiredError(requestHead)) {
+        sendErrorResponse(fd, LENGTH_REQUIRED, "Length Required\n", requestHead, false);
         totalConsumed = st.headerEndPos;
         complete = true;
-    }
-    else if (st.isChunked) {
-        std::string decoded;
-        ChunkDecodeResult r = tryDecodeChunked(st, decoded, totalConsumed);
-        std::cerr << "[NM][fd=" << fd << "] chunked decode result=" << (int)r
-                  << " decoded.size=" << decoded.size() << " totalConsumed=" << totalConsumed
-                  << " buf.size=" << st.buf.size() << std::endl;
-        if (r == CHUNK_NEED_MORE) {
-            // If chunked body grows too large without completing, reject to avoid memory exhaustion
-            if (st.buf.size() > kMaxHeaderBytes + kMaxBodyBytes) {
-                HttpResponse res;
-                res.setVersion("HTTP/1.1");
-                res.setHeader("Server", "webserv");
-                res.setHeader("Host", getServerName(clientPorts[fd]));
-                res.setStatus(CONTENT_TOO_LARGE);
-                res.setMimeType("text/plain");
-                res.setBody("Payload Too Large\n");
-                st.wantClose = true;
-                res.setHeader("Connection", "close");
-
-                sendBufs[fd] = res.generateResponse(res.getStatus());
-                for (size_t i = 0; i < pollfds.size(); ++i)
-                    if (pollfds[i].fd == fd) { pollfds[i].events &= ~POLLIN; pollfds[i].events |= POLLOUT; break; }
-            }
-            return false;
-        }
-        if (r == CHUNK_INVALID) {
-            HttpResponse res;
-            res.setVersion("HTTP/1.1");
-            res.setHeader("Server", "webserv");
-            res.setHeader("Host", getServerName(clientPorts[fd]));
-            res.setStatus(BAD_REQUEST);
-            res.setMimeType("text/plain");
-            res.setBody("Bad Request\n");
-            st.wantClose = true;
-            res.setHeader("Connection", "close");
-
-            sendBufs[fd] = res.generateResponse(res.getStatus());
-            for (size_t i = 0; i < pollfds.size(); ++i)
-                if (pollfds[i].fd == fd) { pollfds[i].events &= ~POLLIN; pollfds[i].events |= POLLOUT; break; }
-
-            // Consume the header at least, so we don't spin; we will close after sending
-            totalConsumed = st.headerEndPos;
-            complete = true;
-        } else {
-            if (decoded.size() > kMaxBodyBytes) {
-                HttpResponse res;
-                res.setVersion("HTTP/1.1");
-                res.setHeader("Server", "webserv");
-                res.setHeader("Host", getServerName(clientPorts[fd]));
-                res.setStatus(CONTENT_TOO_LARGE);
-                res.setMimeType("text/plain");
-                res.setBody("Payload Too Large\n");
-                st.wantClose = true;
-                res.setHeader("Connection", "close");
-
-                sendBufs[fd] = res.generateResponse(res.getStatus());
-                for (size_t i = 0; i < pollfds.size(); ++i)
-                    if (pollfds[i].fd == fd) { pollfds[i].events &= ~POLLIN; pollfds[i].events |= POLLOUT; break; }
-
-                totalConsumed = (totalConsumed > 0) ? totalConsumed : st.headerEndPos;
-                complete = true;
-            } else {
-                HttpRequest req;
-                try { req.parseRequest(requestHead); } catch(...) {}
-                req.setBody(decoded);
-                {
-                    std::ostringstream cl; cl << decoded.size();
-                    req.setHeader("Content-Length", cl.str());
-                }
-
-                HttpHandler handler;
-                HttpResponse res = handler.handleRequest(req, config, clientIps[fd], clientPorts[fd]);
-
-                if (res.getVersion().empty() || res.getVersion().find("HTTP/") != 0)
-                    res.setVersion("HTTP/1.1");
-                if (res.getStatus() == UNSET) {
-                    res.setStatus(INTERNAL_SERVER_ERROR);
-                    if (res.getMimeType().empty()) res.setMimeType("text/plain");
-                    if (res.getBody().empty()) res.setBody("Internal Server Error\n");
-                }
-                res.setHeader("Server", "webserv");
-                res.setHeader("Host", getServerName(clientPorts[fd]));
-
-                bool keep = shouldKeepAlive(requestHead);
-                st.requestCount++;
-                if (st.requestCount >= kMaxRequestsPerConnection)
-                    keep = false;
-
-                st.wantClose = !keep;
-                res.setHeader("Connection", keep ? "keep-alive" : "close");
-
-                sendBufs[fd] = res.generateResponse(res.getStatus());
-                for (size_t i = 0; i < pollfds.size(); ++i)
-                    if (pollfds[i].fd == fd) { pollfds[i].events &= ~POLLIN; pollfds[i].events |= POLLOUT; break; }
-
-                complete = true;
-            }
-        }
-
-        // Clamp totalConsumed to the end of the chunked body/trailer, but never past the current buffer size.
-        if (complete) {
-            if (totalConsumed > st.buf.size())
-                totalConsumed = st.buf.size();
-        }
-    }
-    else {
-        size_t bodyHave = (st.buf.size() >= st.headerEndPos) ? (st.buf.size() - st.headerEndPos) : 0;
-        size_t need = (st.contentLength == (size_t)-1) ? 0 : st.contentLength;
-        std::cerr << "[NM][fd=" << fd << "] non-chunked bodyHave=" << bodyHave << " need=" << need
-                  << " headerEndPos=" << st.headerEndPos << " buf.size=" << st.buf.size() << std::endl;
-        if (bodyHave >= need) {
-            totalConsumed = st.headerEndPos + need;
-            std::string body = (need == 0) ? std::string() : st.buf.substr(st.headerEndPos, need);
-
-            HttpRequest req;
-            try { req.parseRequest(requestHead); } catch(...) {}
-            if (!body.empty()) {
-                req.setBody(body);
-                std::ostringstream cl; cl << body.size();
-                req.setHeader("Content-Length", cl.str());
-            }
-
-            HttpHandler handler;
-            HttpResponse res = handler.handleRequest(req, config, clientIps[fd], clientPorts[fd]);
-
-            if (res.getVersion().empty() || res.getVersion().find("HTTP/") != 0)
-                res.setVersion("HTTP/1.1");
-            if (res.getStatus() == UNSET) {
-                res.setStatus(INTERNAL_SERVER_ERROR);
-                if (res.getMimeType().empty()) res.setMimeType("text/plain");
-                if (res.getBody().empty()) res.setBody("Internal Server Error\n");
-            }
-            res.setHeader("Server", "webserv");
-            res.setHeader("Host", getServerName(clientPorts[fd]));
-
-            bool keep = shouldKeepAlive(requestHead);
-            st.requestCount++;
-            if (st.requestCount >= kMaxRequestsPerConnection)
-                keep = false;
-
-            st.wantClose = !keep;
-            res.setHeader("Connection", keep ? "keep-alive" : "close");
-
-            sendBufs[fd] = res.generateResponse(res.getStatus());
-            for (size_t i = 0; i < pollfds.size(); ++i)
-                if (pollfds[i].fd == fd) { pollfds[i].events &= ~POLLIN; pollfds[i].events |= POLLOUT; break; }
-
-            complete = true;
-        }
+    } else if (st.isChunked) {
+        complete = handleChunkedBody(fd, st, requestHead, totalConsumed);
+    } else {
+        complete = handleRegularBody(fd, st, requestHead, totalConsumed);
     }
 
     if (!complete) return false;
 
+    // --- Cleanup phase ---
     touchActivity(fd);
 
     std::cerr << "[NM][fd=" << fd << "] complete, erasing consumed bytes=" << totalConsumed
@@ -262,14 +79,99 @@ bool NetworkManager::tryParseRequest(int fd)
         std::cerr << "[NM][fd=" << fd << "] remaining buf empty" << std::endl;
     }
 
-    st.headerDone = false;
-    st.headerEndPos = 0;
-    st.isChunked = false;
-    st.contentLength = (size_t)-1;
-    st.chunkParsePos = 0;
-
+    resetParseState(st);
     return true;
 }
+
+void NetworkManager::dispatchRequest(int fd, const std::string &requestHead, const std::string &body)
+{
+    ConnState &st = states[fd];
+
+    HttpRequest req;
+    try { req.parseRequest(requestHead); } catch(...) {}
+    if (!body.empty()) {
+        req.setBody(body);
+        std::ostringstream cl; cl << body.size();
+        req.setHeader("Content-Length", cl.str());
+    }
+
+    HttpHandler handler;
+    HttpResponse res = handler.handleRequest(req, config, clientIps[fd], clientPorts[fd]);
+
+    if (res.getVersion().empty() || res.getVersion().find("HTTP/") != 0)
+        res.setVersion("HTTP/1.1");
+    if (res.getStatus() == UNSET) {
+        res.setStatus(INTERNAL_SERVER_ERROR);
+        if (res.getMimeType().empty()) res.setMimeType("text/plain");
+        if (res.getBody().empty()) res.setBody("Internal Server Error\n");
+    }
+    res.setHeader("Server", "webserv");
+    res.setHeader("Host", getServerName(clientPorts[fd]));
+
+    bool keep = shouldKeepAlive(requestHead);
+    st.requestCount++;
+    if (st.requestCount >= kMaxRequestsPerConnection)
+        keep = false;
+    st.wantClose = !keep;
+    res.setHeader("Connection", keep ? "keep-alive" : "close");
+
+    sendBufs[fd] = res.generateResponse(res.getStatus());
+    enableWriteMode(fd);
+}
+
+// ============================================================================
+// Chunked body handling
+// ============================================================================
+
+bool NetworkManager::handleChunkedBody(int fd, ConnState &st, const std::string &requestHead, size_t &totalConsumed)
+{
+    std::string decoded;
+    ChunkDecodeResult r = tryDecodeChunked(st, decoded, totalConsumed);
+    std::cerr << "[NM][fd=" << fd << "] chunked decode result=" << (int)r
+              << " decoded.size=" << decoded.size() << " totalConsumed=" << totalConsumed
+              << " buf.size=" << st.buf.size() << std::endl;
+
+    if (r == CHUNK_NEED_MORE) {
+        if (st.buf.size() > kMaxHeaderBytes + kMaxBodyBytes)
+            sendErrorResponse(fd, CONTENT_TOO_LARGE, "Payload Too Large\n", requestHead, true);
+        return false;
+    }
+
+    if (r == CHUNK_INVALID) {
+        sendErrorResponse(fd, BAD_REQUEST, "Bad Request\n", requestHead, true);
+        totalConsumed = st.headerEndPos;
+    } else if (decoded.size() > kMaxBodyBytes) {
+        sendErrorResponse(fd, CONTENT_TOO_LARGE, "Payload Too Large\n", requestHead, true);
+        totalConsumed = (totalConsumed > 0) ? totalConsumed : st.headerEndPos;
+    } else {
+        dispatchRequest(fd, requestHead, decoded);
+    }
+
+    if (totalConsumed > st.buf.size())
+        totalConsumed = st.buf.size();
+    return true;
+}
+
+// ============================================================================
+// Regular (non-chunked) body handling
+// ============================================================================
+
+bool NetworkManager::handleRegularBody(int fd, ConnState &st, const std::string &requestHead, size_t &totalConsumed)
+{
+    size_t bodyHave = (st.buf.size() >= st.headerEndPos) ? (st.buf.size() - st.headerEndPos) : 0;
+    size_t need = (st.contentLength == (size_t)-1) ? 0 : st.contentLength;
+    std::cerr << "[NM][fd=" << fd << "] non-chunked bodyHave=" << bodyHave << " need=" << need
+              << " headerEndPos=" << st.headerEndPos << " buf.size=" << st.buf.size() << std::endl;
+
+    if (bodyHave < need)
+        return false;
+
+    totalConsumed = st.headerEndPos + need;
+    std::string body = (need == 0) ? std::string() : st.buf.substr(st.headerEndPos, need);
+    dispatchRequest(fd, requestHead, body);
+    return true;
+}
+
 
 std::map<std::string, std::string> NetworkManager::parseHeaderMap(const std::string &headersRaw)
 {
@@ -319,4 +221,47 @@ void NetworkManager::parseHeadersAndInitState(ConnState &st)
         std::istringstream iss(v);
         size_t n; if (iss >> n) st.contentLength = n;
     }
+}
+
+void NetworkManager::enableWriteMode(int fd)
+{
+    for (size_t i = 0; i < pollfds.size(); ++i)
+        if (pollfds[i].fd == fd) { pollfds[i].events &= ~POLLIN; pollfds[i].events |= POLLOUT; break; }
+}
+
+void NetworkManager::resetParseState(ConnState &st)
+{
+    st.headerDone = false;
+    st.headerEndPos = 0;
+    st.isChunked = false;
+    st.contentLength = (size_t)-1;
+    st.chunkParsePos = 0;
+}
+
+void NetworkManager::sendErrorResponse(int fd, e_status_code status, const std::string &bodyText,
+                                       const std::string &requestHead, bool forceClose)
+{
+    ConnState &st = states[fd];
+    HttpResponse res;
+    res.setVersion("HTTP/1.1");
+    res.setHeader("Server", "webserv");
+    res.setHeader("Host", getServerName(clientPorts[fd]));
+    res.setStatus(status);
+    res.setMimeType("text/plain");
+    res.setBody(bodyText);
+
+    if (forceClose) {
+        st.wantClose = true;
+        res.setHeader("Connection", "close");
+    } else {
+        bool keep = shouldKeepAlive(requestHead);
+        st.requestCount++;
+        if (st.requestCount >= kMaxRequestsPerConnection)
+            keep = false;
+        st.wantClose = !keep;
+        res.setHeader("Connection", keep ? "keep-alive" : "close");
+    }
+
+    sendBufs[fd] = res.generateResponse(res.getStatus());
+    enableWriteMode(fd);
 }

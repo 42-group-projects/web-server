@@ -4,6 +4,7 @@
 #include "../configFileParser/ServerConfig.hpp"
 
 
+
 class NetworkManager {
 public:
     NetworkManager(const ServerConfig& config);
@@ -75,8 +76,17 @@ private:
     void queueSimpleOkResponse(int fd); // 最小テスト用の固定レスポンス
 
     // パース補助
-    bool tryParseRequest(int fd); // 完全なリクエストを1つ消化したら true（ループで複数処理）
+    bool tryParseRequest(int fd);
     void parseHeadersAndInitState(ConnState &st);
+
+    // request-parsing helpers (extracted from tryParseRequest)
+    void enableWriteMode(int fd);
+    void sendErrorResponse(int fd, e_status_code status, const std::string &bodyText,
+                           const std::string &requestHead, bool forceClose);
+    void dispatchRequest(int fd, const std::string &requestHead, const std::string &body);
+    bool handleChunkedBody(int fd, ConnState &st, const std::string &requestHead, size_t &totalConsumed);
+    bool handleRegularBody(int fd, ConnState &st, const std::string &requestHead, size_t &totalConsumed);
+    void resetParseState(ConnState &st);
     static std::map<std::string, std::string> parseHeaderMap(const std::string &headersRaw);
     static std::string toLower(const std::string &s);
     static std::string trim(const std::string &s);

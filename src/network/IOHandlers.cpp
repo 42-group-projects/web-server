@@ -134,7 +134,6 @@ void NetworkManager::handleClientWrite(int fd)
             }
             if (rn < 0) {
                 // Non-blocking socket: no more data available right now
-                // (can't check errno, so assume EAGAIN/EWOULDBLOCK)
                 break;
             }
         }

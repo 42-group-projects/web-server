@@ -25,4 +25,5 @@
 #include <cstring>
 #include <cctype>
 #include <signal.h>
+#include <enums.hpp>
 
