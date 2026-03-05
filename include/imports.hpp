@@ -12,7 +12,6 @@
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <netinet/in.h>
-#include <sstream>
 #include <cstdlib>
 #include <set>
 #include <fstream>

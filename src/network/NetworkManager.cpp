@@ -2,6 +2,7 @@
 #include "../http/HttpHandler/HttpHandler.hpp"
 #include "../http/HttpRequest/HttpRequest.hpp"
 #include "../http/HttpResponse/HttpResponse.hpp"
+#include "utils.hpp"
 
 NetworkManager::NetworkManager(const ServerConfig& config) : config(config), running(false) {}
 
@@ -50,7 +51,7 @@ bool NetworkManager::addListener(const std::string &ip, int port)
     struct sockaddr_in addr; std::memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
     addr.sin_port = htons(port);
-    if (inet_pton(AF_INET, ip.c_str(), &addr.sin_addr) != 1) {
+    if (!parseIPv4ToNetworkOrder(ip, addr.sin_addr.s_addr)) {
         close(fd); return false;
     }
 
@@ -212,10 +213,8 @@ void NetworkManager::handleListenerEvent(int fd)
         st.requestCount = 0;
         st.lastActivity = std::time(NULL);
 
-        char ipbuf[INET_ADDRSTRLEN];
-        const char *p = inet_ntop(AF_INET, &cli.sin_addr, ipbuf, sizeof(ipbuf));
-
-        clientIps[cfd] = std::string(p);
+        const std::string clientIp = formatIPv4FromNetworkOrder(cli.sin_addr.s_addr);
+        clientIps[cfd] = clientIp;
         struct sockaddr_in localAddr;
         socklen_t addrlen = sizeof(localAddr);
         if (getsockname(cfd, (struct sockaddr*)&localAddr, &addrlen) == 0)
@@ -225,7 +224,7 @@ void NetworkManager::handleListenerEvent(int fd)
         }
         std::cout
             << "Accepted fd=" << cfd
-            << " from " << (p ? p : "?") << ":" << ntohs(cli.sin_port)
+            << " from " << clientIp << ":" << ntohs(cli.sin_port)
             << " on port " << clientPorts[cfd] << std::endl;
     }
 }
