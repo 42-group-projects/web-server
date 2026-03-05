@@ -106,14 +106,11 @@ HttpResponse HttpHandler::writeFile(const HttpRequest& req, const std::string& f
             return HttpHandler::handleErrorPages(req, CONFLICT);
         }
 
-        if (stat(req_config.upload_store.c_str(), &st) != 0)
-        {
-            if (mkdir(req_config.upload_store.c_str(), 0755) != 0)
-            {
-                warning("Failed to create upload directory", "HttpHandler::writeFile");
-                return HttpHandler::handleErrorPages(req, INTERNAL_SERVER_ERROR);
-            }
-        }
+		if (stat(req_config.upload_store.c_str(), &st) != 0)
+		{
+		    warning("Upload directory does not exist: " + req_config.upload_store, "HttpHandler::writeFile");
+		    return HttpHandler::handleErrorPages(req, INTERNAL_SERVER_ERROR);
+		}
 
         std::ofstream outfile(file_path.c_str(), std::ios::binary);
         if (!outfile.is_open())

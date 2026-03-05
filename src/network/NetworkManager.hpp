@@ -2,6 +2,8 @@
 
 #include "../../include/imports.hpp"
 #include "../configFileParser/ServerConfig.hpp"
+#include "../http/HttpRequest/HttpRequest.hpp"
+
 
 
 class NetworkManager {
@@ -50,6 +52,19 @@ private:
 
     std::map<int, ConnState> states;             // 各接続の状態
 
+    // Async CGI tracking: maps pipe fd -> process info
+    struct PendingCgiProcess {
+        pid_t pid;
+        int pipeFd;         // pipe read end (monitored by poll)
+        int clientFd;       // client socket to send response to
+        std::string clientIp;   // client IP for error page handling
+        std::string output; // accumulated CGI output
+        time_t startTime;
+        std::string requestHead; // for keep-alive decision
+        HttpRequest request;     // original request (for error pages)
+    };
+    std::map<int, PendingCgiProcess> pendingCgiProcesses;
+
     // chunked decode result to distinguish “need more” vs “bad request”
     enum ChunkDecodeResult {
         CHUNK_OK = 0,
@@ -72,11 +87,22 @@ private:
     void handleListenerEvent(int fd);
     void handleClientRead(int fd);
     void handleClientWrite(int fd);
-    void queueSimpleOkResponse(int fd); // 最小テスト用の固定レスポンス
+    void queueSimpleOkResponse(int fd);
+    void handleCgiPipeRead(int pipeFd);
+    void completeCgiProcess(int pipeFd); // 最小テスト用の固定レスポンス
 
     // パース補助
-    bool tryParseRequest(int fd); // 完全なリクエストを1つ消化したら true（ループで複数処理）
+    bool tryParseRequest(int fd);
     void parseHeadersAndInitState(ConnState &st);
+
+    // request-parsing helpers (extracted from tryParseRequest)
+    void enableWriteMode(int fd);
+    void sendErrorResponse(int fd, e_status_code status, const std::string &bodyText,
+                           const std::string &requestHead, bool forceClose);
+    void dispatchRequest(int fd, const std::string &requestHead, const std::string &body);
+    bool handleChunkedBody(int fd, ConnState &st, const std::string &requestHead, size_t &totalConsumed);
+    bool handleRegularBody(int fd, ConnState &st, const std::string &requestHead, size_t &totalConsumed);
+    void resetParseState(ConnState &st);
     static std::map<std::string, std::string> parseHeaderMap(const std::string &headersRaw);
     static std::string toLower(const std::string &s);
     static std::string trim(const std::string &s);
@@ -85,10 +111,16 @@ private:
     // keep-alive policy
     static const int kKeepAliveTimeoutSec = 60;
     static const size_t kMaxRequestsPerConnection = 100;
+    static const int kCgiTimeoutSec = 10;
 
     void touchActivity(int fd);
     void cleanupIdleConnections();
+    void cleanupTimedOutCgiProcesses();
     bool shouldKeepAlive(const std::string &requestHead) const;
     bool isBodyLengthRequiredError(const std::string &requestHead) const;
     std::string getServerName(int port) const;
 };
+
+
+bool parseIPv4ToNetworkOrder(const std::string &ip, uint32_t &outNetworkOrder);
+std::string formatIPv4FromNetworkOrder(uint32_t networkOrderIp);

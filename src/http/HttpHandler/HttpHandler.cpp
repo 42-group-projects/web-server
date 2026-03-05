@@ -8,16 +8,6 @@ HttpHandler::~HttpHandler() {}
 
 HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConfig& config, std::string& ip, int port)
 {
-	// std::string server_name = config.getConfiguration()[0].server_name[0];
-	// std::string ip = config.getAllListen()[0].first;
-	// int port = config.getAllListen()[0].second;
-
-	// std::cout << "Server Name: " << server_name << std::endl;
-	// std::cout << "IP: " << ip << " Port: " << port << std::endl;
-	// need to get this info from the network layer.
-	// std::cout << req_config << std::endl;
-	// FileSystem fs(req_config.safePath, req_config);
-	// std::cout << fs  << std::endl;
 
 	std::string server_name = req.getHeaders()["Host"];
 	int pos = server_name.find_first_of(':');
@@ -53,7 +43,6 @@ HttpResponse HttpHandler::handleRequest(const HttpRequest& req, const ServerConf
 	try
 	{
 		CgiHandler cgi_handler(req_config);
-		// if (false) // --- IGNORE ---
 		if (isCgiRequest(req))
 		{
 			if (req_config.cgi_pass.empty())
@@ -202,6 +191,12 @@ HttpResponse HttpHandler::handleErrorPages(const HttpRequest& req, e_status_code
 	res.setMimeType(getMimeTypeString(fs.getMimeType()));
 	if(fs.exists())
 		res.setBody(fs.getFileContents());
+	else
+	{
+		std::string status_msg = getStatusString(response_code);
+		res.setBody(status_msg);
+		res.setMimeType("text/html");
+	}
 	return res;
 }
 

@@ -18,15 +18,12 @@ class HttpHandler
 
 		bool hasHttpRequestErrors(const HttpRequest& req);
 		std::string addAllowHeaders();
-		HttpResponse handleErrorPages(const HttpRequest& req, e_status_code response_code);
 		HttpResponse handleRedirects(const HttpRequest& req);
 		bool isCgiRequest(const HttpRequest& req);
-
 		HttpResponse writeFile(const HttpRequest& req, const std::string& file_name, const std::string& content);
-
 	public:
 		HttpHandler();
 		~HttpHandler();
-
 		HttpResponse handleRequest(const HttpRequest& req, const ServerConfig& config, std::string& ip, int port);
+		HttpResponse handleErrorPages(const HttpRequest& req, e_status_code response_code);
 };

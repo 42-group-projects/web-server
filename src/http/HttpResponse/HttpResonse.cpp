@@ -1,7 +1,7 @@
 #include "./HttpResponse.hpp"
 #include "../utils.hpp"
 
-HttpResponse::HttpResponse() : version("Http1.1"), status(UNSET), mime_type(""), body("") {}
+HttpResponse::HttpResponse() : version("Http1.1"), status(UNSET), mime_type(""), body(""), cgiPipeFd(-1), cgiPid(-1) {}
 
 HttpResponse::~HttpResponse() {}
 
@@ -14,6 +14,8 @@ HttpResponse::HttpResponse(HttpResponse const &other)
 		this->mime_type = other.mime_type;
 		this->headers = other.headers;
 		this->body = other.body;
+		this->cgiPipeFd = other.cgiPipeFd;
+		this->cgiPid = other.cgiPid;
 	}
 }
 HttpResponse &HttpResponse::operator=(HttpResponse const &other)
@@ -25,6 +27,8 @@ HttpResponse &HttpResponse::operator=(HttpResponse const &other)
 		this->mime_type = other.mime_type;
 		this->headers = other.headers;
 		this->body = other.body;
+		this->cgiPipeFd = other.cgiPipeFd;
+		this->cgiPid = other.cgiPid;
 	}
 	return *this;
 }
@@ -125,3 +129,4 @@ HttpResponse &HttpResponse::parseCgiResponse(const std::string& cgi_output)
 	this->setBody(body_section);
 	return *this;
 }
+
