@@ -129,3 +129,4 @@ HttpResponse &HttpResponse::parseCgiResponse(const std::string& cgi_output)
 	this->setBody(body_section);
 	return *this;
 }
+

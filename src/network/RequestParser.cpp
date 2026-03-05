@@ -104,9 +104,11 @@ void NetworkManager::dispatchRequest(int fd, const std::string &requestHead, con
         proc.pid = res.getCgiPid();
         proc.pipeFd = res.getCgiPipeFd();
         proc.clientFd = fd;
+        proc.clientIp = clientIps[fd];
         proc.output = "";
         proc.startTime = time(NULL);
         proc.requestHead = requestHead;
+        proc.request = req;
         pendingCgiProcesses[proc.pipeFd] = proc;
         addPollFd(proc.pipeFd, POLLIN, false);
         // Pause client reads while CGI is running
@@ -279,6 +281,8 @@ void NetworkManager::sendErrorResponse(int fd, e_status_code status, const std::
         res.setHeader("Connection", keep ? "keep-alive" : "close");
     }
 
+
+    
     sendBufs[fd] = res.generateResponse(res.getStatus());
     enableWriteMode(fd);
 }

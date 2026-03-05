@@ -46,6 +46,7 @@ public:
 	void setHeader(const std::string &key, const std::string &value) { headers[key] = value; };
 	void setCgiPipeFd(int fd) { cgiPipeFd = fd; }
 	void setCgiPid(pid_t pid) { cgiPid = pid; }
+
 };
 
 #endif

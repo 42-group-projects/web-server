@@ -220,14 +220,21 @@ void NetworkManager::completeCgiProcess(int pipeFd)
 
     // Build response from CGI output
     HttpResponse res;
-    res.parseCgiResponse(proc.output);
+    // If child exited abnormally or with non-zero status, send a 500 error
+    if (!WIFEXITED(wstatus) || WEXITSTATUS(wstatus) != 0) {
+        HttpHandler handler;
+        handler.handleRequest(proc.request, config, proc.clientIp, clientPorts[clientFd]);
+        res = handler.handleErrorPages(proc.request, INTERNAL_SERVER_ERROR);
+    } else {
+        res.parseCgiResponse(proc.output);
+    }
 
     if (res.getVersion().empty() || res.getVersion().find("HTTP/") != 0)
         res.setVersion("HTTP/1.1");
     if (res.getStatus() == UNSET) {
-        res.setStatus(INTERNAL_SERVER_ERROR);
-        if (res.getMimeType().empty()) res.setMimeType("text/plain");
-        if (res.getBody().empty()) res.setBody("Internal Server Error\n");
+        HttpHandler handler;
+        handler.handleRequest(proc.request, config, proc.clientIp, clientPorts[clientFd]);
+        res = handler.handleErrorPages(proc.request, INTERNAL_SERVER_ERROR);
     }
     res.setHeader("Server", "webserv");
     res.setHeader("Host", getServerName(clientPorts[clientFd]));
@@ -267,7 +274,18 @@ void NetworkManager::cleanupTimedOutCgiProcesses()
         PendingCgiProcess &proc = pendingCgiProcesses[pipeFd];
         std::cerr << "[CGI] timeout pid=" << proc.pid << " client fd=" << proc.clientFd << std::endl;
         kill(proc.pid, SIGKILL);
-        sendErrorResponse(proc.clientFd, GATEWAY_TIMEOUT, "CGI Timeout\n", proc.requestHead, true);
+        
+        // Use custom error pages if configured, otherwise send plain error
+        HttpHandler handler;
+        handler.handleRequest(proc.request, config, proc.clientIp, clientPorts[proc.clientFd]);
+        HttpResponse res = handler.handleErrorPages(proc.request, GATEWAY_TIMEOUT);
+        
+        res.setHeader("Server", "webserv");
+        res.setHeader("Host", getServerName(clientPorts[proc.clientFd]));
+        res.setHeader("Connection", "close");
+        
+        sendBufs[proc.clientFd] = res.generateResponse(res.getStatus());
+        enableWriteMode(proc.clientFd);
 
         for (std::vector<struct pollfd>::iterator pi = pollfds.begin(); pi != pollfds.end(); ++pi) {
             if (pi->fd == pipeFd) { pollfds.erase(pi); break; }

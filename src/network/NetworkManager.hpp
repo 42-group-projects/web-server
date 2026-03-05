@@ -2,6 +2,7 @@
 
 #include "../../include/imports.hpp"
 #include "../configFileParser/ServerConfig.hpp"
+#include "../http/HttpRequest/HttpRequest.hpp"
 
 
 
@@ -56,9 +57,11 @@ private:
         pid_t pid;
         int pipeFd;         // pipe read end (monitored by poll)
         int clientFd;       // client socket to send response to
+        std::string clientIp;   // client IP for error page handling
         std::string output; // accumulated CGI output
         time_t startTime;
         std::string requestHead; // for keep-alive decision
+        HttpRequest request;     // original request (for error pages)
     };
     std::map<int, PendingCgiProcess> pendingCgiProcesses;
 
@@ -108,7 +111,7 @@ private:
     // keep-alive policy
     static const int kKeepAliveTimeoutSec = 60;
     static const size_t kMaxRequestsPerConnection = 100;
-    static const int kCgiTimeoutSec = 3;
+    static const int kCgiTimeoutSec = 10;
 
     void touchActivity(int fd);
     void cleanupIdleConnections();
