@@ -193,20 +193,8 @@ HttpResponse HttpHandler::handleErrorPages(const HttpRequest& req, e_status_code
 		res.setBody(fs.getFileContents());
 	else
 	{
-		// Return generic error response if no error page exists
-		std::stringstream ss;
-		int status_code = static_cast<int>(response_code);
 		std::string status_msg = getStatusString(response_code);
-		ss << "<!DOCTYPE html>\r\n"
-		   << "<html>\r\n"
-		   << "<head>\r\n"
-		   << "<title>" << status_code << " " << status_msg << "</title>\r\n"
-		   << "</head>\r\n"
-		   << "<body>\r\n"
-		   << "<h1>" << status_code << " " << status_msg << "</h1>\r\n"
-		   << "</body>\r\n"
-		   << "</html>\r\n";
-		res.setBody(ss.str());
+		res.setBody(status_msg);
 		res.setMimeType("text/html");
 	}
 	return res;
