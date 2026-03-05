@@ -92,3 +92,7 @@ private:
     bool isBodyLengthRequiredError(const std::string &requestHead) const;
     std::string getServerName(int port) const;
 };
+
+
+bool parseIPv4ToNetworkOrder(const std::string &ip, uint32_t &outNetworkOrder);
+std::string formatIPv4FromNetworkOrder(uint32_t networkOrderIp);

@@ -1,4 +1,38 @@
-#include "utils.hpp"
+#include "NetworkManager.hpp"
+
+// ============================================================================
+// Utility Functions (String manipulation, lookups)
+// ============================================================================
+
+std::string NetworkManager::getServerName(int port) const
+{
+    const std::vector<t_server_config>& configs = config.getConfiguration();
+    for (size_t i = 0; i < configs.size(); ++i) {
+        for (size_t j = 0; j < configs[i].listen.size(); ++j) {
+            if (configs[i].listen[j].second == port) {
+                if (!configs[i].server_name.empty())
+                    return configs[i].server_name[0];
+            }
+        }
+    }
+    return "localhost";
+}
+
+std::string NetworkManager::toLower(const std::string &s)
+{
+    std::string r(s);
+    for (size_t i = 0; i < r.size(); ++i) r[i] = std::tolower(r[i]);
+    return r;
+}
+
+std::string NetworkManager::trim(const std::string &s)
+{
+    size_t a = 0, b = s.size();
+    while (a < b && (s[a] == ' ' || s[a] == '\t' || s[a] == '\r' || s[a] == '\n')) ++a;
+    while (b > a && (s[b-1] == ' ' || s[b-1] == '\t' || s[b-1] == '\r' || s[b-1] == '\n')) --b;
+    return s.substr(a, b - a);
+}
+
 
 bool parseIPv4ToNetworkOrder(const std::string &ip, uint32_t &outNetworkOrder)
 {
