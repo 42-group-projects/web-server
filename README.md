@@ -37,3 +37,13 @@ You can also execute a test script by running:
 
 ## Testing suit
 - [Webserver tester made fellow 42 student](https://github.com/ulsgks/webserv-tester)
+
+## AI use
+
+AI-assisted development tools (GitHub Copilot) were utilized throughout this project for:
+- Code structure suggestions and boilerplate generation
+- Debugging assistance and error analysis
+- HTTP protocol implementation guidance and RFC compliance checking
+
+The core architecture, design decisions, and problem-solving approaches were developed by the team, with AI serving as a supplementary tool for efficiency and best practices.
+
