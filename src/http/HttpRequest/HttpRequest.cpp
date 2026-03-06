@@ -59,6 +59,17 @@ void HttpRequest::parseRequest(const std::string &request)
 			error("Malformed request line", "Request Parser");
 		}
 
+		// Extract query string BEFORE decoding the URI
+		// This prevents %2B in query params from being decoded too early
+		if (uri.find('?') != std::string::npos)
+		{
+			size_t pos = uri.find('?');
+			std::string query_string = uri.substr(pos + 1);
+			uri = uri.substr(0, pos);
+			setQuaryString(query_string);
+			parseQueryParams(query_string);
+		}
+
 		uri = decodeUri(uri);
 
 		// Parse headers
@@ -79,15 +90,6 @@ void HttpRequest::parseRequest(const std::string &request)
 			{
 				error("Exceeded maximum number of headers", "Request Parser");
 			}
-		}
-		// query parameters
-		if (uri.find('?') != std::string::npos)
-		{
-			size_t pos = uri.find('?');
-			std::string query_string = uri.substr(pos + 1);
-			uri = uri.substr(0, pos);
-			setQuaryString(query_string);
-			parseQueryParams(query_string);
 		}
 
 		// Parse body
