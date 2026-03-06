@@ -27,10 +27,20 @@
         </ul>
     </nav>
     <section class="info">
-        <h2>POST Test Information</h2>
-        <p>The POST form below sends data to a CGI script. The script processes the data and displays it back to you. It does not save anything to disk - it simply echoes the received data for testing purposes.</p>
+        <h2>GET Test Information</h2>
     </section>
-    <section class="post-form">
+    <section class="form">
+        <form action="./cgi-bin/test.cgi" method="get" accept-charset="utf-8">
+            <label for="getmsg">GET to .test.cgi:</label>
+            <input id="getmsg" name="message" type="text" placeholder="Type a message" required>
+            <input id="getmsg" name="message" type="text" placeholder="Type a message" >
+            <button type="submit">Send</button>
+        </form>
+    </section>
+        <section class="info">
+        <h2>POST Test Information</h2>
+    </section>
+    <section class="form">
         <form action="./cgi-bin/post.cgi" method="post" accept-charset="utf-8">
             <label for="postmsg">POST to .post.cgi:</label>
             <input id="postmsg" name="message" type="text" placeholder="Type a message" required>
@@ -38,5 +48,6 @@
             <button type="submit">Send</button>
         </form>
     </section>
+    
 </body>
 </html>
