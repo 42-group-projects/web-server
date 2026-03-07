@@ -221,7 +221,7 @@ char **CgiHandler::makeEnvs(const HttpRequest& req)
 
 std::string CgiHandler::getQueryString(const HttpRequest& req)
 {
-	const std::string allowed = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-%=&";
+	const std::string allowed = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-%=&+";
 	std::string qs = req.getQueryString();
 	for (size_t i = 0; i < qs.size(); i++)
 		if (allowed.find(qs[i]) == std::string::npos)
@@ -242,33 +242,57 @@ std::string CgiHandler::getExtension(const std::string& uri)
 	return ext.substr(0, pos);
 }
 
-bool isWhiteListed(char c)
+int hexDigitValue(char c)
 {
-	return ( (c >= 'a' && c <= 'z') ||
-			 (c >= 'A' && c <= 'Z') ||
-			 (c >= '0' && c <= '9') ||
-			 c == '-' || c == '_' || c == '.' ||
-			 c == '=' || c == '&' || c == '%' );
+	if (c >= '0' && c <= '9')
+		return c - '0';
+	if (c >= 'a' && c <= 'f')
+		return 10 + (c - 'a');
+	if (c >= 'A' && c <= 'F')
+		return 10 + (c - 'A');
+	return -1;
+}
+
+bool isControlChar(unsigned char c)
+{
+	return (c < 0x20 || c == 0x7F);
 }
 
 std::string CgiHandler::sanitizeQueryString(const std::string& query)
 {
-	std::string sanitized;
-	sanitized.reserve(query.size());
+	std::string decoded;
+	decoded.reserve(query.size());
 
 	for (size_t i = 0; i < query.size(); ++i)
 	{
 		char c = query[i];
-		if (isWhiteListed(c))
+		if (c == '+')
 		{
-		    sanitized += c;
+			decoded += ' ';
+		}
+		else if (c == '%' && i + 2 < query.size())
+		{
+			int high = hexDigitValue(query[i + 1]);
+			int low = hexDigitValue(query[i + 2]);
+			if (high != -1 && low != -1)
+			{
+				unsigned char value = static_cast<unsigned char>((high << 4) | low);
+				if (isControlChar(value))
+					error("Cannot run CGI, possible code injection", "CgiHandler::sanitizeQueryString");
+				decoded += static_cast<char>(value);
+				i += 2;
+			}
+			else
+			{
+				error("Cannot run CGI, possible code injection", "CgiHandler::sanitizeQueryString");
+			}
 		}
 		else
 		{
-			char buf[4];
-			std::sprintf(buf, "%%%02X", (unsigned char)c);
-			sanitized += buf;
+			if (isControlChar(static_cast<unsigned char>(c)))
+				error("Cannot run CGI, possible code injection", "CgiHandler::sanitizeQueryString");
+			decoded += c;
 		}
 	}
-	return sanitized;
+	return decoded;
 }
