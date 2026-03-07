@@ -260,7 +260,7 @@ void NetworkManager::completeCgiProcess(int pipeFd)
 
 void NetworkManager::cleanupTimedOutCgiProcesses()
 {
-    time_t now = time(NULL);
+    time_t now = std::time(NULL);
     std::vector<int> timedOut;
 
     for (std::map<int, PendingCgiProcess>::iterator it = pendingCgiProcesses.begin();
