@@ -17,11 +17,6 @@ void setSignalNetworkManager(NetworkManager *net)
 
 void setupSignalHandlers()
 {
-	struct sigaction sa;
-	sa.sa_handler = signalHandler;
-	sigemptyset(&sa.sa_mask);
-	sa.sa_flags = 0;
-
-	sigaction(SIGINT,  &sa, NULL);
-	sigaction(SIGTERM, &sa, NULL);
+	signal(SIGINT,  signalHandler);
+	signal(SIGTERM, signalHandler);
 }

@@ -106,7 +106,7 @@ void NetworkManager::dispatchRequest(int fd, const std::string &requestHead, con
         proc.clientFd = fd;
         proc.clientIp = clientIps[fd];
         proc.output = "";
-        proc.startTime = time(NULL);
+        proc.startTime = std::time(NULL);
         proc.requestHead = requestHead;
         proc.request = req;
         pendingCgiProcesses[proc.pipeFd] = proc;

@@ -167,8 +167,12 @@ char **CgiHandler::makeArgs(const HttpRequest& req)
 
 	char **args;
 	args = new char*[3];
-	args[0] = strdup(cgi_interpreter.c_str());
-	args[1] = strdup(script_for_exec.c_str());
+	args[0] = new char[cgi_interpreter.size() + 1];
+	cgi_interpreter.copy(args[0], cgi_interpreter.size());
+	args[0][cgi_interpreter.size()] = '\0';
+	args[1] = new char[script_for_exec.size() + 1];
+	script_for_exec.copy(args[1], script_for_exec.size());
+	args[1][script_for_exec.size()] = '\0';
 	args[2] = NULL;
 	return args;
 }
@@ -212,7 +216,10 @@ char **CgiHandler::makeEnvs(const HttpRequest& req)
 	for (std::map<std::string, std::string>::iterator it = env_vars.begin(); it != env_vars.end(); ++it)
 	{
 		std::string env_entry = it->first + "=" + it->second;
-		envp[i++] = strdup(env_entry.c_str());
+		char *buf = new char[env_entry.size() + 1];
+		env_entry.copy(buf, env_entry.size());
+		buf[env_entry.size()] = '\0';
+		envp[i++] = buf;
 	}
 	envp[i] = NULL;
 
